@@ -86,14 +86,12 @@
             📝 提交同好会信息
           </button>
         </div>
- <p class="card-body gpl-text" style="margin-top: 12px; font-size: 12px;">
+        <p class="card-body gpl-text" style="margin-top: 12px; font-size: 12px;">
           本项目基于 
           <a href="https://github.com/HELPMEEADICE/china-bandori-maps" target="_blank" rel="noopener noreferrer">china-bandori-maps</a> 
           二次开发，遵循 
           <a href="./LICENSE" target="_blank">GPLv3 开源协议</a>。
         </p>
-
-      </section>
       </section>
 
       <section id="selectedCard" class="md3-card">
@@ -188,6 +186,7 @@
           </div>
         </div>
       </div>
+
       <!-- 同好会详情弹窗 -->
       <div id="clubDetailModal" class="calendar-modal" aria-hidden="true">
         <div class="calendar-modal-card" role="dialog" aria-modal="true">
@@ -200,15 +199,54 @@
           </div>
         </div>
       </div>
+
+      <!-- 刷新按钮（只保留一个） -->
       <button id="refreshApiBtn" class="context-refresh-btn" type="button">刷新数据</button>
       <div id="tooltip"></div>
+
+      <!-- 管理员模式相关代码 -->
+      <!-- 管理员浮动按钮 -->
+      <button id="floatingAdminBtn" class="floating-admin-btn" title="管理员模式">👑</button>
+
+      <!-- 添加同好会按钮（管理员模式下显示） -->
+      <button id="addClubBtn" class="floating-admin-btn" style="bottom: 140px; background: #27ae60; display: none;">➕</button>
+
+      <!-- 主题选择器（开发者模式下显示） -->
+      <div class="theme-selector" id="themeSelector" style="display: none;">
+        <div class="theme-dot theme-red" data-theme="red" title="红色主题"></div>
+        <div class="theme-dot theme-blue" data-theme="blue" title="蓝色主题"></div>
+        <div class="theme-dot theme-green" data-theme="green" title="绿色主题"></div>
+        <div class="theme-dot theme-purple" data-theme="purple" title="紫色主题"></div>
+        <div class="theme-dot theme-orange" data-theme="orange" title="橙色主题"></div>
+      </div>
+
+      <!-- 管理员编辑面板 -->
+      <div id="adminPanel" class="admin-panel">
+        <h3 id="adminPanelTitle">编辑同好会</h3>
+        <input type="hidden" id="editId">
+        <input type="text" id="editName" placeholder="组织名称">
+        <input type="text" id="editProvince" placeholder="省份">
+        <select id="editType">
+          <option value="school">高校同好会</option>
+          <option value="region">地区高校联合</option>
+          <option value="vnfest">视觉小说学园祭</option>
+        </select>
+        <input type="text" id="editInfo" placeholder="联系方式">
+        <textarea id="editRemark" rows="4" placeholder="详细介绍..."></textarea>
+        <input type="text" id="editSchool" placeholder="学校/组织">
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="adminCancelBtn" class="btn-secondary">取消</button>
+          <button id="adminSaveBtn" class="btn-primary">保存</button>
+          <button id="adminDeleteBtn" class="btn-secondary" style="background: #e74c3c; color: white;">删除</button>
+        </div>
+      </div>
     </main>
 
     <footer id="siteFooter">
       <a href="#" target="_blank">Visual Novel Festival</a>
     </footer>
 
-    <!-- 🔴 关键！这些 script 标签必须存在！ -->
+    <!-- 脚本文件 -->
     <script defer src="https://cdn.jsdmirror.com/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script defer src="./china.min.js"></script>
     <script defer src="./app.js"></script>

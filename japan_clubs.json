@@ -1,0 +1,36 @@
+{
+  "success": true,
+  "total": 3,
+  "data": [
+    {
+      "id": 1,
+      "region": "东京都",
+      "name": "东京Galgame同好会",
+      "info": "https://discord.gg/example",
+      "type": "region",
+      "verified": 1,
+      "remark": "东京地区的Galgame爱好者交流群，定期举办线下活动。",
+      "created_at": "2024-01-01"
+    },
+    {
+      "id": 2,
+      "region": "大阪府",
+      "name": "大阪视觉小说研究会",
+      "info": "https://discord.gg/example2",
+      "type": "school",
+      "verified": 1,
+      "remark": "大阪大学视觉小说研究同好会",
+      "created_at": "2024-01-01"
+    },
+    {
+      "id": 3,
+      "region": "京都府",
+      "name": "京都动画游戏同好会",
+      "info": "123456789",
+      "type": "school",
+      "verified": 1,
+      "remark": "京都地区的同好会，欢迎加入",
+      "created_at": "2024-01-01"
+    }
+  ]
+}

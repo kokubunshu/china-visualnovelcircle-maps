@@ -1,5 +1,5 @@
 :root {
-  /* 白黑红配色 - 浅色模式 */
+  /* 基础配色 - 浅色模式 */
   --md-surface: #ffffff;
   --md-surface-container: #f8f8f8;
   --md-surface-container-high: #f0f0f0;
@@ -23,7 +23,6 @@
 }
 
 :root[data-theme='dark'] {
-  /* 白黑红配色 - 深色模式 */
   --md-surface: #0a0a0a;
   --md-surface-container: #141414;
   --md-surface-container-high: #1f1f1f;
@@ -155,7 +154,7 @@ body {
 }
 
 .province:hover {
-  fill: var(--red-4) !important;
+  fill: var(--md-primary) !important;
 }
 
 .province.selected {
@@ -409,14 +408,6 @@ body {
   max-width: 100%;
   height: auto;
   margin: 2px 0 10px;
-}
-
-#introCounter {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  margin-top: 12px;
 }
 
 #introCard .card-body {
@@ -1354,6 +1345,159 @@ body {
 .context-refresh-btn:hover { background: var(--red-5); }
 .context-refresh-btn:active { transform: translateY(1px) scale(0.98); }
 
+/* ================== 管理员模式 ================== */
+.floating-admin-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 200;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s;
+}
+
+.floating-admin-btn:hover {
+  transform: scale(1.1);
+  background: #c0392b;
+}
+
+.floating-admin-btn.admin-active {
+  background: #27ae60;
+}
+
+/* 开发者模式下显示管理员按钮 */
+.developer-mode .floating-admin-btn {
+  display: flex !important;
+}
+
+/* 管理员模式下卡片可编辑样式 */
+.admin-mode .group-item {
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.admin-mode .group-item:hover {
+  border-color: #e74c3c;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+  transform: translateX(2px);
+}
+
+.admin-mode .group-item:hover::after {
+  content: '✎ 编辑';
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: #e74c3c;
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.admin-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 300;
+  width: 90%;
+  max-width: 500px;
+  background: var(--md-surface-container);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  display: none;
+}
+
+.admin-panel.open {
+  display: block;
+}
+
+.admin-panel input,
+.admin-panel textarea,
+.admin-panel select {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+}
+
+.admin-panel button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-panel .btn-primary {
+  background: var(--md-primary);
+  color: white;
+}
+
+.admin-panel .btn-secondary {
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface);
+}
+
+/* ================== 主题选择器 ================== */
+.theme-selector {
+  position: fixed;
+  bottom: 20px;
+  right: 80px;
+  z-index: 200;
+  display: none;
+  gap: 8px;
+  background: var(--md-surface-container);
+  padding: 8px 12px;
+  border-radius: 40px;
+  border: 1px solid var(--md-outline);
+  backdrop-filter: blur(8px);
+}
+
+/* 开发者模式下显示主题选择器 */
+.developer-mode .theme-selector {
+  display: flex !important;
+}
+
+.theme-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.theme-dot:hover {
+  transform: scale(1.15);
+}
+
+.theme-dot.active {
+  border-color: var(--md-on-surface);
+  box-shadow: 0 0 0 2px var(--md-surface);
+}
+
+.theme-red { background: #e74c3c; }
+.theme-blue { background: #3498db; }
+.theme-green { background: #27ae60; }
+.theme-purple { background: #9b59b6; }
+.theme-orange { background: #e67e22; }
+
 /* ================== 响应式适配 ================== */
 @media (max-width: 720px) {
   #tooltip { display: none; }
@@ -1428,11 +1572,6 @@ body {
     bottom: auto;
     min-width: 0;
     height: 38px;
-  }
-
-  .secondary-toggle-btn.mobile-inside,
-  .tertiary-toggle-btn.mobile-inside {
-    margin-top: 8px;
   }
 
   #controlCard {

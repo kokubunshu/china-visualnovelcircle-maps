@@ -33,6 +33,11 @@ const State = {
   resetClickBurstTimer: null,
 };
 
+// 全局变量
+let adminMode = false;
+let currentEditClubId = null;
+const ADMIN_PASSWORD = 'ciallo';
+
 // ==========================================
 // 2. 核心工具函数
 // ==========================================
@@ -381,7 +386,7 @@ function renderGroupList(rows) {
     `;
   }).join('');
 
-  // 绑定点击事件 - 点击整个卡片打开详情
+  // 绑定点击事件
   document.querySelectorAll('.group-item').forEach(item => {
     item.addEventListener('click', (e) => {
       if (e.target.classList.contains('copy-btn')) {
@@ -389,7 +394,12 @@ function renderGroupList(rows) {
       }
       const clubData = item.getAttribute('data-club');
       if (clubData) {
-        showClubDetail(JSON.parse(decodeURIComponent(clubData)));
+        const club = JSON.parse(decodeURIComponent(clubData));
+        if (adminMode) {
+          openEditPanel(club);
+        } else {
+          showClubDetail(club);
+        }
       }
     });
   });
@@ -432,13 +442,11 @@ function showClubDetail(club) {
   
   title.textContent = club.name;
   
-  // 判断是否为链接
   const contactInfo = club.originalInfo || club.info || '';
   const detectedUrl = club.detectedUrl;
   const isLink = detectedUrl || contactInfo.startsWith('http://') || contactInfo.startsWith('https://') || contactInfo.includes('discord.gg') || contactInfo.includes('discord.com/invite');
   const contactUrl = detectedUrl || (isLink ? contactInfo : null);
   
-  // 转义函数
   const escapeHtml = (str) => {
     if (!str) return '';
     return String(str).replace(/[&<>]/g, function(m) {
@@ -452,12 +460,11 @@ function showClubDetail(club) {
   const safeInfo = escapeHtml(club.info);
   const safeUrl = contactUrl ? escapeHtml(contactUrl) : '';
   
-  // 联系方式显示区域
   let contactHtml = '';
   if (isLink && contactUrl) {
     contactHtml = `
       <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
-        <strong>📞 联系方式</strong><br>
+        <strong>群聊号码</strong><br>
         <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="font-family: monospace; font-size: 16px; color: var(--md-primary); word-break: break-all;">${safeInfo}</a>
         <div style="margin-top: 12px;">
           <button onclick="window.open('${safeUrl.replace(/'/g, "\\'")}', '_blank')" style="margin-right: 10px; padding: 6px 16px; background: var(--md-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">打开链接</button>
@@ -469,7 +476,7 @@ function showClubDetail(club) {
     const safeInfoForCopy = safeInfo.replace(/'/g, "\\'");
     contactHtml = `
       <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
-        <strong>📞 联系方式</strong><br>
+        <strong>群聊号码</strong><br>
         <span style="font-family: monospace; font-size: 16px; word-break: break-all;">${safeInfo || '无联系方式'}</span>
         ${safeInfo ? `<button onclick="navigator.clipboard.writeText('${safeInfoForCopy}')" style="margin-left: 10px; padding: 4px 12px; background: var(--md-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">复制</button>` : ''}
       </div>
@@ -480,11 +487,11 @@ function showClubDetail(club) {
     <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
       <div style="display: flex; flex-wrap: wrap; gap: 16px;">
         <div style="flex: 1;">
-          <strong>📌 所属省份</strong><br>
+          <strong>所在省份</strong><br>
           ${escapeHtml(club.province || '未填写')}
         </div>
         <div style="flex: 1;">
-          <strong>🏷️ 组织类型</strong><br>
+          <strong>同好会类型</strong><br>
           ${escapeHtml(club.type || '其他')}
         </div>
       </div>
@@ -493,11 +500,11 @@ function showClubDetail(club) {
     ${contactHtml}
     
     <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
-      <strong>📅 ${escapeHtml(club.verifyMeta || '成立时间未知')}</strong>
+      <strong>${escapeHtml(club.verifyMeta || '成立时间未知')}</strong>
     </div>
     
     <div style="padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
-      <strong>📝 介绍</strong><br>
+      <strong>介绍</strong><br>
       <div style="margin-top: 8px; line-height: 1.6;">${escapeHtml(club.remark || '暂无介绍，欢迎补充~')}</div>
     </div>
   `;
@@ -833,18 +840,41 @@ function renderChinaMap() {
 
 async function reloadBandoriData() {
   let rows = [], source = 'none';
-  for (const url of [CONFIG.API_URL, ...CONFIG.FALLBACK_URLS]) {
-    try {
-      const resp = await fetch(url, { cache: 'no-store' });
-      if (!resp.ok) continue;
+  
+  // 优先从在线 API 获取
+  try {
+    const resp = await fetch('./api.php', { cache: 'no-store' });
+    if (resp.ok) {
       const json = await resp.json();
-      if (json?.data && Array.isArray(json.data)) {
-        rows = json.data; source = url; break;
+      if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+        rows = json.data;
+        source = '在线API';
+        console.log('✅ 从在线API加载数据成功');
       }
-    } catch (e) {}
+    }
+  } catch (e) {
+    console.log('在线API请求失败:', e);
+  }
+  
+  // 如果在线API失败或没有数据，从本地 JSON 文件加载（兜底）
+  if (!rows.length) {
+    for (const url of [CONFIG.API_URL, ...CONFIG.FALLBACK_URLS]) {
+      try {
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) continue;
+        const json = await resp.json();
+        if (json?.data && Array.isArray(json.data)) {
+          rows = json.data;
+          source = '本地JSON';
+          console.log('✅ 从本地JSON加载数据成功');
+          break;
+        }
+      } catch (e) {}
+    }
   }
 
   if (rows.length) {
+    // 去重逻辑
     const dedupedMap = new Map();
     rows.forEach((item) => {
       const key = String(item.info || '').trim();
@@ -852,20 +882,17 @@ async function reloadBandoriData() {
         dedupedMap.set(Symbol('no-info'), item);
         return;
       }
-
       const prev = dedupedMap.get(key);
       if (!prev) {
         dedupedMap.set(key, item);
         return;
       }
-
       const prevTime = new Date(prev.created_at || 0).getTime() || 0;
       const currTime = new Date(item.created_at || 0).getTime() || 0;
       if (currTime >= prevTime) {
         dedupedMap.set(key, item);
       }
     });
-
     rows = Array.from(dedupedMap.values());
   }
 
@@ -887,7 +914,11 @@ async function reloadBandoriData() {
   if (State.selectedProvinceKey === '海外') showProvinceDetails('海外');
 }
 
+// ==========================================
+// 4. 事件绑定
+// ==========================================
 function bindAllStaticEvents() {
+  // 复制/打开链接事件
   document.addEventListener('click', async (e) => {
     const linkTrigger = e.target.closest('.copy-number[data-href]');
     if (linkTrigger) {
@@ -911,14 +942,32 @@ function bindAllStaticEvents() {
     } catch (err) {}
   });
 
-  document.getElementById('searchInput')?.addEventListener('input', (e) => { State.listQuery = e.target.value.trim().toLowerCase(); renderCurrentDetail(); });
-  document.getElementById('typeFilter')?.addEventListener('change', (e) => { State.listType = e.target.value || 'all'; renderCurrentDetail(); });
-  document.getElementById('globalSearchBtn')?.addEventListener('click', () => { setGlobalSearchEnabled(!State.globalSearchEnabled, { resetToDefault: true }); renderCurrentDetail(); });
+  // 搜索和筛选
+  document.getElementById('searchInput')?.addEventListener('input', (e) => { 
+    State.listQuery = e.target.value.trim().toLowerCase(); 
+    renderCurrentDetail(); 
+  });
+  
+  document.getElementById('typeFilter')?.addEventListener('change', (e) => { 
+    State.listType = e.target.value || 'all'; 
+    renderCurrentDetail(); 
+  });
+  
+  document.getElementById('globalSearchBtn')?.addEventListener('click', () => { 
+    setGlobalSearchEnabled(!State.globalSearchEnabled, { resetToDefault: true }); 
+    renderCurrentDetail(); 
+  });
+  
   document.getElementById('sortBar')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.sort-btn');
-    if (btn) { State.listSort = btn.getAttribute('data-sort') || 'default'; updateSortButtonView(); renderCurrentDetail(); }
+    if (btn) { 
+      State.listSort = btn.getAttribute('data-sort') || 'default'; 
+      updateSortButtonView(); 
+      renderCurrentDetail(); 
+    }
   });
 
+  // 地图缩放控件
   const stepScale = (factor) => {
     if (!State.mapViewState) return;
     const { svg, zoom, minScale, maxScale, width, height } = State.mapViewState;
@@ -936,6 +985,7 @@ function bindAllStaticEvents() {
 
   document.getElementById('zoomInBtn')?.addEventListener('click', () => stepScale(1.2));
   document.getElementById('zoomOutBtn')?.addEventListener('click', () => stepScale(1 / 1.2));
+  
   document.getElementById('resetViewBtn')?.addEventListener('click', () => {
     State.resetClickBurstCount++;
     clearTimeout(State.resetClickBurstTimer);
@@ -946,8 +996,21 @@ function bindAllStaticEvents() {
       State.resetClickBurstCount = 0;
       const btn = document.getElementById('resetViewBtn');
       if(btn) {
-         btn.textContent = State.developerModeEnabled ? '重置（开发者）' : '重置';
-         btn.title = State.developerModeEnabled ? '允许右键' : '禁止右键';
+        btn.textContent = State.developerModeEnabled ? '重置（开发者）' : '重置';
+        btn.title = State.developerModeEnabled ? '允许右键' : '禁止右键';
+      }
+      
+      const floatingAdminBtn = document.getElementById('floatingAdminBtn');
+      if (State.developerModeEnabled) {
+        document.body.classList.add('developer-mode');
+        if (floatingAdminBtn) floatingAdminBtn.style.display = 'flex';
+        console.log('🔓 开发者模式已开启，管理员按钮已显示');
+        alert('开发者模式已开启！\n👑 管理员按钮已出现在右下角');
+      } else {
+        document.body.classList.remove('developer-mode');
+        if (floatingAdminBtn) floatingAdminBtn.style.display = 'none';
+        if (adminMode) toggleAdminMode();
+        console.log('🔒 开发者模式已关闭，管理员按钮已隐藏');
       }
     }
 
@@ -957,6 +1020,7 @@ function bindAllStaticEvents() {
     }
   });
 
+  // 海外/国内同好会按钮
   document.getElementById('overseasToggleBtn')?.addEventListener('click', () => {
     setGlobalSearchEnabled(false);
     State.selectedProvinceKey = '海外';
@@ -975,15 +1039,18 @@ function bindAllStaticEvents() {
     State.mapViewState?.g.selectAll('.province').classed('selected', false);
   });
 
+  // 日历按钮
   document.getElementById('calendarToggleBtn')?.addEventListener('click', () => {
     document.getElementById('calendarModal')?.classList.add('open');
     document.getElementById('calendarModal')?.setAttribute('aria-hidden', 'false');
   });
 
+  // 点击地图其他地方隐藏气泡
   document.getElementById('map')?.addEventListener('click', (e) => {
     if (!e.target.closest('#badgeBubble') && !e.target.closest('.count-badge')) hideMapBubble();
   });
 
+  // 刷新按钮
   const refreshBtn = document.getElementById('refreshApiBtn');
   refreshBtn?.addEventListener('click', async () => {
     refreshBtn.textContent = '刷新中...';
@@ -994,9 +1061,11 @@ function bindAllStaticEvents() {
     refreshBtn.classList.remove('show');
   });
 
+  // 简介卡片收起/展开
   document.getElementById('introCloseBtn')?.addEventListener('click', () => document.getElementById('introCard')?.classList.add('collapsed'));
   document.getElementById('introExpandBtn')?.addEventListener('click', () => document.getElementById('introCard')?.classList.remove('collapsed'));
   
+  // 反转操作开关
   const invertSwitch = document.getElementById('invertCtrlSwitch');
   invertSwitch?.addEventListener('change', () => {
     State.invertCtrlBubble = !!invertSwitch.checked;
@@ -1004,6 +1073,7 @@ function bindAllStaticEvents() {
     if(label) label.textContent = State.invertCtrlBubble ? '反转操作（已开启）' : '反转操作（默认关）';
   });
 
+  // 主题切换
   const themeSwitch = document.getElementById('themeSwitch');
   themeSwitch?.addEventListener('change', () => {
     const currentEffectiveTheme = getPreferredTheme();
@@ -1016,11 +1086,21 @@ function bindAllStaticEvents() {
     setThemePreference('system');
   });
 
+  // 反馈弹窗
   const feedbackModal = document.getElementById('feedbackModal');
-  document.getElementById('feedbackModalBtn')?.addEventListener('click', () => { feedbackModal?.classList.add('open'); feedbackModal?.setAttribute('aria-hidden', 'false'); });
-  document.getElementById('feedbackModalClose')?.addEventListener('click', () => { feedbackModal?.classList.remove('open'); feedbackModal?.setAttribute('aria-hidden', 'true'); });
-  feedbackModal?.addEventListener('click', (e) => { if (e.target === feedbackModal) feedbackModal.classList.remove('open'); });
+  document.getElementById('feedbackModalBtn')?.addEventListener('click', () => { 
+    feedbackModal?.classList.add('open'); 
+    feedbackModal?.setAttribute('aria-hidden', 'false'); 
+  });
+  document.getElementById('feedbackModalClose')?.addEventListener('click', () => { 
+    feedbackModal?.classList.remove('open'); 
+    feedbackModal?.setAttribute('aria-hidden', 'true'); 
+  });
+  feedbackModal?.addEventListener('click', (e) => { 
+    if (e.target === feedbackModal) feedbackModal.classList.remove('open'); 
+  });
 
+  // 右键菜单
   document.addEventListener('contextmenu', (e) => {
     if (State.developerModeEnabled) return;
     e.preventDefault();
@@ -1047,8 +1127,12 @@ function bindAllStaticEvents() {
       }
     }
   }, true);
-  document.addEventListener('click', (e) => { if (e.target !== refreshBtn) refreshBtn?.classList.remove('show'); }, true);
+  
+  document.addEventListener('click', (e) => { 
+    if (e.target !== refreshBtn) refreshBtn?.classList.remove('show'); 
+  }, true);
 
+  // 彩蛋
   let easterClickCount = 0, easterTimer = null;
   document.getElementById('introTitle')?.addEventListener('click', () => {
     easterClickCount++;
@@ -1063,22 +1147,288 @@ function bindAllStaticEvents() {
   });
   document.getElementById('easterModalClose')?.addEventListener('click', () => document.getElementById('easterModal')?.classList.remove('open'));
 
-  document.addEventListener('touchmove', (e) => { if (Utils.isMobileViewport() && e.touches.length >= 2 && !e.target.closest('#map')) e.preventDefault(); }, { passive: false });
-  ['gesturestart', 'gesturechange'].forEach(evt => document.addEventListener(evt, (e) => { if (Utils.isMobileViewport() && !e.target.closest('#map')) e.preventDefault(); }, { passive: false }));
+  // 移动端触摸优化
+  document.addEventListener('touchmove', (e) => { 
+    if (Utils.isMobileViewport() && e.touches.length >= 2 && !e.target.closest('#map')) e.preventDefault(); 
+  }, { passive: false });
+  ['gesturestart', 'gesturechange'].forEach(evt => document.addEventListener(evt, (e) => { 
+    if (Utils.isMobileViewport() && !e.target.closest('#map')) e.preventDefault(); 
+  }, { passive: false }));
 }
 
+// ==========================================
+// 5. 管理员模式
+// ==========================================
+
+function toggleAdminMode() {
+  if (!State.developerModeEnabled) {
+    alert('请先连续点击「重置」按钮6次开启开发者模式');
+    return false;
+  }
+  
+  // 保存/清除 token
+  if (!adminMode) {
+    localStorage.setItem('admin_token', 'ciallo');
+  } else {
+    localStorage.removeItem('admin_token');
+  }
+  
+  adminMode = !adminMode;
+  const floatingAdminBtn = document.getElementById('floatingAdminBtn');
+  const addClubBtn = document.getElementById('addClubBtn');
+  
+  if (adminMode) {
+    floatingAdminBtn?.classList.add('admin-active');
+    floatingAdminBtn.title = '退出管理员模式';
+    if (addClubBtn) addClubBtn.style.display = 'flex';
+    document.body.classList.add('admin-mode');
+    console.log('✅ 管理员模式已开启');
+  } else {
+    floatingAdminBtn?.classList.remove('admin-active');
+    floatingAdminBtn.title = '管理员模式';
+    if (addClubBtn) addClubBtn.style.display = 'none';
+    document.body.classList.remove('admin-mode');
+    console.log('✅ 管理员模式已关闭');
+  }
+  return true;
+}
+
+function openEditPanel(club = null, isNew = false) {
+  const adminPanel = document.getElementById('adminPanel');
+  const adminPanelTitle = document.getElementById('adminPanelTitle');
+  const editId = document.getElementById('editId');
+  const editName = document.getElementById('editName');
+  const editProvince = document.getElementById('editProvince');
+  const editType = document.getElementById('editType');
+  const editInfo = document.getElementById('editInfo');
+  const editRemark = document.getElementById('editRemark');
+  const editSchool = document.getElementById('editSchool');
+  const adminDeleteBtn = document.getElementById('adminDeleteBtn');
+  
+  if (!adminPanel) return;
+  
+  if (isNew) {
+    adminPanelTitle.textContent = '➕ 添加同好会';
+    if (editId) editId.value = '';
+    if (editName) editName.value = '';
+    if (editProvince) editProvince.value = '';
+    if (editType) editType.value = 'school';
+    if (editInfo) editInfo.value = '';
+    if (editRemark) editRemark.value = '';
+    if (editSchool) editSchool.value = '';
+    if (adminDeleteBtn) adminDeleteBtn.style.display = 'none';
+    currentEditClubId = null;
+  } else if (club) {
+    adminPanelTitle.textContent = '✏️ 编辑同好会';
+    if (editId) editId.value = club.id || '';
+    if (editName) editName.value = club.name || '';
+    if (editProvince) editProvince.value = club.province || '';
+    if (editType) editType.value = club.type || 'school';
+    if (editInfo) editInfo.value = club.originalInfo || club.info || '';
+    if (editRemark) editRemark.value = club.remark || '';
+    if (editSchool) editSchool.value = club.school || '';
+    if (adminDeleteBtn) adminDeleteBtn.style.display = 'block';
+    currentEditClubId = club.id;
+  }
+  
+  adminPanel.classList.add('open');
+}
+
+function closeAdminPanel() {
+  const adminPanel = document.getElementById('adminPanel');
+  if (adminPanel) adminPanel.classList.remove('open');
+  currentEditClubId = null;
+}
+
+async function saveClub() {
+  const editId = document.getElementById('editId');
+  const editName = document.getElementById('editName');
+  const editProvince = document.getElementById('editProvince');
+  const editType = document.getElementById('editType');
+  const editInfo = document.getElementById('editInfo');
+  const editRemark = document.getElementById('editRemark');
+  const editSchool = document.getElementById('editSchool');
+  
+  const clubData = {
+    name: editName?.value.trim() || '',
+    province: editProvince?.value.trim() || '',
+    type: editType?.value || 'school',
+    info: editInfo?.value.trim() || '',
+    remark: editRemark?.value.trim() || '',
+    school: editSchool?.value.trim() || '',
+    verified: 1
+  };
+  
+  if (!clubData.name) {
+    alert('请填写组织名称');
+    return;
+  }
+  if (!clubData.province) {
+    alert('请填写省份');
+    return;
+  }
+  if (!clubData.info) {
+    alert('请填写联系方式');
+    return;
+  }
+  
+  const isEdit = currentEditClubId !== null;
+  const adminToken = localStorage.getItem('admin_token');
+  
+  try {
+    let response;
+    if (isEdit) {
+      // 更新
+      clubData.id = currentEditClubId;
+      response = await fetch('./api.php', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Token': adminToken
+        },
+        body: JSON.stringify(clubData)
+      });
+    } else {
+      // 添加
+      response = await fetch('./api.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Token': adminToken
+        },
+        body: JSON.stringify(clubData)
+      });
+    }
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      alert(isEdit ? '✅ 更新成功！' : '✅ 添加成功！');
+      await reloadBandoriData();  // 重新加载数据
+      closeAdminPanel();
+    } else {
+      alert('保存失败：' + (result.message || '未知错误'));
+    }
+  } catch (err) {
+    console.error('保存失败：', err);
+    alert('保存失败，请检查网络连接或 API 配置');
+  }
+}
+
+function exportData() {
+  const dataStr = JSON.stringify(State.bandoriRows, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `galgame_clubs_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('📁 数据已导出！');
+}
+// 删除同好会（添加到 exportData 函数后面）
+async function deleteClub() {
+  if (!confirm('⚠️ 确定要删除这个同好会吗？此操作不可撤销！')) return;
+  
+  const adminToken = localStorage.getItem('admin_token');
+  
+  try {
+    const response = await fetch('./api.php', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Token': adminToken
+      },
+      body: JSON.stringify({ id: currentEditClubId })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      alert('✅ 删除成功！');
+      await reloadBandoriData();
+      closeAdminPanel();
+    } else {
+      alert('删除失败：' + (result.message || '未知错误'));
+    }
+  } catch (err) {
+    console.error('删除失败：', err);
+    alert('删除失败，请检查网络连接');
+  }
+}
+function initAdminEvents() {
+  const floatingAdminBtn = document.getElementById('floatingAdminBtn');
+  if (!floatingAdminBtn) {
+    setTimeout(initAdminEvents, 100);
+    return;
+  }
+  
+  const addClubBtn = document.getElementById('addClubBtn');
+  const adminCancelBtn = document.getElementById('adminCancelBtn');
+  const adminSaveBtn = document.getElementById('adminSaveBtn');
+  const adminDeleteBtn = document.getElementById('adminDeleteBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  
+  floatingAdminBtn.style.display = State.developerModeEnabled ? 'flex' : 'none';
+  
+  floatingAdminBtn.addEventListener('click', () => {
+    if (!State.developerModeEnabled) {
+      alert('请先连续点击「重置」按钮6次开启开发者模式');
+      return;
+    }
+    if (!adminMode) {
+      const pwd = prompt('🔐 请输入管理员密码：');
+      if (pwd !== ADMIN_PASSWORD) {
+        alert('❌ 密码错误！');
+        return;
+      }
+    }
+    toggleAdminMode();
+  });
+  
+  if (addClubBtn) {
+    addClubBtn.addEventListener('click', () => {
+      if (!State.developerModeEnabled) {
+        alert('请先开启开发者模式');
+        return;
+      }
+      openEditPanel(null, true);
+    });
+  }
+  
+  if (adminCancelBtn) adminCancelBtn.addEventListener('click', closeAdminPanel);
+  if (adminSaveBtn) adminSaveBtn.addEventListener('click', saveClub);
+  if (adminDeleteBtn) adminDeleteBtn.addEventListener('click', deleteClub);
+  
+  if (adminPanel) {
+    adminPanel.addEventListener('click', (e) => {
+      if (e.target === adminPanel) closeAdminPanel();
+    });
+  }
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'e' && adminMode) {
+      e.preventDefault();
+      exportData();
+    }
+  });
+  
+  console.log('✅ 管理员事件已初始化');
+}
+
+
+
+// ==========================================
+// 6. 启动应用
+// ==========================================
 async function init() {
-  initThemePreference();
-  bindAllStaticEvents();
-  bindMobileSheetResize();
-  applyMobileModeLayout();
-  await reloadBandoriData();
+    initThemePreference();
+    bindAllStaticEvents();
+    bindMobileSheetResize();
+    applyMobileModeLayout();
+    await reloadBandoriData();
+    initAdminEvents();
 }
 
-window.addEventListener('resize', Utils.debounce(() => {
-  applyMobileModeLayout();
-  renderChinaMap();
-}, 150));
-
-// 启动应用
+// 页面加载时启动
 init();
