@@ -82,8 +82,8 @@
             <img src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub" />
             <span>开源仓库</span>
           </a>
-          <button id="feedbackModalBtn" class="feedback-link" type="button">
-            反馈与提交同好会信息
+          <button id="submitClubBtn" class="feedback-link" type="button" onclick="window.open('./submit.html', '_blank')">
+            📝 提交同好会信息
           </button>
         </div>
  <p class="card-body gpl-text" style="margin-top: 12px; font-size: 12px;">
@@ -188,7 +188,18 @@
           </div>
         </div>
       </div>
-
+      <!-- 同好会详情弹窗 -->
+      <div id="clubDetailModal" class="calendar-modal" aria-hidden="true">
+        <div class="calendar-modal-card" role="dialog" aria-modal="true">
+          <button id="clubDetailClose" class="calendar-modal-close" type="button">×</button>
+          <div class="calendar-modal-scroll">
+            <h3 id="clubDetailName" class="event-poster-title" style="margin-bottom: 20px;"></h3>
+            <div id="clubDetailContent" style="line-height: 1.8;">
+              <!-- 动态内容 -->
+            </div>
+          </div>
+        </div>
+      </div>
       <button id="refreshApiBtn" class="context-refresh-btn" type="button">刷新数据</button>
       <div id="tooltip"></div>
     </main>

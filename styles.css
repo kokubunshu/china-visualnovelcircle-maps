@@ -1509,3 +1509,41 @@ body {
   .md3-switch-thumb { width: 20px; height: 20px; }
   .md3-switch input:checked + .md3-switch-track .md3-switch-thumb { transform: translateX(18px); }
 }
+
+/* 可点击的联系方式样式 */
+.clickable-info {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-info:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* 同好会详情弹窗 */
+#clubDetailModal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+
+#clubDetailModal.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+#clubDetailModal .calendar-modal-card {
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}

@@ -6,7 +6,7 @@ const CONFIG = {
   BASE_HEIGHT: 700,
   API_URL: './galgame_clubs.json',
   FALLBACK_URLS: ['./galgame_clubs.json'],
-  POLYMERIZATION_URL: './bandori_polymerization.json'
+  POLYMERIZATION_URL: ''
 };
 
 const State = {
@@ -52,7 +52,7 @@ const Utils = {
   groupTypeText: (type) => ({ school: '高校同好会', region: '地区高校联合', 'vnfest': '视觉小说学园祭' }[type] || '其他'),
   typeFilterValue: (type) => ({ school: 'school', region: 'region', 'vnfest': 'vnfest' }[type] || 'other'),
   formatCreatedAt: (value) => {
-    if (!value) return '建群时间未知';
+    if (!value) return '成立时间未知';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -285,7 +285,7 @@ function updateSortButtonView() {
 
     const config = {
       default: { text: '默认', active: State.listSort === 'default', next: 'default' },
-      time_desc: { text: State.listSort === 'time_asc' ? '登记时间 ↑' : '成立时间 ↓', active: ['time_asc', 'time_desc'].includes(State.listSort), next: State.listSort === 'time_asc' ? 'time_asc' : 'time_desc' },
+      time_desc: { text: State.listSort === 'time_asc' ? '成立时间 ↑' : '成立时间 ↓', active: ['time_asc', 'time_desc'].includes(State.listSort), next: State.listSort === 'time_asc' ? 'time_asc' : 'time_desc' },
       name_asc: { text: State.listSort === 'name_desc' ? '首字母 Z→A' : '首字母 A→Z', active: ['name_asc', 'name_desc'].includes(State.listSort), next: State.listSort === 'name_desc' ? 'name_desc' : 'name_asc' },
       type_asc: { text: State.listSort === 'type_desc' ? '类型 Z→A' : '类型 A→Z', active: ['type_asc', 'type_desc'].includes(State.listSort), next: State.listSort === 'type_desc' ? 'type_desc' : 'type_asc' }
     };
@@ -331,6 +331,9 @@ function getFilteredSortedRows(rows) {
   return result;
 }
 
+// ==========================================
+// 核心：渲染同好会列表
+// ==========================================
 function renderGroupList(rows) {
   const listEl = document.getElementById('groupList');
   if (!listEl) return;
@@ -347,32 +350,182 @@ function renderGroupList(rows) {
     const rawInfo = detectedUrl || item.info || '';
     const infoText = rawInfo || '无联系方式';
     const info = Utils.escapeHTML(infoText);
-    const copyValue = encodeURIComponent(String(rawInfo));
     const type = Utils.escapeHTML(Utils.groupTypeText(item.type));
     const verifyMeta = Utils.escapeHTML(item.verified ? '已登记' : '未登记') + ' · 成立时间：' + Utils.escapeHTML(Utils.formatCreatedAt(item.created_at));
-    const actionText = detectedUrl ? '复制链接' : '复制联系方式';
-    const infoClass = detectedUrl ? 'group-info copy-number link-like' : 'group-info copy-number';
-    const infoAttrs = detectedUrl
-      ? `data-href="${Utils.escapeHTML(detectedUrl)}" title="点击打开链接"`
-      : `data-copy="${copyValue}" title="点击复制联系方式"`;
-    const buttonAttrs = rawInfo ? `data-copy="${copyValue}"` : 'disabled';
+    
+    // 构建详情数据
+    const clubData = encodeURIComponent(JSON.stringify({
+      name: name,
+      school: item.school || '',
+      info: info,
+      originalInfo: item.info || '',
+      detectedUrl: detectedUrl,
+      type: type,
+      verifyMeta: verifyMeta,
+      province: item.province || '',
+      remark: item.remark || '暂无介绍'
+    }));
     
     return `
-        <article class="group-item">
+        <article class="group-item" data-club='${clubData}'>
           <div class="group-top">
             <h3 class="group-name" title="${rawText}">${name}</h3>
             <span class="group-chip">${type}</span>
           </div>
-        <div class="group-info-row">
-          <p class="${infoClass}" ${infoAttrs}>${info}</p>
-          <button class="copy-btn" ${buttonAttrs} type="button">${actionText}</button>
-        </div>
-        <p class="group-meta">${verifyMeta}</p>
-      </article>
+          <div class="group-info-row">
+            <p class="group-info" data-club='${clubData}'>${info}</p>
+            <button class="copy-btn" data-club='${clubData}' type="button">查看详情</button>
+          </div>
+          <p class="group-meta">${verifyMeta}</p>
+        </article>
     `;
   }).join('');
+
+  // 绑定点击事件 - 点击整个卡片打开详情
+  document.querySelectorAll('.group-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('copy-btn')) {
+        return;
+      }
+      const clubData = item.getAttribute('data-club');
+      if (clubData) {
+        showClubDetail(JSON.parse(decodeURIComponent(clubData)));
+      }
+    });
+  });
+  
+  // 绑定联系方式点击事件
+  document.querySelectorAll('.group-info').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const clubData = el.getAttribute('data-club');
+      if (clubData) {
+        showClubDetail(JSON.parse(decodeURIComponent(clubData)));
+      }
+    });
+  });
+  
+  // 绑定按钮点击事件
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const clubData = btn.getAttribute('data-club');
+      if (clubData) {
+        showClubDetail(JSON.parse(decodeURIComponent(clubData)));
+      }
+    });
+  });
 }
 
+// ==========================================
+// 详情弹窗
+// ==========================================
+function showClubDetail(club) {
+  const modal = document.getElementById('clubDetailModal');
+  const title = document.getElementById('clubDetailName');
+  const content = document.getElementById('clubDetailContent');
+  
+  if (!modal) {
+    console.error('找不到 clubDetailModal 元素');
+    return;
+  }
+  
+  title.textContent = club.name;
+  
+  // 判断是否为链接
+  const contactInfo = club.originalInfo || club.info || '';
+  const detectedUrl = club.detectedUrl;
+  const isLink = detectedUrl || contactInfo.startsWith('http://') || contactInfo.startsWith('https://') || contactInfo.includes('discord.gg') || contactInfo.includes('discord.com/invite');
+  const contactUrl = detectedUrl || (isLink ? contactInfo : null);
+  
+  // 转义函数
+  const escapeHtml = (str) => {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  };
+  
+  const safeInfo = escapeHtml(club.info);
+  const safeUrl = contactUrl ? escapeHtml(contactUrl) : '';
+  
+  // 联系方式显示区域
+  let contactHtml = '';
+  if (isLink && contactUrl) {
+    contactHtml = `
+      <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
+        <strong>📞 联系方式</strong><br>
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="font-family: monospace; font-size: 16px; color: var(--md-primary); word-break: break-all;">${safeInfo}</a>
+        <div style="margin-top: 12px;">
+          <button onclick="window.open('${safeUrl.replace(/'/g, "\\'")}', '_blank')" style="margin-right: 10px; padding: 6px 16px; background: var(--md-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">打开链接</button>
+          <button onclick="navigator.clipboard.writeText('${safeUrl.replace(/'/g, "\\'")}')" style="padding: 6px 16px; background: var(--md-surface-container-high); color: var(--md-primary); border: 1px solid var(--md-outline); border-radius: 8px; cursor: pointer;">复制链接</button>
+        </div>
+      </div>
+    `;
+  } else {
+    const safeInfoForCopy = safeInfo.replace(/'/g, "\\'");
+    contactHtml = `
+      <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
+        <strong>📞 联系方式</strong><br>
+        <span style="font-family: monospace; font-size: 16px; word-break: break-all;">${safeInfo || '无联系方式'}</span>
+        ${safeInfo ? `<button onclick="navigator.clipboard.writeText('${safeInfoForCopy}')" style="margin-left: 10px; padding: 4px 12px; background: var(--md-primary); color: white; border: none; border-radius: 8px; cursor: pointer;">复制</button>` : ''}
+      </div>
+    `;
+  }
+  
+  content.innerHTML = `
+    <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+        <div style="flex: 1;">
+          <strong>📌 所属省份</strong><br>
+          ${escapeHtml(club.province || '未填写')}
+        </div>
+        <div style="flex: 1;">
+          <strong>🏷️ 组织类型</strong><br>
+          ${escapeHtml(club.type || '其他')}
+        </div>
+      </div>
+    </div>
+    
+    ${contactHtml}
+    
+    <div style="margin-bottom: 16px; padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
+      <strong>📅 ${escapeHtml(club.verifyMeta || '成立时间未知')}</strong>
+    </div>
+    
+    <div style="padding: 12px; background: var(--md-surface-container); border-radius: 12px;">
+      <strong>📝 介绍</strong><br>
+      <div style="margin-top: 8px; line-height: 1.6;">${escapeHtml(club.remark || '暂无介绍，欢迎补充~')}</div>
+    </div>
+  `;
+  
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  
+  const closeBtn = document.getElementById('clubDetailClose');
+  if (closeBtn) {
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+    newCloseBtn.onclick = () => {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    };
+  }
+  
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  };
+}
+
+// ==========================================
+// 继续其他函数...
+// ==========================================
 function renderCurrentDetail() {
   if (!State.currentDetailProvinceName && !State.globalSearchEnabled) return;
 
@@ -426,7 +579,6 @@ function showProvinceDetails(provinceName) {
   const key = Utils.normalizeProvinceName(provinceName);
   State.currentDetailProvinceName = provinceName;
   
-  // 判断是否是国内同好会（原 __non_regional__）
   if (provinceName === '国内同好会') {
     State.currentDetailRows = State.provinceGroupsMap.get('__non_regional__') || [];
   } else {
@@ -717,30 +869,6 @@ async function reloadBandoriData() {
     rows = Array.from(dedupedMap.values());
   }
 
-  try {
-    const polymerResp = await fetch(CONFIG.POLYMERIZATION_URL, { cache: 'no-store' });
-    if (polymerResp.ok) {
-      const polymerJson = await polymerResp.json();
-      if (polymerJson?.data && Array.isArray(polymerJson.data)) {
-        const apiInfoSet = new Set(rows.map(item => String(item.info || '').trim()).filter(Boolean));
-        const mergedRows = rows.slice();
-
-        polymerJson.data.forEach((item) => {
-          const infoKey = String(item.info || '').trim();
-          if (infoKey && apiInfoSet.has(infoKey)) return;
-          mergedRows.push(item);
-        });
-
-        rows = mergedRows;
-        if (source !== 'none') {
-          source += ' + 作者收集';
-        } else {
-          source = CONFIG.POLYMERIZATION_URL;
-        }
-      }
-    }
-  } catch (e) {}
-
   State.bandoriRows = rows;
   State.currentDataSource = source;
   State.provinceGroupsMap = new Map();
@@ -829,7 +957,6 @@ function bindAllStaticEvents() {
     }
   });
 
-  // 海外同好会按钮
   document.getElementById('overseasToggleBtn')?.addEventListener('click', () => {
     setGlobalSearchEnabled(false);
     State.selectedProvinceKey = '海外';
@@ -838,10 +965,8 @@ function bindAllStaticEvents() {
     State.mapViewState?.g.selectAll('.province').classed('selected', false);
   });
 
-  // 国内同好会按钮 - 显示所有国内数据（排除海外）
   document.getElementById('nonRegionalToggleBtn')?.addEventListener('click', () => {
     setGlobalSearchEnabled(false);
-    // 获取所有国内数据（排除海外）
     const allDomesticRows = State.bandoriRows.filter(item => item.province !== '海外');
     State.currentDetailProvinceName = '国内同好会';
     State.currentDetailRows = allDomesticRows;
@@ -955,4 +1080,5 @@ window.addEventListener('resize', Utils.debounce(() => {
   renderChinaMap();
 }, 150));
 
+// 启动应用
 init();
