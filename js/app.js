@@ -209,6 +209,24 @@ function closeAccountModal() {
     document.getElementById('avatarCropModal').style.display = 'none';
 }
 
+function goUserCenter(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+    }
+    window.location.assign('./user.html');
+}
+
+document.addEventListener('click', function(event) {
+    var target = event.target;
+    if (target && target.closest && target.closest('#topAccountBtn, #listAccountBtn')) {
+        goUserCenter(event);
+    }
+}, true);
+
 // 页面加载时检查登录状态
 checkAuth();
 
@@ -1053,7 +1071,7 @@ document.addEventListener('click', (e) => {
                     const r = await fetch('./api/club_avatar.php?scope=club', { method: 'POST', credentials: 'same-origin', body: fd });
                     const j = await r.json();
                     if (j.success) {
-                        document.getElementById('editClubAvatar').src = Utils.resolveMediaUrl(j.image_url);
+                        document.getElementById('editClubAvatar').src = Utils.preloadMediaUrl(j.image_url);
                         document.getElementById('editClubAvatarUrl').value = j.image_url;
                         const rmBtn = document.getElementById('editClubAvatarRemoveBtn');
                         if (rmBtn) rmBtn.style.display = '';
@@ -1079,7 +1097,7 @@ document.addEventListener('click', (e) => {
                 const data = await resp.json();
                 if (data.success && currentUser?.user) {
                     currentUser.user.avatar_url = data.avatar_url;
-                    document.getElementById('accUserAvatar').src = Utils.resolveMediaUrl(data.avatar_url);
+                    document.getElementById('accUserAvatar').src = Utils.preloadMediaUrl(data.avatar_url);
                     renderVNProfile();
                     if (statusEl) { statusEl.textContent = '✅ 头像更新成功'; statusEl.style.color = '#27ae60'; }
                     setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
@@ -2087,6 +2105,7 @@ Object.assign(translations.zh, {
     listUnknownProvince: '未分类',
     modeMap: '地图',
     modeList: '列表',
+    modeStarmap: '星图',
     topLogin: '登录 / 注册',
     topAccount: '账号',
     topAdmin: '同好会管理',
@@ -2220,6 +2239,7 @@ Object.assign(translations.ja, {
     listUnknownProvince: '未分類',
     modeMap: '地図',
     modeList: 'リスト',
+    modeStarmap: '星図',
     topLogin: 'ログイン / 登録',
     topAccount: 'アカウント',
     topAdmin: '同好会管理',
@@ -2489,6 +2509,7 @@ function updateListModeLanguage() {
 
     document.querySelectorAll('.mode-tab[data-mode="map"] .mode-tab-label').forEach(function(el) { el.textContent = __('modeMap'); });
     document.querySelectorAll('.mode-tab[data-mode="list"] .mode-tab-label').forEach(function(el) { el.textContent = __('modeList'); });
+    document.querySelectorAll('.mode-tab[data-mode="starmap"] .mode-tab-label').forEach(function(el) { el.textContent = __('modeStarmap'); });
 }
 
 // ==========================================
@@ -2530,9 +2551,11 @@ function getPreferredTheme() {
 }
 
 function updateThemeMetaColor(theme) {
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]:not([media])');
-  if (!metaThemeColor) return;
-  metaThemeColor.setAttribute('content', theme === 'dark' ? '#140913' : '#9b59b6');
+  const themeColor = theme === 'dark' ? '#140913' : '#9b59b6';
+  document.querySelectorAll('meta[name="theme-color"]:not([media])').forEach(meta => {
+    meta.setAttribute('content', themeColor);
+  });
+  document.documentElement.style.colorScheme = theme;
 
   const supportsDynamicThemeColor = window.matchMedia('(display-mode: browser)').matches || window.matchMedia('(display-mode: standalone)').matches;
   if (supportsDynamicThemeColor) {
@@ -2825,6 +2848,10 @@ function renderExternalLinks(externalLinksStr) {
 
 // ===== 地图/列表模式切换 =====
 function switchViewMode(mode) {
+  if (mode === 'starmap') {
+    window.location.href = './star_map.html';
+    return;
+  }
   if (mode === State.viewMode) return;
   State.viewMode = mode;
 
@@ -3130,9 +3157,8 @@ function bindListModeControls() {
     openAccountModal('login');
   });
 
-  document.getElementById('listAccountBtn')?.addEventListener('click', function() {
-    openAccountModal('settings');
-    if (typeof refreshProfile === 'function') refreshProfile();
+  document.getElementById('listAccountBtn')?.addEventListener('click', function(e) {
+    goUserCenter(e);
   });
 
   // 列表模式导航按钮（区域筛选）
@@ -6519,7 +6545,7 @@ function initPublicationEvents() {
       const r = await fetch('./api/club_avatar.php?scope=publication', { method: 'POST', body: fd });
       const j = await r.json();
       if (j.success) {
-        document.getElementById('pubImagePreview').src = j.image_url;
+        document.getElementById('pubImagePreview').src = Utils.preloadMediaUrl(j.image_url);
         document.getElementById('pubImagePreview').style.display = '';
         document.getElementById('pubImageUrl').value = j.image_url;
         if (pubImageRemoveBtn) pubImageRemoveBtn.style.display = '';
@@ -6761,9 +6787,7 @@ function initTopUserBar() {
 
   // 账号按钮
   document.getElementById('topAccountBtn')?.addEventListener('click', function(e) {
-    e.stopPropagation();
-    openAccountModal('settings');
-    refreshProfile();
+    goUserCenter(e);
   });
 
   // 移动端：点击卡片切换折叠/展开

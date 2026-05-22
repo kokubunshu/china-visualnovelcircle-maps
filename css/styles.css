@@ -1045,8 +1045,11 @@ body {
   background: var(--md-surface-variant);
   border-radius: 10px;
   padding: 2px;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 .display-switch-container {
@@ -1056,7 +1059,9 @@ body {
   justify-content: flex-end;
   gap: 0;
   margin-left: auto;
-  flex-shrink: 0;
+  flex: 0 1 330px;
+  min-width: 0;
+  max-width: 330px;
   align-self: center;
 }
 
@@ -1067,8 +1072,11 @@ body {
 .mode-tab {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 14px;
+  justify-content: center;
+  gap: 0;
+  padding: 5px 22px;
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 28px;
   border: none;
   border-radius: 8px;
@@ -1077,6 +1085,7 @@ body {
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
   transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
   background: transparent;
   color: var(--md-on-surface-variant);
@@ -1094,13 +1103,28 @@ body {
 }
 
 .mode-tab-icon {
-  font-size: 14px;
-  line-height: 1;
+  display: none;
 }
 
 .mode-tab-label {
   font-size: 12px;
   line-height: 1;
+  min-width: max-content;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.list-top-row .display-switch-container {
+  flex: 0 1 246px;
+  max-width: 246px;
+}
+
+.list-top-row .mode-tab {
+  padding: 5px 14px;
+}
+
+.list-top-row .mode-switch {
+  width: 100%;
 }
 
 /* 导航按钮行 */
@@ -3620,6 +3644,35 @@ body {
         transform: translateY(20px) scale(0.8);
     }
 }
+/* ================== 窄桌面适配 (宽度 ≤ 800px) ================== */
+@media (max-width: 800px) {
+  .user-info-card {
+    min-width: 0;
+    padding: 8px 12px;
+  }
+  .user-info-card .user-info-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .user-info-card .display-switch-container {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    align-items: stretch;
+    margin-left: 0;
+    padding-top: 2px;
+  }
+  .user-info-card .mode-switch {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .user-info-card .mode-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 5px 12px;
+  }
+}
+
 /* ================== 移动端适配 (宽度 ≤ 720px) ================== */
 @media (max-width: 720px) {
 
@@ -3662,9 +3715,11 @@ body {
       border-radius: 7px;
     }
     .list-top-row .display-switch-container {
-      flex: 1 1 100%;
+      flex: 0 1 246px;
+      width: auto;
+      max-width: 246px;
       align-items: stretch;
-      margin-left: 0;
+      margin-left: auto;
       padding-top: 2px;
       gap: 2px;
     }
@@ -3689,12 +3744,22 @@ body {
       font-size: 11px;
     }
 
-    .user-info-card .display-switch-container,
-    .list-top-row .display-switch-container {
+    .user-info-card .display-switch-container {
         flex: 1 1 100%;
         width: 100%;
+        max-width: none;
         align-items: stretch;
         margin-left: 0;
+        padding-top: 2px;
+        gap: 2px;
+    }
+
+    .list-top-row .display-switch-container {
+        flex: 0 1 246px;
+        width: auto;
+        max-width: min(246px, 100%);
+        align-items: stretch;
+        margin-left: auto;
         padding-top: 2px;
         gap: 2px;
     }
@@ -3939,6 +4004,7 @@ body {
         order: 2;
         flex: 1 1 100%;
         width: 100%;
+        max-width: none;
         align-items: stretch;
         margin-left: 0;
         gap: 2px;

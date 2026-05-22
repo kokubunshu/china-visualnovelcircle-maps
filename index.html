@@ -24,11 +24,30 @@
             });
     })();
     </script>
+    <script>
+    (function() {
+        var root = document.documentElement;
+        var saved = null;
+        try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+        var systemDark = false;
+        try {
+            systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        } catch (e) {}
+        var resolved = systemDark ? 'dark' : 'light';
+        if (saved === 'light' || saved === 'dark') {
+            root.setAttribute('data-theme', saved);
+            resolved = saved;
+        } else {
+            root.removeAttribute('data-theme');
+        }
+        root.style.colorScheme = resolved;
+    })();
+    </script>
     <!-- Cropper.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
     <meta name="theme-color" content="#9b59b6" />
     <meta name="theme-color" content="#9b59b6" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#2c0a2c" media="prefers-color-scheme: dark" />
+    <meta name="theme-color" content="#2c0a2c" media="(prefers-color-scheme: dark)" />
     <meta name="format-detection" content="telephone=no,email=no,address=no" />
     
     <!-- Preconnect & Preload -->
@@ -114,7 +133,7 @@
         </div>
 
         <button id="topLoginBtn" class="top-login-btn">登录 / 注册</button>
-        <button id="topAccountBtn" class="top-account-btn" style="display:none;">账号</button>
+        <a id="topAccountBtn" class="top-account-btn" href="./user.html" style="display:none;">账号</a>
         <a id="topAdminBtn" class="top-admin-btn" href="admin/club_manager.html" style="display:none;">同好会管理</a>
         <a class="top-admin-btn" href="moe/index.html">萌战活动</a>
         <div class="display-switch-container">
@@ -126,6 +145,10 @@
             <button class="mode-tab" data-mode="list" role="tab" aria-selected="false" title="列表模式">
               <span class="mode-tab-icon">📋</span>
               <span class="mode-tab-label">列表</span>
+            </button>
+            <button class="mode-tab" data-mode="starmap" role="tab" aria-selected="false" title="星图模式">
+              <span class="mode-tab-icon">⭐</span>
+              <span class="mode-tab-label">星图</span>
             </button>
           </div>
         </div>
@@ -308,12 +331,13 @@
                 <span class="list-top-name" id="listUserName">访客</span>
                 <span class="list-role-badge" id="listRoleBadge" style="display:none;"></span>
                 <button id="listLoginBtn" class="top-login-btn">登录 / 注册</button>
-                <button id="listAccountBtn" class="top-account-btn" style="display:none;">账号</button>
+                <a id="listAccountBtn" class="top-account-btn" href="./user.html" style="display:none;">账号</a>
                 <a id="listAdminBtn" class="top-admin-btn" href="admin/club_manager.html" style="display:none;">同好会管理</a>
                 <div class="display-switch-container">
                   <div class="mode-switch">
                     <button class="mode-tab active" data-mode="map" role="tab" aria-selected="true"><span class="mode-tab-icon">🗺️</span><span class="mode-tab-label">地图</span></button>
                     <button class="mode-tab" data-mode="list" role="tab" aria-selected="false"><span class="mode-tab-icon">📋</span><span class="mode-tab-label">列表</span></button>
+                    <button class="mode-tab" data-mode="starmap" role="tab" aria-selected="false"><span class="mode-tab-icon">⭐</span><span class="mode-tab-label">星图</span></button>
                   </div>
                 </div>
               </div>
@@ -978,7 +1002,7 @@
             <div class="crop-modal-content">
                 <h3 style="margin: 0 0 12px; font-size: 16px;">裁剪头像</h3>
                 <div class="crop-container">
-                    <img id="cropImage" src="" alt="" />
+                    <img id="cropImage" src="" alt="" loading="eager" decoding="async" />
                 </div>
                 <div class="crop-actions">
                     <button id="cropCancelBtn" class="submit-btn" type="button">取消</button>
@@ -1263,7 +1287,7 @@
     <script defer src="./js/china.js"></script>
     <script defer src="./js/japan.js"></script>
     <script defer src="./js/app-core.js"></script>
-    <script defer src="./js/app.js"></script>
+    <script defer src="./js/app.js?v=20260519-user-center"></script>
     <script defer src="./js/calendar.js"></script>
     
     <script>

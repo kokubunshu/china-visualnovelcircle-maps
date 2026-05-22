@@ -11,9 +11,23 @@
   var pickerMode = script.getAttribute('data-picker') || '';
   var pickerAnchorId = script.getAttribute('data-anchor') || '';
   var waitForMap = script.hasAttribute('data-after-map');
+  var mobileWallpaperQuery = window.matchMedia ? window.matchMedia('(max-width: 720px), (pointer: coarse)') : null;
+  var initStarted = false;
   var fallbackImages = [
     { name: '默认壁纸', file: 'fd912ee18f271bb0cb042bda8ca85d8c.jpeg', url: 'images/fd912ee18f271bb0cb042bda8ca85d8c.jpeg' }
   ];
+
+  function isMobileWallpaperDisabled() {
+    return !!(mobileWallpaperQuery && mobileWallpaperQuery.matches);
+  }
+
+  function removeWallpaperUi() {
+    document.documentElement.classList.remove('has-vnfest-wallpaper');
+    var layer = document.getElementById(layerId);
+    if (layer) layer.remove();
+    var picker = document.getElementById(pickerId);
+    if (picker) picker.remove();
+  }
 
   function injectStyle() {
     if (document.getElementById(styleId)) return;
@@ -96,6 +110,10 @@
   }
 
   function applyWallpaper(url) {
+    if (isMobileWallpaperDisabled()) {
+      removeWallpaperUi();
+      return;
+    }
     if (!url) return;
     injectStyle();
     var layer = ensureLayer();
@@ -126,6 +144,7 @@
   }
 
   function installPicker(images, activeUrl) {
+    if (isMobileWallpaperDisabled()) return;
     if (!pickerMode || document.getElementById(pickerId)) return;
     var select = document.createElement('select');
     select.id = pickerId;
@@ -194,7 +213,18 @@
   }
 
   async function init() {
+    if (initStarted) return;
+    if (isMobileWallpaperDisabled()) {
+      removeWallpaperUi();
+      return;
+    }
+    initStarted = true;
     await waitForMapReady();
+    if (isMobileWallpaperDisabled()) {
+      removeWallpaperUi();
+      initStarted = false;
+      return;
+    }
     var images = fallbackImages.slice();
     try {
       var resp = await fetch(apiUrl.toString(), { credentials: 'same-origin' });
@@ -204,17 +234,42 @@
       }
     } catch (e) {}
 
-    if (!images.length) return;
+    if (!images.length) {
+      initStarted = false;
+      return;
+    }
     var saved = readPreference();
     var selected = saved ? findByUrl(images, saved) : null;
     var item = selected || pickRandom(images);
-    if (!item) return;
+    if (!item) {
+      initStarted = false;
+      return;
+    }
 
     var url = toAbsoluteImageUrl(item);
     applyWallpaper(url);
     installPicker(images, selected ? url : '');
+    initStarted = false;
   }
 
+  function installMobileWallpaperGuard() {
+    if (!mobileWallpaperQuery) return;
+    var handleChange = function () {
+      if (isMobileWallpaperDisabled()) {
+        removeWallpaperUi();
+        initStarted = false;
+      } else {
+        init();
+      }
+    };
+    if (mobileWallpaperQuery.addEventListener) {
+      mobileWallpaperQuery.addEventListener('change', handleChange);
+    } else if (mobileWallpaperQuery.addListener) {
+      mobileWallpaperQuery.addListener(handleChange);
+    }
+  }
+
+  installMobileWallpaperGuard();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

@@ -1,11 +1,24 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f3f0" media="(prefers-color-scheme: light)">
 <title>VNFest · 登录</title>
+<script>
+(function() {
+  var root = document.documentElement;
+  var saved = null;
+  try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+  var systemDark = false;
+  try {
+    systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch (e) {}
+  root.setAttribute('data-theme', saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light'));
+  root.style.colorScheme = root.getAttribute('data-theme');
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -192,11 +205,16 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 800;
-  letter-spacing: 0;
-  box-shadow: 0 12px 28px rgba(231,76,60,0.28);
+  overflow: hidden;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.20);
+}
+.brand-symbol img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
 }
 .brand-mark strong {
   display: block;
@@ -602,7 +620,7 @@ a { color: inherit; text-decoration: none; }
 <div class="login-shell">
   <section class="brand-panel" aria-label="VNFest 入口">
     <a class="brand-mark" href="index.html?guest=1" aria-label="返回 VNFest 地图">
-      <span class="brand-symbol">VN</span>
+      <span class="brand-symbol"><img src="/images/logo.png" alt="" decoding="async"></span>
       <span>
         <strong>VNFest</strong>
         <small>视觉小说高校学园祭</small>
@@ -754,19 +772,43 @@ var wallpaperSelect = document.getElementById('wallpaperSelect');
 function getCurrentTheme() {
   var attr = document.documentElement.getAttribute('data-theme');
   if (attr === 'light' || attr === 'dark') return attr;
+  return resolveSystemTheme();
+}
+
+function resolveSystemTheme() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function syncLoginThemeChrome(theme) {
+  document.documentElement.style.colorScheme = theme;
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  syncLoginThemeChrome(theme);
   try { localStorage.setItem('themePreference', theme); } catch (e) {}
 }
 
-(function initTheme() {
+function applyStoredOrSystemTheme() {
   var saved;
   try { saved = localStorage.getItem('themePreference'); } catch (e) {}
-  if (saved === 'light' || saved === 'dark') {
-    document.documentElement.setAttribute('data-theme', saved);
+  var resolved = saved === 'light' || saved === 'dark' ? saved : resolveSystemTheme();
+  document.documentElement.setAttribute('data-theme', resolved);
+  syncLoginThemeChrome(resolved);
+}
+
+(function initTheme() {
+  applyStoredOrSystemTheme();
+  var media = window.matchMedia('(prefers-color-scheme: dark)');
+  var handleSystemThemeChange = function() {
+    var saved;
+    try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+    if (saved !== 'light' && saved !== 'dark') applyStoredOrSystemTheme();
+  };
+  if (typeof media.addEventListener === 'function') {
+    media.addEventListener('change', handleSystemThemeChange);
+  } else if (typeof media.addListener === 'function') {
+    media.addListener(handleSystemThemeChange);
   }
 })();
 
@@ -844,12 +886,21 @@ async function initWallpapers() {
 }
 
 /* ── Auth Check (Gate) ── */
+function getSafeRedirectTarget() {
+  var params = new URLSearchParams(window.location.search);
+  var target = params.get('redirect') || 'index.html';
+  if (/^https?:\/\//i.test(target) || target.indexOf('//') === 0) return 'index.html';
+  if (target.charAt(0) === '/' || target.indexOf('..') !== -1) return 'index.html';
+  if (!/^[a-zA-Z0-9_./?=&%-]+$/.test(target)) return 'index.html';
+  return target;
+}
+
 async function checkAuth() {
   try {
     var resp = await fetch('api/auth.php?action=me', { credentials: 'same-origin' });
     var data = await resp.json();
     if (data.logged_in) {
-      window.location.replace('index.html');
+      window.location.replace(getSafeRedirectTarget());
       return true;
     }
   } catch (e) { /* network error, show login */ }
@@ -1070,7 +1121,7 @@ async function handleLogin() {
     var data = await resp.json();
     if (data.success) {
       showMsg('loginMsg', '登录成功，正在跳转...', 'success');
-      setTimeout(function() { window.location.replace('index.html'); }, 600);
+      setTimeout(function() { window.location.replace(getSafeRedirectTarget()); }, 600);
     } else {
       showMsg('loginMsg', data.message || '用户名或密码错误', 'error');
       shakeCard();
@@ -1197,7 +1248,7 @@ async function handleRegister() {
     var data = await resp.json();
     if (data.success) {
       showMsg('regMsg', '注册成功，正在跳转...', 'success');
-      setTimeout(function() { window.location.replace('index.html'); }, 800);
+      setTimeout(function() { window.location.replace(getSafeRedirectTarget()); }, 800);
     } else {
       showMsg('regMsg', data.message || '注册失败', 'error');
       shakeCard();

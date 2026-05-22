@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用户中心参考方案 - VNFest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #101114;
+  --surface: rgba(24,24,27,.9);
+  --surface-2: rgba(36,36,40,.86);
+  --border: rgba(255,255,255,.12);
+  --text: #f7f1ee;
+  --muted: #b8aca6;
+  --primary: #e74c3c;
+  --amber: #d99a3a;
+  --cyan: #5fb7d7;
+  --green: #49b982;
+  --radius: 8px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    linear-gradient(115deg, rgba(231,76,60,.16), transparent 34%),
+    linear-gradient(245deg, rgba(95,183,215,.12), transparent 40%),
+    var(--bg);
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+button { font: inherit; cursor: pointer; }
+.page { position: relative; z-index: 1; width: min(1180px, calc(100vw - 32px)); margin: 0 auto; padding: 24px 0 42px; }
+.header { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:18px; }
+.header h1 { margin:0; font-size:clamp(28px,4vw,44px); line-height:1.08; }
+.header p { margin:8px 0 0; color:var(--muted); }
+.switcher { display:flex; flex-wrap:wrap; gap:8px; }
+.switcher button {
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  min-height:36px;
+  padding:8px 12px;
+  background:var(--surface-2);
+  color:var(--text);
+}
+.switcher button.active { background:rgba(231,76,60,.16); border-color:rgba(231,76,60,.48); font-weight:800; }
+.board { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); backdrop-filter:blur(18px); overflow:hidden; box-shadow:0 26px 74px rgba(0,0,0,.38); }
+.option { display:none; min-height:660px; }
+.option.active { display:grid; }
+.workbench { grid-template-rows:auto auto 1fr; gap:14px; padding:18px; }
+.hero { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:14px; }
+.panel, .tile, .nav, .card { border:1px solid var(--border); border-radius:var(--radius); background:rgba(255,255,255,.045); padding:14px; }
+.identity { display:grid; grid-template-columns:84px minmax(0,1fr); gap:16px; align-items:center; }
+.avatar, .icon { display:flex; align-items:center; justify-content:center; border-radius:var(--radius); border:1px solid var(--border); background:rgba(231,76,60,.16); color:#fff; font-weight:800; }
+.avatar { width:84px; height:84px; font-size:30px; }
+.identity h2 { margin:0; font-size:34px; }
+.identity p, .panel p, .tile span, .card span { color:var(--muted); margin:6px 0 0; font-size:13px; }
+.today { display:grid; gap:9px; }
+.today .row { display:grid; grid-template-columns:32px 1fr auto; gap:8px; align-items:center; padding:9px; border:1px solid var(--border); border-radius:var(--radius); }
+.entry-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.tile { min-height:88px; display:grid; grid-template-columns:36px 1fr; gap:10px; }
+.icon { width:36px; height:36px; color:var(--cyan); }
+.main-grid { display:grid; grid-template-columns:220px 1fr; gap:14px; }
+.nav { display:grid; gap:8px; align-content:start; }
+.nav span { padding:10px; border-radius:var(--radius); color:var(--muted); }
+.nav span.active { color:var(--text); background:rgba(231,76,60,.14); font-weight:800; }
+.content-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.profile { grid-template-columns:360px minmax(0,1fr); }
+.profile-left { padding:22px; background:linear-gradient(180deg, rgba(231,76,60,.16), rgba(255,255,255,.04)); }
+.profile-card { border:1px solid var(--border); border-radius:var(--radius); min-height:560px; padding:18px; display:grid; grid-template-rows:auto 1fr auto; }
+.portrait { height:280px; border-radius:var(--radius); border:1px solid var(--border); background:linear-gradient(135deg, rgba(231,76,60,.34), rgba(95,183,215,.18)); display:grid; place-items:center; font-size:58px; font-weight:800; }
+.profile-right { padding:18px; display:grid; gap:12px; align-content:start; }
+.card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.console { grid-template-columns:280px 1fr; }
+.console-side { padding:16px; border-right:1px solid var(--border); display:grid; gap:10px; align-content:start; background:rgba(255,255,255,.035); }
+.console-main { padding:16px; display:grid; gap:12px; align-content:start; }
+.table { display:grid; gap:8px; }
+.table-row { display:grid; grid-template-columns:1.2fr .8fr .7fr auto; gap:10px; padding:10px; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); }
+.table-row strong { color:var(--text); }
+.badge { border:1px solid rgba(73,185,130,.35); color:var(--green); border-radius:6px; padding:3px 8px; font-size:12px; }
+@media (max-width:900px) {
+  .header, .hero, .main-grid, .profile, .console { grid-template-columns:1fr; display:grid; }
+  .entry-grid, .content-grid, .card-grid { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:560px) {
+  .entry-grid, .content-grid, .card-grid { grid-template-columns:1fr; }
+  .identity { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="header">
+    <div>
+      <h1>用户中心参考方案</h1>
+      <p>三套可点方向：最终实现采用“个人工作台”。</p>
+    </div>
+    <div class="switcher">
+      <button class="active" data-option="workbench">个人工作台</button>
+      <button data-option="profile">社区名片</button>
+      <button data-option="console">管理控制台</button>
+    </div>
+  </header>
+
+  <section class="board">
+    <div id="option-workbench" class="option workbench active">
+      <div class="hero">
+        <div class="panel identity">
+          <div class="avatar">森</div>
+          <div>
+            <h2>森野同学</h2>
+            <p>把账户、社群身份、通知和活动入口都放在第一屏，适合频繁返回处理事务。</p>
+          </div>
+        </div>
+        <div class="panel today">
+          <div class="row"><span class="icon">通</span><strong>未读通知</strong><b>3</b></div>
+          <div class="row"><span class="icon">审</span><strong>待处理申请</strong><b>2</b></div>
+          <div class="row"><span class="icon">萌</span><strong>萌战活动</strong><b>4</b></div>
+        </div>
+      </div>
+      <div class="entry-grid">
+        <div class="tile"><span class="icon">账</span><span><strong>账户设置</strong><br>资料、安全、绑定</span></div>
+        <div class="tile"><span class="icon">会</span><span><strong>我的同好会</strong><br>身份、绑定码</span></div>
+        <div class="tile"><span class="icon">管</span><span><strong>同好会管理</strong><br>成员、资料、审批</span></div>
+        <div class="tile"><span class="icon">萌</span><span><strong>萌战活动</strong><br>提名、投票、管理</span></div>
+      </div>
+      <div class="main-grid">
+        <div class="nav"><span class="active">总览</span><span>账户安全</span><span>同好会</span><span>萌战</span><span>通知</span></div>
+        <div class="content-grid">
+          <div class="card"><strong>我的同好会</strong><span>盐城工学院橘柚视觉小说同好会 · 负责人</span></div>
+          <div class="card"><strong>最近通知</strong><span>新的绑定申请需要审核。</span></div>
+          <div class="card"><strong>报名活动</strong><span>上海 Galgame Only · 2026/07/25</span></div>
+          <div class="card"><strong>萌战动态</strong><span>夏季角色萌战正在提名。</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="option-profile" class="option profile">
+      <div class="profile-left">
+        <div class="profile-card">
+          <div>
+            <div class="portrait">森</div>
+            <h2 style="margin:16px 0 0;">森野同学</h2>
+            <p>“今晚也要把视觉小说打完。”</p>
+          </div>
+          <div></div>
+          <div class="badge">同好会负责人</div>
+        </div>
+      </div>
+      <div class="profile-right">
+        <div class="card-grid">
+          <div class="card"><strong>3</strong><span>同好会</span></div>
+          <div class="card"><strong>8</strong><span>活动</span></div>
+          <div class="card"><strong>12</strong><span>图鉴</span></div>
+        </div>
+        <div class="card"><strong>所属同好会</strong><span>以名片与收藏为核心，管理入口退居侧边。适合做社区展示页。</span></div>
+        <div class="card"><strong>图鉴墙</strong><span>展示加入过的同好会、参与过的活动、刊物贡献。</span></div>
+      </div>
+    </div>
+
+    <div id="option-console" class="option console">
+      <aside class="console-side">
+        <div class="card"><strong>管理队列</strong><span>同好会、GalOnly、萌战</span></div>
+        <div class="card"><strong>快捷筛选</strong><span>待审 · 进行中 · 异常</span></div>
+        <div class="card"><strong>权限</strong><span>负责人 / 审核员 / 超管</span></div>
+      </aside>
+      <section class="console-main">
+        <div class="table">
+          <div class="table-row"><strong>成员绑定申请</strong><span>橘柚同好会</span><span>2 条</span><span class="badge">处理</span></div>
+          <div class="table-row"><strong>GalOnly 高校申请</strong><span>上海场</span><span>5 条</span><span class="badge">审核</span></div>
+          <div class="table-row"><strong>萌战候选审核</strong><span>夏季角色</span><span>14 条</span><span class="badge">进入</span></div>
+        </div>
+        <div class="content-grid">
+          <div class="card"><strong>同好会管理</strong><span>编辑资料、成员角色、负责人转让。</span></div>
+          <div class="card"><strong>刊物管理</strong><span>维护刊物征集与关联社团。</span></div>
+          <div class="card"><strong>萌战管理</strong><span>阶段、候选、对阵、结果。</span></div>
+          <div class="card"><strong>通知</strong><span>系统和审核反馈集中处理。</span></div>
+        </div>
+      </section>
+    </div>
+  </section>
+</main>
+<script>
+document.querySelectorAll('[data-option]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('[data-option]').forEach(function (item) { item.classList.remove('active'); });
+    document.querySelectorAll('.option').forEach(function (item) { item.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('option-' + btn.dataset.option).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

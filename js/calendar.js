@@ -976,7 +976,8 @@
           const r = await fetch('./api/club_avatar.php?scope=event', { method: 'POST', body: fd });
           const j = await r.json();
           if (j.success) {
-            if (elements.eventImagePreview) { elements.eventImagePreview.src = j.image_url; elements.eventImagePreview.style.display = 'block'; }
+            const imageUrl = window.Utils?.preloadMediaUrl ? window.Utils.preloadMediaUrl(j.image_url) : j.image_url;
+            if (elements.eventImagePreview) { elements.eventImagePreview.src = imageUrl; elements.eventImagePreview.style.display = 'block'; }
             if (elements.eventEditorImage) elements.eventEditorImage.value = j.image_url;
             if (elements.eventImageRemoveBtn) elements.eventImageRemoveBtn.style.display = 'inline-block';
             if (elements.eventImageStatus) elements.eventImageStatus.textContent = '✅ 上传成功';

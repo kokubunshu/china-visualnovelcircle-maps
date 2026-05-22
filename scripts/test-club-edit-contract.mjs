@@ -20,6 +20,7 @@ assert.match(appSource, /openClubEditor\(club\)/, 'deep link handler should open
 assert.match(appSource, /data-action="edit-club"[\s\S]*openClubEditor\(club\)/, 'detail edit action should hydrate before editing');
 assert.match(indexSource, /id="provincePicker"/, 'club editor should use a province picker');
 assert.match(indexSource, /id="provincePickerOptions"/, 'province picker should render selectable options');
+assert.match(indexSource, /id="cropImage"[^>]*loading="eager"/, 'avatar crop image should load eagerly while the crop modal opens');
 assert.match(appSource, /CHINA_PROVINCE_OPTIONS/, 'club editor should provide province options');
 assert.match(appSource, /bindProvincePicker/, 'club editor should bind picker interactions');
 assert.match(appSource, /setProvincePickerSelection/, 'club editor should restore picker selection');

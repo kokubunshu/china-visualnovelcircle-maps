@@ -1,19 +1,40 @@
-# 默认入口页：访问站点根目录时优先打开登录页
 DirectoryIndex login.html index.html
 
-# 保护 includes 目录（禁止直接访问）
+# Block direct access to server-side includes and database files.
 RewriteRule ^includes/ - [F,L]
-
-# 保护数据库文件
 RewriteRule ^data/.*\.(db|sqlite)$ - [F,L]
 
-# PHP 安全头
+# Basic security headers.
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "DENY"
 </IfModule>
 
-# 禁止访问 .json 提交文件（但不影响 clubs.json 等公开数据）
+# Browser cache for uploaded/static media. Upload APIs append ?t=... when a file changes.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(avif|gif|ico|jpe?g|png|svg|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/avif "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType text/css "access plus 1 day"
+    ExpiresByType application/javascript "access plus 1 day"
+    ExpiresByType text/javascript "access plus 1 day"
+</IfModule>
+
+# Keep submission JSON private while allowing public data JSON such as clubs.json.
 <FilesMatch "submissions.*\.json$">
     Order allow,deny
     Deny from all

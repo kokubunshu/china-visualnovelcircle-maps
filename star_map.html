@@ -1,0 +1,4909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090909" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f1ec" media="(prefers-color-scheme: light)">
+<title>星图观测台 - VNFest</title>
+<script>
+(function() {
+  var root = document.documentElement;
+  var saved = null;
+  try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+  var systemDark = false;
+  try {
+    systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  } catch (e) {}
+  root.setAttribute('data-theme', saved === 'light' || saved === 'dark' ? saved : (systemDark ? 'dark' : 'light'));
+  root.style.colorScheme = root.getAttribute('data-theme');
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Theme Variables ── */
+:root {
+  --bg: #090909;
+  --surface: rgba(20,21,25,0.94);
+  --surface2: rgba(28,29,34,0.92);
+  --surface3: rgba(39,40,46,0.9);
+  --border: rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.16);
+  --text: #f7f1ee;
+  --muted: #b9aaa4;
+  --soft: #7c716d;
+  --primary: #e74c3c;
+  --primary-dim: #bd382b;
+  --primary-soft: rgba(231,76,60,0.14);
+  --accent: #d99a3a;
+  --accent-cool: #5fb7d7;
+  --success: #4fb985;
+  --glass-bg: rgba(18,17,16,0.84);
+  --glass-border: rgba(255,255,255,0.13);
+  --input-bg: rgba(255,255,255,0.055);
+  --shadow: 0 28px 80px rgba(0,0,0,0.42);
+  --radius: 8px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* cosmic */
+  --star-gold: #f0c060;
+  --star-white: #e8e0f0;
+  --star-blue: #88bbee;
+  --star-purple: #c8a0e0;
+  --constellation-line: rgba(240,220,180,0.28);
+  --nebula: rgba(80,60,180,0.06);
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  --bg: #f4f1ec;
+  --surface: rgba(255,255,255,0.94);
+  --surface2: rgba(248,245,240,0.96);
+  --surface3: rgba(238,233,226,0.96);
+  --border: rgba(69,42,32,0.12);
+  --border-strong: rgba(69,42,32,0.20);
+  --text: #211b18;
+  --muted: #705f57;
+  --soft: #9b8d87;
+  --primary: #e74c3c;
+  --primary-dim: #c23d30;
+  --primary-soft: rgba(231,76,60,0.10);
+  --accent: #b77925;
+  --accent-cool: #287c9a;
+  --success: #258a5c;
+  --glass-bg: rgba(255,255,255,0.88);
+  --glass-border: rgba(69,42,32,0.12);
+  --input-bg: rgba(69,42,32,0.045);
+  --shadow: 0 28px 70px rgba(75,48,35,0.12);
+  --star-gold: #c88820;
+  --star-white: #b8a8c0;
+  --star-blue: #487aaa;
+  --star-purple: #9060b0;
+  --constellation-line: rgba(160,120,60,0.20);
+  --nebula: rgba(120,100,200,0.03);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #090909; --surface: rgba(20,21,25,0.94); --surface2: rgba(28,29,34,0.92); --surface3: rgba(39,40,46,0.9);
+    --border: rgba(255,255,255,0.09); --border-strong: rgba(255,255,255,0.16);
+    --text: #f7f1ee; --muted: #b9aaa4; --soft: #7c716d;
+    --primary: #e74c3c; --primary-dim: #bd382b; --primary-soft: rgba(231,76,60,0.14);
+    --accent: #d99a3a; --accent-cool: #5fb7d7; --success: #4fb985;
+    --glass-bg: rgba(18,17,16,0.84); --glass-border: rgba(255,255,255,0.13);
+    --input-bg: rgba(255,255,255,0.055); --shadow: 0 28px 80px rgba(0,0,0,0.42);
+    --star-gold: #f0c060; --star-white: #e8e0f0; --star-blue: #88bbee; --star-purple: #c8a0e0;
+    --constellation-line: rgba(240,220,180,0.28); --nebula: rgba(80,60,180,0.06);
+    color-scheme: dark;
+  }
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh; min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+body::before {
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(231,76,60,0.08), transparent 34%),
+    linear-gradient(315deg, rgba(95,183,215,0.10), transparent 38%),
+    var(--bg);
+  background-size: 92px 92px, 92px 92px, 100% 100%, 100% 100%, auto;
+}
+body::after {
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.52), transparent 18%, transparent 74%, rgba(0,0,0,0.45)),
+    linear-gradient(90deg, rgba(0,0,0,0.42), transparent 22%, transparent 76%, rgba(0,0,0,0.34));
+}
+:root[data-theme='light'] body::before {
+  background:
+    linear-gradient(90deg, rgba(86,62,42,0.055) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(86,62,42,0.045) 1px, transparent 1px),
+    radial-gradient(circle at 18% 16%, rgba(231,76,60,0.12), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(40,124,154,0.12), transparent 34%),
+    linear-gradient(180deg, #fbf7ef, #efe8dc);
+  background-size: 92px 92px, 92px 92px, 100% 100%, 100% 100%, auto;
+}
+:root[data-theme='light'] body::after {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.62), transparent 18%, transparent 78%, rgba(104,74,44,0.08)),
+    linear-gradient(90deg, rgba(104,74,44,0.08), transparent 24%, transparent 76%, rgba(104,74,44,0.06));
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { border-radius: 8px; background: linear-gradient(180deg, var(--primary), rgba(231,76,60,0.5)); }
+
+/* ── Particle Canvas ── */
+#particleCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.deep-space-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0, transparent 48%, rgba(0,0,0,0.24) 78%, rgba(0,0,0,0.48) 100%),
+    linear-gradient(90deg, rgba(0,0,0,0.20), transparent 18%, transparent 82%, rgba(0,0,0,0.18));
+  mix-blend-mode: multiply;
+  opacity: 0.72;
+}
+:root[data-theme='light'] .deep-space-vignette {
+  background:
+    radial-gradient(circle at 50% 42%, transparent 0, transparent 52%, rgba(108,78,45,0.08) 78%, rgba(108,78,45,0.18) 100%),
+    linear-gradient(90deg, rgba(108,78,45,0.08), transparent 20%, transparent 80%, rgba(108,78,45,0.08));
+  opacity: 0.58;
+}
+
+/* ── Topbar ── */
+.starmap-topbar {
+  position: fixed; top: 18px; left: 22px; right: 22px; z-index: 12;
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px;
+  background: var(--glass-bg);
+  background: color-mix(in srgb, var(--glass-bg) 88%, transparent);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+  border-bottom: 1px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.34);
+}
+.topbar-back {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: rgba(255,255,255,0.045);
+  color: var(--text); font-size: 13px; font-family: inherit;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.topbar-back:hover { border-color: var(--primary); background: var(--surface3); transform: translateY(-1px); }
+.topbar-back-icon { font-size: 16px; }
+
+.submode-switch {
+  display: flex; align-items: center; gap: 0;
+  background: rgba(255,255,255,0.055); border: 1px solid var(--border); border-radius: 8px; padding: 3px;
+  flex-shrink: 0;
+}
+.submode-tab {
+  min-height: 32px;
+  padding: 6px 16px; border: none; border-radius: 6px;
+  font-size: 12px; font-family: inherit; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  background: transparent; color: var(--muted);
+  transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.submode-tab.active {
+  background: linear-gradient(135deg, rgba(231,76,60,0.95), rgba(217,154,58,0.92));
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(231,76,60,0.22);
+}
+.submode-tab:not(.active):hover { color: var(--text); }
+
+.topbar-spacer { flex: 1; }
+
+.star-search {
+  position: relative;
+  flex: 0 1 320px;
+  min-width: 180px;
+  max-width: 360px;
+}
+.star-search-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.055);
+  color: var(--text);
+  font: 500 12px "Noto Sans SC", sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.star-search-input:focus {
+  border-color: var(--accent-cool);
+  background: var(--input-bg);
+  box-shadow: 0 0 0 3px rgba(95,183,215,0.10);
+}
+.star-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+}
+.star-search.has-value .star-search-clear { display: block; }
+.star-search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--glass-bg) 94%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: none;
+}
+.star-search-results.visible { display: block; }
+.star-search-result {
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.star-search-result:hover,
+.star-search-result:focus-visible {
+  outline: none;
+  background: var(--surface3);
+}
+.star-search-result strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.star-search-result span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.star-search-empty {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.topbar-theme-btn {
+  width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px;
+  background: rgba(255,255,255,0.045); color: var(--text); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.topbar-theme-btn:hover { border-color: var(--primary); background: var(--surface3); transform: translateY(-1px); }
+
+.topbar-create-btn {
+  min-height: 36px;
+  padding: 8px 16px; border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; font-size: 12px; font-weight: 700;
+  font-family: inherit; cursor: pointer; white-space: nowrap;
+  transition: filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 26px rgba(231,76,60,0.22);
+}
+.topbar-create-btn:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 14px 34px rgba(231,76,60,0.28); }
+
+/* ── Star Canvas ── */
+#starCanvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3;
+  cursor: grab;
+  touch-action: none;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  text-align: center; z-index: 2; pointer-events: none;
+}
+.empty-state-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.7; }
+.empty-state-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty-state-desc { font-size: 13px; color: var(--muted); max-width: 320px; line-height: 1.6; }
+
+/* ── Detail Panel ── */
+.detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 90vw; z-index: 20;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -8px 0 40px rgba(0,0,0,0.3);
+  transform: translateX(100%); transition: transform 0.35s var(--ease);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.detail-panel.open { transform: translateX(0); }
+.detail-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.detail-panel-title { font-size: 16px; font-weight: 700; }
+.detail-panel-close {
+  width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--surface2); color: var(--text); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.detail-panel-body { padding: 20px; flex: 1; }
+.detail-meta { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.7; }
+.detail-section-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: var(--soft);
+  text-transform: uppercase; margin-bottom: 10px; margin-top: 16px;
+}
+.member-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.member-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; border-radius: 6px; background: var(--surface3);
+  font-size: 13px;
+}
+.member-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-item-school { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.member-remove-btn {
+  width: 26px; height: 26px; border: none; border-radius: 50%;
+  background: transparent; color: var(--soft); font-size: 14px; cursor: pointer;
+  flex-shrink: 0; transition: color 0.15s ease, background 0.15s ease;
+}
+.member-remove-btn:hover { color: var(--primary); background: var(--primary-soft); }
+.detail-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.detail-action-btn {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface2); color: var(--text); font-size: 12px; font-family: inherit;
+  cursor: pointer; transition: border-color 0.2s ease;
+}
+.detail-action-btn:hover { border-color: var(--primary); }
+.detail-action-btn.danger { color: var(--primary); }
+.detail-action-btn.danger:hover { background: var(--primary-soft); border-color: var(--primary); }
+
+/* ── Modal Overlay ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-card {
+  width: 460px; max-width: 92vw; max-height: 85vh; overflow-y: auto;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; box-shadow: var(--shadow);
+  padding: 24px;
+}
+.modal-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 9px 13px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--input-bg); color: var(--text);
+  font-size: 13px; font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+.form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+.form-textarea { resize: vertical; min-height: 70px; }
+.form-select { cursor: pointer; }
+
+.club-search-wrap { position: relative; margin-bottom: 10px; }
+.club-search-results {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 5;
+  max-height: 180px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: var(--shadow);
+  display: none;
+}
+.club-search-results.visible { display: block; }
+.club-search-item {
+  padding: 8px 12px; cursor: pointer; font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+.club-search-item:last-child { border-bottom: none; }
+.club-search-item:hover { background: var(--surface3); }
+.club-search-item .cs-school { color: var(--muted); font-size: 11px; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tag-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--surface3); font-size: 12px;
+}
+.tag-remove {
+  width: 18px; height: 18px; border: none; border-radius: 50%;
+  background: transparent; color: var(--soft); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s ease;
+}
+.tag-remove:hover { color: var(--primary); }
+
+/* color picker */
+.color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.color-swatch {
+  width: 32px; height: 32px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.active { border-color: var(--text); box-shadow: 0 0 12px currentColor; }
+
+/* search mode toggle */
+.search-mode-btn {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface3); color: var(--muted); font-size: 11px; font-family: inherit;
+  cursor: pointer; transition: all 0.2s ease;
+}
+.search-mode-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* bound tag */
+.bound-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--surface3); font-size: 12px; border: 1px solid var(--border);
+}
+.bound-tag .tag-remove { cursor: pointer; color: var(--soft); }
+.bound-tag .tag-remove:hover { color: var(--primary); }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+.modal-btn {
+  padding: 9px 20px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface2); color: var(--text); font-size: 13px; font-family: inherit;
+  cursor: pointer; transition: border-color 0.2s ease;
+}
+.modal-btn:hover { border-color: var(--primary); }
+.modal-btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.modal-btn.primary:hover { background: var(--primary-dim); }
+.modal-btn.danger { color: var(--primary); }
+
+/* ── Tooltip ── */
+.star-tooltip {
+  position: fixed; z-index: 15; pointer-events: none;
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 12px 16px; max-width: 260px;
+  font-size: 12px; line-height: 1.6;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.star-tooltip.visible { opacity: 1; transform: translateY(0); }
+.star-tooltip .tt-name { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+.star-tooltip .tt-school { color: var(--muted); }
+.star-tooltip .tt-province { color: var(--soft); font-size: 11px; }
+
+/* ── Club Detail Modal ── */
+.club-detail-overlay {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.club-detail-card {
+  position: relative;
+  width: min(92vw, 520px); max-height: 82vh;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px; box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: cdFadeIn 0.28s var(--ease);
+}
+@keyframes cdFadeIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.club-detail-close {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--surface2); color: var(--text); font-size: 20px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.club-detail-close:hover { border-color: var(--primary); background: var(--primary-soft); }
+.club-detail-scroll {
+  max-height: 82vh; overflow-y: auto; padding: 22px 22px 28px;
+}
+/* Header */
+.cd-header { display: flex; gap: 16px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.cd-avatar {
+  width: 72px; height: 72px; border-radius: 16px; flex-shrink: 0;
+  background: var(--surface3); display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--primary); overflow: hidden;
+  border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.cd-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cd-header-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.cd-name { font-size: 18px; font-weight: 700; line-height: 1.3; word-break: break-all; }
+.cd-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.cd-chip {
+  padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  border: 1px solid var(--border); background: var(--surface3); color: var(--muted);
+}
+.cd-chip.verified { border-color: var(--success); color: var(--success); }
+.cd-chip.primary { border-color: var(--primary); color: var(--primary); }
+/* Sections */
+.cd-section { margin-bottom: 16px; }
+.cd-section-title {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: var(--soft);
+  text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.cd-section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.cd-description { font-size: 13px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
+.cd-contact {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: var(--radius); background: var(--surface3);
+  font-size: 13px; font-family: monospace; word-break: break-all;
+}
+.cd-copy-btn {
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface2); color: var(--text); font-size: 11px; font-family: inherit;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+.cd-copy-btn:hover { border-color: var(--primary); }
+.cd-copy-btn.copied { border-color: var(--success); color: var(--success); }
+.cd-footer { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--soft); }
+
+/* Immersive observatory layer */
+.starmap-stage-frame {
+  position: fixed;
+  inset: 92px 24px 86px;
+  z-index: 4;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.075);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px rgba(231,76,60,0.05),
+    inset 0 0 90px rgba(95,183,215,0.045);
+}
+.starmap-stage-frame::before,
+.starmap-stage-frame::after {
+  content: "";
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.starmap-stage-frame::before {
+  left: -1px;
+  top: -1px;
+  border-left: 1px solid;
+  border-top: 1px solid;
+}
+.starmap-stage-frame::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
+}
+.starmap-brandplate,
+.starmap-hud,
+.starmap-dock,
+.starmap-shortcuts {
+  position: fixed;
+  z-index: 11;
+  background: var(--glass-bg);
+  background: color-mix(in srgb, var(--glass-bg) 88%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.30);
+}
+.starmap-brandplate {
+  left: 24px;
+  top: 86px;
+  width: min(320px, calc(100vw - 48px));
+  padding: 16px;
+  pointer-events: none;
+}
+.brand-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.brand-title {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-wrap: pretty;
+}
+.brand-desc {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.brand-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.brand-metric {
+  padding: 9px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+.metric-value {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+.metric-label {
+  display: block;
+  margin-top: 2px;
+  color: var(--soft);
+  font-size: 10px;
+}
+.starmap-hud {
+  right: 24px;
+  top: 86px;
+  width: 260px;
+  padding: 14px;
+  pointer-events: none;
+}
+.hud-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.hud-row:last-child { border-bottom: none; }
+.hud-label { color: var(--muted); }
+.hud-value { color: var(--text); font-weight: 700; text-align: right; }
+.hud-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-signal::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 12px var(--success);
+}
+.starmap-dock {
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.dock-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.045);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.dock-btn:hover,
+.dock-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface3);
+  transform: translateY(-1px);
+}
+.dock-btn.primary {
+  color: #fff;
+  border-color: rgba(255,255,255,0.14);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+.dock-separator {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+.starmap-shortcuts {
+  left: 24px;
+  bottom: 20px;
+  width: min(330px, calc(100vw - 48px));
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  pointer-events: none;
+}
+.shortcut-title {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.shortcut-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-bottom-color: var(--border-strong);
+  border-radius: 5px;
+  background: rgba(255,255,255,0.055);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+}
+.immersive-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.is-immersive .starmap-brandplate,
+.is-immersive .starmap-hud,
+.is-immersive .starmap-shortcuts {
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+}
+.starmap-brandplate,
+.starmap-hud,
+.starmap-shortcuts {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+/* Observatory visual refresh */
+body {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(95,183,215,0.08), transparent 34%),
+    linear-gradient(180deg, #080b12, #050508 72%);
+}
+:root[data-theme='light'] body {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(40,124,154,0.13), transparent 34%),
+    linear-gradient(180deg, #fbf8f1, #eee6da 76%);
+}
+.starmap-topbar {
+  top: 16px;
+  left: 18px;
+  right: 18px;
+  min-height: 52px;
+  padding: 7px 8px;
+  border-color: color-mix(in srgb, var(--glass-border) 72%, var(--accent-cool));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--glass-bg) 88%, transparent), color-mix(in srgb, var(--glass-bg) 76%, transparent));
+  box-shadow: 0 16px 50px rgba(0,0,0,0.24);
+}
+.topbar-back,
+.topbar-theme-btn,
+.topbar-create-btn,
+.submode-switch,
+.dock-btn,
+.detail-action-btn,
+.modal-btn {
+  border-radius: 8px;
+}
+.submode-switch {
+  background: color-mix(in srgb, var(--surface3) 55%, transparent);
+}
+.submode-tab.active,
+.dock-btn.primary,
+.topbar-create-btn,
+.modal-btn.primary {
+  background: linear-gradient(135deg, #d99a3a, #e74c3c);
+  box-shadow: 0 12px 30px rgba(217,154,58,0.20);
+}
+.topbar-theme-btn {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.starmap-stage-frame {
+  inset: 84px 20px 82px;
+  border-color: color-mix(in srgb, var(--accent-cool) 24%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.035),
+    inset 0 0 120px rgba(95,183,215,0.055),
+    0 0 0 1px rgba(217,154,58,0.035);
+}
+.starmap-brandplate,
+.starmap-hud,
+.starmap-dock,
+.starmap-shortcuts,
+.detail-panel,
+.modal-card,
+.star-tooltip {
+  border-color: color-mix(in srgb, var(--glass-border) 74%, var(--accent-cool));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--glass-bg) 90%, transparent), color-mix(in srgb, var(--glass-bg) 76%, transparent));
+  box-shadow: 0 20px 70px rgba(0,0,0,0.26);
+}
+.starmap-brandplate {
+  top: 88px;
+  width: min(344px, calc(100vw - 48px));
+}
+.brand-kicker,
+.shortcut-title,
+.hud-signal::before {
+  color: var(--accent-cool);
+}
+.brand-title {
+  font-size: 24px;
+}
+.brand-desc {
+  color: color-mix(in srgb, var(--muted) 88%, var(--text));
+}
+.brand-metric {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025));
+  border-color: color-mix(in srgb, var(--border) 72%, var(--accent));
+}
+.metric-value {
+  color: var(--star-gold);
+}
+.starmap-hud {
+  top: 88px;
+  width: 276px;
+}
+.hud-row {
+  padding: 7px 0;
+}
+.starmap-dock {
+  bottom: 18px;
+  gap: 7px;
+  padding: 7px;
+}
+.dock-btn {
+  min-width: 40px;
+  height: 40px;
+}
+.dock-zoom-readout {
+  min-width: 58px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.045);
+  color: var(--star-gold);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.detail-panel {
+  top: 76px;
+  right: 18px;
+  bottom: 18px;
+  width: 400px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  transform: translateX(calc(100% + 28px));
+}
+.detail-panel-header {
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), transparent);
+}
+.detail-panel-close,
+.club-detail-close,
+.member-remove-btn {
+  border-radius: 8px;
+}
+.detail-panel-body {
+  padding: 16px;
+}
+.member-item,
+.cd-contact,
+.tag-item,
+.bound-tag {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface3) 78%, transparent);
+}
+.empty-state-icon {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .club-detail-overlay { align-items: flex-end; }
+  .club-detail-card {
+    width: 100%; max-width: 100%; max-height: 85vh;
+    border-radius: 20px 20px 0 0;
+    animation: cdSlideUp 0.3s var(--ease);
+  }
+  @keyframes cdSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .club-detail-scroll { padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .starmap-topbar,
+  .starmap-brandplate,
+  .starmap-dock,
+  .detail-panel,
+  .modal-card,
+  .star-tooltip,
+  .club-detail-card {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .starmap-topbar,
+  .starmap-brandplate,
+  .starmap-dock,
+  .detail-panel {
+    background: color-mix(in srgb, var(--glass-bg) 94%, transparent);
+  }
+  #starCanvas,
+  #particleCanvas {
+    image-rendering: auto;
+  }
+  .starmap-topbar { top: 10px; left: 10px; right: 10px; padding: 6px; gap: 6px; flex-wrap: wrap; }
+  .star-search { order: 3; flex: 1 0 100%; max-width: none; min-width: 0; }
+  .star-search-input { height: 34px; }
+  .star-search-results { max-height: 220px; }
+  .topbar-back-label { display: none; }
+  .submode-tab { padding: 5px 10px; font-size: 11px; }
+  .topbar-create-btn { padding: 6px 10px; font-size: 11px; }
+  .detail-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 82vh;
+    border-radius: 8px 8px 0 0;
+    transform: translateY(100%);
+  }
+  .detail-panel.open { transform: translateY(0); }
+  .modal-card { padding: 16px; }
+  .star-tooltip { max-width: 200px; padding: 10px 12px; font-size: 11px; }
+  .starmap-stage-frame { inset: 68px 10px 78px; }
+  .starmap-brandplate { top: 68px; left: 10px; width: calc(100vw - 20px); padding: 12px; }
+  .brand-title { font-size: 18px; }
+  .brand-desc { display: none; }
+  .brand-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; }
+  .starmap-hud { display: none; }
+  .starmap-shortcuts { display: none; }
+  .starmap-dock { bottom: 12px; width: calc(100vw - 20px); justify-content: center; }
+  .dock-btn { flex: 1; min-width: 0; padding: 0 8px; }
+  .dock-zoom-readout { flex: 0 0 58px; min-width: 0; padding: 0 6px; }
+}
+@media (max-width: 480px) {
+  .submode-tab { padding: 4px 8px; font-size: 10px; }
+  .topbar-back { padding: 5px 8px; }
+  .topbar-theme-btn { width: 28px; height: 28px; font-size: 14px; }
+  .topbar-create-btn { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+  .brand-metric { padding: 7px 6px; }
+  .metric-value { font-size: 15px; }
+  #focusSelectedBtn { display: none; }
+  .dock-btn[data-label="immersive"] { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-panel { transition: none; }
+  .star-tooltip { transition: none; }
+  .submode-tab { transition: none; }
+  .starmap-brandplate,
+  .starmap-hud,
+  .starmap-shortcuts { transition: none; }
+  .star-search-input,
+  .star-search-results { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="particleCanvas" aria-hidden="true"></canvas>
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="deep-space-vignette" aria-hidden="true"></div>
+
+<div class="starmap-stage-frame" aria-hidden="true"></div>
+
+<section class="starmap-brandplate" aria-label="星图概览">
+  <div class="brand-kicker">VNFest Observatory</div>
+  <div class="brand-title" id="brandTitle">个人星图观测台</div>
+  <p class="brand-desc" id="brandDesc">拖拽移动星域，滚轮或底部控件缩放。点选星点查看同好会，切换到联合星图可维护地区高校联合。</p>
+  <div class="brand-metrics">
+    <div class="brand-metric">
+      <span class="metric-value" id="metricStars">0</span>
+      <span class="metric-label">星点</span>
+    </div>
+    <div class="brand-metric">
+      <span class="metric-value" id="metricLinks">0</span>
+      <span class="metric-label">连接</span>
+    </div>
+    <div class="brand-metric">
+      <span class="metric-value" id="metricZoom">100%</span>
+      <span class="metric-label">缩放</span>
+    </div>
+  </div>
+</section>
+
+<aside class="starmap-hud" aria-label="星图状态">
+  <div class="hud-row">
+    <span class="hud-label">观测状态</span>
+    <span class="hud-value hud-signal">在线</span>
+  </div>
+  <div class="hud-row">
+    <span class="hud-label">当前模式</span>
+    <span class="hud-value" id="hudMode">个人星图</span>
+  </div>
+  <div class="hud-row">
+    <span class="hud-label">可交互目标</span>
+    <span class="hud-value" id="hudTargets">0 个</span>
+  </div>
+  <div class="hud-row">
+    <span class="hud-label">选中目标</span>
+    <span class="hud-value" id="hudSelection">未选中</span>
+  </div>
+</aside>
+
+<div class="starmap-shortcuts" aria-hidden="true">
+  <div class="shortcut-title">操作提示</div>
+  <div>拖拽平移，滚轮缩放，点击星点打开详情，双指可在移动端缩放。</div>
+  <div class="shortcut-keys">
+    <span class="keycap">1</span><span>个人</span>
+    <span class="keycap">2</span><span>联合</span>
+    <span class="keycap">0</span><span>复位</span>
+    <span class="keycap">Esc</span><span>关闭</span>
+  </div>
+</div>
+
+<nav class="starmap-dock" aria-label="星图控制">
+  <button class="dock-btn" id="zoomOutBtn" type="button" title="缩小" aria-label="缩小">−</button>
+  <div class="dock-zoom-readout" id="dockZoom" aria-live="polite">100%</div>
+  <button class="dock-btn" id="zoomInBtn" type="button" title="放大" aria-label="放大">+</button>
+  <button class="dock-btn primary" id="resetViewBtn" type="button" title="复位视图">复位</button>
+  <button class="dock-btn" id="focusSelectedBtn" type="button" title="聚焦选中星体">聚焦</button>
+  <div class="dock-separator" aria-hidden="true"></div>
+  <button class="dock-btn" id="toggleImmersiveBtn" data-label="immersive" type="button" title="隐藏辅助面板">沉浸</button>
+</nav>
+
+<!-- Topbar -->
+<div class="starmap-topbar" id="topbar">
+  <button class="topbar-back" id="backBtn" title="返回地图">
+    <span class="topbar-back-icon">&#x2190;</span>
+    <span class="topbar-back-label">返回</span>
+  </button>
+  <div class="submode-switch" id="submodeSwitch">
+    <button class="submode-tab active" data-submode="personal">个人星图</button>
+    <button class="submode-tab" data-submode="union">联合星图</button>
+  </div>
+  <div class="star-search" id="starSearchWrap">
+    <input class="star-search-input" id="starSearchInput" placeholder="搜索同好会 / 联合" autocomplete="off" aria-label="搜索同好会或联合">
+    <button class="star-search-clear" id="starSearchClear" type="button" aria-label="清空搜索">&times;</button>
+    <div class="star-search-results" id="starSearchResults" role="listbox"></div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <button class="topbar-create-btn" id="createUnionBtn" style="display:none;" title="创建联合">+ 创建联合</button>
+  <button class="topbar-theme-btn" id="themeBtn" title="切换主题">夜</button>
+</div>
+
+<!-- Empty State -->
+<div class="empty-state" id="emptyState" style="display:none;">
+  <div class="empty-state-icon">✦</div>
+  <div class="empty-state-title" id="emptyTitle">还没有可观测的星点</div>
+  <div class="empty-state-desc" id="emptyDesc">加入同好会后，它们会在这里化作星辰；切换到联合星图可查看或创建地区高校联合。</div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-panel-header">
+    <span class="detail-panel-title" id="detailTitle">联合详情</span>
+    <button class="detail-panel-close" id="detailCloseBtn">&times;</button>
+  </div>
+  <div class="detail-panel-body" id="detailBody"></div>
+</div>
+
+<!-- Union Editor Modal -->
+<div class="modal-overlay" id="editorModal" style="display:none;" aria-hidden="true">
+  <div class="modal-card">
+    <h3 id="editorTitle">创建联合</h3>
+    <div class="form-group">
+      <label class="form-label">联合名称 *</label>
+      <input class="form-input" id="edName" placeholder="例如：北京高校联合" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">地区</label>
+      <input class="form-input" id="edRegion" placeholder="例如：华北、华东、全国" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">简介</label>
+      <textarea class="form-textarea" id="edDesc" placeholder="描述这个联合..." maxlength="500"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">国家/地区</label>
+      <select class="form-select" id="edCountry">
+        <option value="china">中国</option>
+        <option value="japan">日本</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">绑定联合群</label>
+      <div class="club-search-wrap">
+        <input class="form-input" id="edBoundSearch" placeholder="搜索要绑定的同好会群..." autocomplete="off">
+        <div class="club-search-results" id="edBoundResults"></div>
+      </div>
+      <div id="edBoundTag" style="margin-top:6px;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">星图颜色</label>
+      <div class="color-picker" id="edColorPicker">
+        <button class="color-swatch active" data-color="#f0c060" style="background:#f0c060;" title="金色"></button>
+        <button class="color-swatch" data-color="#e8e0f0" style="background:#e8e0f0;" title="白色"></button>
+        <button class="color-swatch" data-color="#88bbee" style="background:#88bbee;" title="蓝色"></button>
+        <button class="color-swatch" data-color="#c8a0e0" style="background:#c8a0e0;" title="紫色"></button>
+        <button class="color-swatch" data-color="#64c8c0" style="background:#64c8c0;" title="青色"></button>
+        <button class="color-swatch" data-color="#f09898" style="background:#f09898;" title="粉色"></button>
+      </div>
+    </div>
+    <div class="form-group" id="edClubSection" style="display:none;">
+      <label class="form-label">添加同好会</label>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <button class="search-mode-btn active" data-mode="club" id="edSearchModeClub">搜索同好会</button>
+        <button class="search-mode-btn" data-mode="school" id="edSearchModeSchool">搜索学校</button>
+      </div>
+      <div class="club-search-wrap">
+        <input class="form-input" id="edClubSearch" placeholder="搜索同好会..." autocomplete="off">
+        <div class="club-search-results" id="edClubResults"></div>
+      </div>
+      <div class="tag-list" id="edClubTags"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn danger" id="edDeleteBtn" style="display:none;">删除联合</button>
+      <div style="flex:1;"></div>
+      <button class="modal-btn" id="edCancelBtn">取消</button>
+      <button class="modal-btn primary" id="edSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="star-tooltip" id="starTooltip">
+  <div class="tt-name" id="ttName"></div>
+  <div class="tt-school" id="ttSchool"></div>
+  <div class="tt-province" id="ttProvince"></div>
+</div>
+
+<!-- Club Detail Modal -->
+<div id="clubDetailOverlay" class="club-detail-overlay" style="display:none;" aria-hidden="true">
+  <div class="club-detail-card">
+    <button class="club-detail-close" id="clubDetailCloseBtn">&times;</button>
+    <div class="club-detail-scroll" id="clubDetailBody"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ── State ──
+  var StarState = {
+    submode: 'personal',
+    user: null,
+    memberships: [],
+    personalClubs: [],
+    unions: [],
+    selectedUnion: null,
+    hoveredStar: null,
+    hoveredUnion: null,
+    clubLookup: {},
+    editingUnionId: null,
+    pendingClubTags: [],
+    boundClub: null,
+    searchMode: 'club',
+    searchQuery: '',
+    searchResults: [],
+    searchTarget: null,
+    searchHighlightKey: '',
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+    animationTime: 0,
+    _lastStarRender: 0,
+    targetZoom: 1,
+    targetPanX: 0,
+    targetPanY: 0,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragStartPanX: 0,
+    dragStartPanY: 0,
+    hasDragged: false,
+    _allUnionMemberPositions: null,
+    _renderLoopId: 0,
+    _lastRenderTime: 0,
+    _lastEffectFrame: 0,
+    _dragVelX: 0,
+    _dragVelY: 0,
+    _dragLastX: 0,
+    _dragLastY: 0,
+    _dragLastTime: 0,
+    _lastWheelTime: 0,
+    _touchMode: null,
+    _touchStartDistance: 0,
+    _touchStartZoom: 1,
+    _touchStartPanX: 0,
+    _touchStartPanY: 0,
+    _touchCenterX: 0,
+    _touchCenterY: 0,
+    _draggedUnionOffsets: {},
+    _draggingUnionId: null,
+    _draggingUnionStartWorldX: 0,
+    _draggingUnionStartWorldY: 0,
+    _draggingUnionBaseOffsetX: 0,
+    _draggingUnionBaseOffsetY: 0,
+    _unionLayoutCacheKey: '',
+    _unionLayoutCache: null,
+    _unionConnectionCacheKey: '',
+    _unionConnectionCache: null,
+    _sharedUnionMembers: {},
+    _lastUnionHoverTime: 0,
+    _submodeTransition: null,
+    _transitionFromMode: '',
+    _transitionToMode: '',
+    _activeBurst: null,
+    _lineFlowBudget: 0,
+    _parallaxX: 0,
+    _parallaxY: 0,
+    _didAutoFocusUnion: false
+  };
+
+  var canvas, ctx, particles = [], animId, canvasW, canvasH, lastParticleFrame = 0;
+  var starCanvas, starCtx;
+  var STAR_MAP_ENABLE_PULSE = false;
+
+  function canvasDpr() {
+    var cap = window.innerWidth <= 768 ? 1.75 : 2;
+    return Math.max(1, Math.min(window.devicePixelRatio || 1, cap));
+  }
+
+  function starViewportWidth() {
+    return starCanvas ? (starCanvas.clientWidth || window.innerWidth) : window.innerWidth;
+  }
+
+  function starViewportHeight() {
+    return starCanvas ? (starCanvas.clientHeight || window.innerHeight) : window.innerHeight;
+  }
+
+  function safeSetText(id, value) {
+    var el = $(id);
+    if (el && el.textContent !== value) el.textContent = value;
+  }
+
+  function resetView() {
+    var nextZoom = 1;
+    var nextPanX = 0;
+    var nextPanY = 0;
+    if (StarState.submode === 'union') {
+      var W = starViewportWidth();
+      var H = starViewportHeight();
+      var world = getUnionWorldSize(StarState.unions.length);
+      var minUnionZoom = window.innerWidth <= 768 ? 0.28 : 0.34;
+      nextZoom = Math.min(1, Math.max(minUnionZoom, Math.min(W / (world.width * 0.92), H / (world.height * 0.88))));
+      nextPanX = W / 2 - (world.width / 2) * nextZoom;
+      nextPanY = H / 2 - (world.height / 2) * nextZoom;
+    }
+    StarState.zoom = nextZoom;
+    StarState.panX = nextPanX;
+    StarState.panY = nextPanY;
+    StarState.targetZoom = nextZoom;
+    StarState.targetPanX = nextPanX;
+    StarState.targetPanY = nextPanY;
+    StarState._dragVelX = 0;
+    StarState._dragVelY = 0;
+    renderFrame();
+    updateObservatoryHud();
+  }
+
+  function zoomBy(factor) {
+    var W = starViewportWidth();
+    var H = starViewportHeight();
+    var mx = W / 2;
+    var my = H / 2;
+    var worldX = (mx - StarState.targetPanX) / StarState.targetZoom;
+    var worldY = (my - StarState.targetPanY) / StarState.targetZoom;
+    var nextZoom = Math.max(0.4, Math.min(3.0, StarState.targetZoom * factor));
+    StarState.targetZoom = nextZoom;
+    StarState.targetPanX = mx - worldX * nextZoom;
+    StarState.targetPanY = my - worldY * nextZoom;
+    updateObservatoryHud();
+  }
+
+  function focusWorldPoint(x, y, zoom) {
+    var W = starViewportWidth();
+    var H = starViewportHeight();
+    var nextZoom = Math.max(0.4, Math.min(3.2, zoom || StarState.targetZoom));
+    var panelOffset = StarState.submode === 'union' && window.innerWidth > 900 ? 150 : 0;
+    StarState.targetZoom = nextZoom;
+    StarState.targetPanX = (W / 2 - panelOffset) - x * nextZoom;
+    StarState.targetPanY = H / 2 - y * nextZoom;
+    updateObservatoryHud();
+  }
+
+  function focusSelectedTarget() {
+    if (StarState.submode === 'union' && StarState.selectedUnion && StarState._unionPositions) {
+      for (var i = 0; i < StarState._unionPositions.length; i++) {
+        var p = StarState._unionPositions[i];
+        if (p.union && p.union.id === StarState.selectedUnion.id) {
+          focusWorldPoint(p.x, p.y, Math.max(StarState.targetZoom, 1.04));
+          return;
+        }
+      }
+    }
+    if (StarState.hoveredStar && StarState._positions) {
+      for (var j = 0; j < StarState._positions.length; j++) {
+        var s = StarState._positions[j];
+        if (s.club && s.club.club_id === StarState.hoveredStar.club_id && s.club.country === StarState.hoveredStar.country) {
+          focusWorldPoint(s.x, s.y, Math.max(StarState.targetZoom, 1.18));
+          return;
+        }
+      }
+    }
+    resetView();
+  }
+
+  function getUnionWorldSize(unionCount) {
+    var count = unionCount || 0;
+    var baseW = Math.max(starViewportWidth(), 1880);
+    var baseH = Math.max(starViewportHeight(), 1080);
+    if (count > 0) {
+      var remaining = Math.max(0, count - 1);
+      var ring = 0;
+      while (remaining > 0) {
+        remaining -= 6 + ring * 4;
+        ring++;
+      }
+      var radius = ring ? (420 + (ring - 1) * 440) : 0;
+      baseW = Math.max(baseW, radius * 2 + 760);
+      baseH = Math.max(baseH, radius * 1.8 + 680);
+    }
+    return {
+      width: baseW,
+      height: baseH
+    };
+  }
+
+  function unionThemePalette() {
+    var light = currentTheme() === 'light';
+    return light ? {
+      screenEdge: 'rgba(112,76,40,0.10)',
+      galaxyA: 'rgba(40,124,154,0.075)',
+      galaxyB: 'rgba(183,121,37,0.07)',
+      galaxyCoreA: 'rgba(40,124,154,0.10)',
+      galaxyCoreB: 'rgba(231,76,60,0.045)',
+      labelBg: 'rgba(255,252,246,0.82)',
+      labelBgStrong: 'rgba(255,250,240,0.94)',
+      labelBorder: 'rgba(96,62,36,0.16)',
+      labelText: 'rgba(42,31,24,0.88)',
+      mutedText: 'rgba(82,64,52,0.66)',
+      hubBg: 'rgba(255,244,220,0.88)',
+      hubBorder: 'rgba(183,121,37,0.28)',
+      hubText: 'rgba(118,76,24,0.92)',
+      member: '#2f7890',
+      memberSoft: 'rgba(47,120,144,0.28)',
+      memberGlow: 'rgba(47,120,144,0.18)',
+      linkA: 'rgba(183,121,37,0.34)',
+      linkB: 'rgba(40,124,154,0.24)',
+      linkC: 'rgba(80,55,35,0.15)',
+      coreText: 'rgba(42,31,24,0.86)'
+    } : {
+      screenEdge: 'rgba(1,6,18,0.34)',
+      galaxyA: 'rgba(95,183,215,0.038)',
+      galaxyB: 'rgba(240,192,96,0.035)',
+      galaxyCoreA: 'rgba(95,183,215,0.12)',
+      galaxyCoreB: 'rgba(231,76,60,0.045)',
+      labelBg: 'rgba(8,12,22,0.48)',
+      labelBgStrong: 'rgba(12,18,30,0.78)',
+      labelBorder: 'rgba(255,255,255,0.10)',
+      labelText: 'rgba(255,255,255,0.86)',
+      mutedText: 'rgba(190,220,255,0.48)',
+      hubBg: 'rgba(56,38,14,0.48)',
+      hubBorder: 'rgba(240,192,96,0.24)',
+      hubText: 'rgba(255,220,150,0.88)',
+      member: '#dceaff',
+      memberSoft: 'rgba(220,234,255,0.28)',
+      memberGlow: 'rgba(220,234,255,0.13)',
+      linkA: 'rgba(240,192,96,0.22)',
+      linkB: 'rgba(95,183,215,0.16)',
+      linkC: 'rgba(220,234,255,0.13)',
+      coreText: 'rgba(255,255,255,0.86)'
+    };
+  }
+
+  function resolveClubName(clubId, country, fallback) {
+    var full = StarState.clubLookup[(country || 'china') + '_' + clubId];
+    return (full && (full.name || full.display_name)) || fallback || ('同好会#' + clubId);
+  }
+
+  function switchSubmode(mode) {
+    if (mode !== 'personal' && mode !== 'union') return;
+    if (mode === StarState.submode && !StarState._submodeTransition) return;
+    beginSubmodeTransition(mode);
+  }
+
+  function applySubmode(mode) {
+    document.querySelectorAll('.submode-tab').forEach(function (x) {
+      var active = x.dataset.submode === mode;
+      x.classList.toggle('active', active);
+      x.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    StarState.submode = mode;
+    StarState.selectedUnion = null;
+    StarState.hoveredStar = null;
+    StarState.hoveredUnion = null;
+    hideTooltip();
+    resetView();
+    $('detailPanel').classList.remove('open');
+    $('createUnionBtn').style.display = StarState.submode === 'union' ? '' : 'none';
+    renderFrame();
+    if (mode === 'union') setTimeout(focusPreferredUnionIfNeeded, 60);
+    updateEmptyState();
+    updateObservatoryHud();
+  }
+
+  function beginSubmodeTransition(mode) {
+    if (mode === StarState.submode || prefersReducedMotion()) {
+      applySubmode(mode);
+      return;
+    }
+    var now = performance.now();
+    StarState._transitionFromMode = StarState.submode;
+    StarState._transitionToMode = mode;
+    StarState._submodeTransition = { start: now, duration: 360, switched: false };
+    StarState._lastRenderKey = '';
+    hideTooltip();
+    $('detailPanel').classList.remove('open');
+  }
+
+  function updateSubmodeTransition() {
+    var t = StarState._submodeTransition;
+    if (!t) return;
+    var elapsed = performance.now() - t.start;
+    if (!t.switched && elapsed >= t.duration * 0.42) {
+      t.switched = true;
+      applySubmode(StarState._transitionToMode);
+      StarState._submodeTransition = t;
+    }
+    if (elapsed >= t.duration) {
+      StarState._submodeTransition = null;
+      StarState._transitionFromMode = '';
+      StarState._transitionToMode = '';
+      StarState._lastRenderKey = '';
+    }
+  }
+
+  function updateObservatoryHud() {
+    var isPersonal = StarState.submode === 'personal';
+    var starCount = isPersonal ? StarState.personalClubs.length : StarState.unions.reduce(function (sum, u) {
+      return sum + 1 + ((u._members && u._members.length) || 0);
+    }, 0);
+    var linkCount = isPersonal ? Math.max(0, StarState.personalClubs.length - 1) : StarState.unions.reduce(function (sum, u) {
+      return sum + ((u._members && u._members.length) || 0);
+    }, 0);
+    var selectedName = StarState.selectedUnion ? (StarState.selectedUnion.name || '联合') :
+      (StarState.hoveredUnion ? (StarState.hoveredUnion.name || '联合') :
+      (StarState.hoveredStar ? (StarState.hoveredStar.name || StarState.hoveredStar.display_name || '同好会') : '未选中'));
+    safeSetText('brandTitle', isPersonal ? '个人星图观测台' : '联合星图观测台');
+    safeSetText('brandDesc', isPersonal
+      ? '这里把你加入的同好会组织成个人星域。点选星点查看社团详情，拖拽与缩放可探索不同密度。'
+      : '这里展示地区高校联合与成员同好会的关系。创建联合、绑定群组、添加成员都从这张星域完成。');
+    safeSetText('metricStars', String(starCount));
+    safeSetText('metricLinks', String(linkCount));
+    safeSetText('metricZoom', Math.round(StarState.targetZoom * 100) + '%');
+    safeSetText('dockZoom', Math.round(StarState.targetZoom * 100) + '%');
+    safeSetText('hudMode', isPersonal ? '个人星图' : '联合星图');
+    safeSetText('hudTargets', starCount + ' 个');
+    safeSetText('hudSelection', selectedName);
+  }
+
+  // ── API Helpers ──
+  var sameOrigin = { credentials: 'same-origin' };
+  function apiGet(url) { return fetch(url, sameOrigin).then(function (r) { return r.json(); }); }
+  function apiPost(url, body) {
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then(function (r) { return r.json(); });
+  }
+
+  // ── Theme ──
+  function currentTheme() { return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; }
+  function systemThemePreference() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  function syncThemeMeta(theme) {
+    var color = theme === 'light' ? '#f4f1ec' : '#090909';
+    var metas = document.querySelectorAll('meta[name="theme-color"]');
+    for (var i = 0; i < metas.length; i++) metas[i].setAttribute('content', color);
+  }
+  function setTheme(theme, persist) {
+    theme = theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    syncThemeMeta(theme);
+    if (persist) {
+      try { localStorage.setItem('themePreference', theme); } catch (e) {}
+    }
+    StarState._lastRenderKey = '';
+    updateThemeBtn();
+  }
+  function applyTheme(theme) { setTheme(theme, true); }
+  function initThemePreference() {
+    var saved = null;
+    try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+    setTheme(saved === 'light' || saved === 'dark' ? saved : systemThemePreference(), false);
+  }
+  function bindSystemThemePreference() {
+    if (!window.matchMedia) return;
+    var mq = window.matchMedia('(prefers-color-scheme: light)');
+    var onSystemThemeChange = function () {
+      var saved = null;
+      try { saved = localStorage.getItem('themePreference'); } catch (e) {}
+      if (saved === 'light' || saved === 'dark') return;
+      setTheme(systemThemePreference(), false);
+      renderFrame();
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onSystemThemeChange);
+    else if (mq.addListener) mq.addListener(onSystemThemeChange);
+  }
+  function updateThemeBtn() { $('themeBtn').textContent = currentTheme() === 'dark' ? '夜' : '昼'; }
+
+  // ── Particle System (cosmic) ──
+  function initParticles() {
+    var c = $('particleCanvas');
+    canvas = c; ctx = c.getContext('2d');
+    resizeParticles();
+    var colors = [
+      '#f0c060','#e8e0f0','#88bbee','#c8a0e0','#f8d8a0',
+      '#a0c8f0','#e0d0f8','#90c8e8','#f0a0b0','#a0e8c0',
+      '#d0b8f0','#f8c8a0','#80d0d0','#f0d0e0','#b0d8f0',
+      '#e8c0a0','#c0d0f0','#f0e0c0','#a0d0e0','#e0b8d0'
+    ];
+    var particleCount = STAR_MAP_ENABLE_PULSE ? 200 : (window.innerWidth <= 768 ? 42 : 56);
+    for (var i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * canvasW, y: Math.random() * canvasH,
+        vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 1.8 + 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: Math.random() * 0.008 + 0.003,
+        opacity: Math.random() * 0.6 + 0.3,
+        isShooting: false, shootingLife: 0,
+        shootingVx: 0, shootingVy: 0,
+        _savedVx: 0, _savedVy: 0, _savedR: 0, _savedColor: ''
+      });
+    }
+    drawParticles();
+  }
+
+  function resizeParticles() {
+    canvasW = window.innerWidth; canvasH = window.innerHeight;
+    var dpr = canvasDpr();
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasH + 'px';
+    canvas.width = Math.round(canvasW * dpr);
+    canvas.height = Math.round(canvasH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawParticles() {
+    if (document.hidden) { animId = requestAnimationFrame(drawParticles); return; }
+    var frameNow = performance.now();
+    var minParticleInterval = STAR_MAP_ENABLE_PULSE ? 16 : 42;
+    if (frameNow - lastParticleFrame < minParticleInterval) {
+      animId = requestAnimationFrame(drawParticles);
+      return;
+    }
+    lastParticleFrame = frameNow;
+    var reduced = prefersReducedMotion();
+    ctx.clearRect(0, 0, canvasW, canvasH);
+    var px = (StarState._parallaxX || 0) * 0.018;
+    var py = (StarState._parallaxY || 0) * 0.018;
+
+    // Spawn shooting stars (rarely)
+    if (!reduced && Math.random() < 0.005) {
+      var idx = Math.floor(Math.random() * particles.length);
+      var sp = particles[idx];
+      if (!sp.isShooting) {
+        sp.isShooting = true;
+        sp.shootingLife = 1;
+        sp.shootingVx = (Math.random() * 2 + 1) * (Math.random() > 0.5 ? 1 : -1);
+        sp.shootingVy = (Math.random() * 1 + 0.3) * (Math.random() > 0.5 ? 1 : -1);
+        sp._savedVx = sp.vx; sp._savedVy = sp.vy;
+        sp._savedR = sp.r; sp._savedColor = sp.color;
+      }
+    }
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+
+      // Shooting star animation
+      if (p.isShooting) {
+        p.shootingLife -= 0.015;
+        p.vx = p.shootingVx * p.shootingLife * 3;
+        p.vy = p.shootingVy * p.shootingLife * 3;
+        p.r = p._savedR * 2.5 * p.shootingLife;
+        p.color = '#ffffff';
+        if (p.shootingLife <= 0) {
+          p.isShooting = false;
+          p.vx = p._savedVx; p.vy = p._savedVy;
+          p.r = p._savedR; p.color = p._savedColor;
+        }
+      }
+
+      if (!reduced) {
+        p.x += p.vx; p.y += p.vy;
+        p.wobble += p.wobbleSpeed;
+      }
+      if (p.x < -20) p.x = canvasW + 20; if (p.x > canvasW + 20) p.x = -20;
+      if (p.y < -20) p.y = canvasH + 20; if (p.y > canvasH + 20) p.y = -20;
+      var twinkle = STAR_MAP_ENABLE_PULSE ? (Math.sin(p.wobble * 3) * 0.3 + 0.7) : 0.78;
+      var alpha = p.opacity * twinkle;
+      ctx.beginPath();
+      ctx.arc(p.x + px * (0.8 + (p.r || 1) * 0.18), p.y + py * (0.8 + (p.r || 1) * 0.18), p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = alpha;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (STAR_MAP_ENABLE_PULSE) {
+      for (var i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          var dx = particles[i].x - particles[j].x;
+          var dy = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = 'rgba(240,220,180,' + (0.025 * (1 - dist / 150)) + ')';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+    animId = requestAnimationFrame(drawParticles);
+  }
+
+  // ── Star Canvas Setup ──
+  function initStarCanvas() {
+    starCanvas = $('starCanvas');
+    starCtx = starCanvas.getContext('2d');
+    resizeStarCanvas();
+  }
+
+  function resizeStarCanvas() {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var dpr = canvasDpr();
+    starCanvas.style.width = w + 'px';
+    starCanvas.style.height = h + 'px';
+    starCanvas.width = Math.round(w * dpr);
+    starCanvas.height = Math.round(h * dpr);
+    starCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    StarState._lastRenderKey = '';
+    invalidateUnionLayoutCache();
+  }
+
+  function invalidateUnionLayoutCache() {
+    StarState._unionLayoutCacheKey = '';
+    StarState._unionLayoutCache = null;
+    StarState._unionConnectionCacheKey = '';
+    StarState._unionConnectionCache = null;
+    StarState._sharedUnionMembers = {};
+  }
+
+  // ── Club Data Loading ──
+  function loadClubData() {
+    var cached = null;
+    try { cached = sessionStorage.getItem('star_club_data'); } catch (e) {}
+    if (cached) return Promise.resolve(JSON.parse(cached));
+    return Promise.all([
+      fetch('./data/clubs.json').then(function (r) { return r.json(); }),
+      fetch('./data/clubs_japan.json').then(function (r) { return r.json(); })
+    ]).then(function (results) {
+      var all = [];
+      var china = results[0]; var japan = results[1];
+      if (china && china.data) all = all.concat(china.data.map(function (c) { c._country = 'china'; return c; }));
+      if (japan && japan.data) all = all.concat(japan.data.map(function (c) { c._country = 'japan'; return c; }));
+      try { sessionStorage.setItem('star_club_data', JSON.stringify(all)); } catch (e) {}
+      return all;
+    });
+  }
+
+  function buildClubLookup(clubs) {
+    var map = {};
+    for (var i = 0; i < clubs.length; i++) {
+      var c = clubs[i];
+      map[c._country + '_' + c.id] = c;
+    }
+    return map;
+  }
+
+  // ── Personal Star Map ──
+  function resolvePersonalClubs() {
+    var active = StarState.memberships.filter(function (m) { return m.status === 'active'; });
+    var list = [];
+    for (var i = 0; i < active.length; i++) {
+      var m = active[i];
+      var key = (m.country || 'china') + '_' + m.club_id;
+      var club = StarState.clubLookup[key];
+      if (club) {
+        list.push({ club_id: m.club_id, country: m.country || 'china', name: club.name || club.display_name, school: club.school || '', province: club.province || club.prefecture || '', role: m.role });
+      }
+    }
+    StarState.personalClubs = list;
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function drawObservatoryBackdrop(W, H, intensity) {
+    var light = currentTheme() === 'light';
+    var glow = starCtx.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.78);
+    glow.addColorStop(0, light ? 'rgba(40,124,154,' + (0.10 * intensity) + ')' : 'rgba(95,183,215,' + (0.11 * intensity) + ')');
+    glow.addColorStop(0.46, light ? 'rgba(183,121,37,' + (0.040 * intensity) + ')' : 'rgba(240,192,96,' + (0.035 * intensity) + ')');
+    glow.addColorStop(1, light ? 'rgba(112,76,40,0.10)' : 'rgba(1,6,18,0.36)');
+    starCtx.fillStyle = glow;
+    starCtx.fillRect(0, 0, W, H);
+  }
+
+  function drawStarGlow(x, y, color, radius, strength) {
+    var glow = starCtx.createRadialGradient(x, y, 0, x, y, radius);
+    glow.addColorStop(0, hexToRgba(color, strength));
+    glow.addColorStop(0.45, hexToRgba(color, strength * 0.32));
+    glow.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(x, y, radius, 0, Math.PI * 2);
+    starCtx.fillStyle = glow;
+    starCtx.fill();
+  }
+
+  function drawFocusRing(x, y, radius, color, active) {
+    var time = (!STAR_MAP_ENABLE_PULSE || prefersReducedMotion()) ? 0 : (StarState.animationTime || 0);
+    var pulse = (STAR_MAP_ENABLE_PULSE && active) ? 1 + Math.sin(time * 0.004) * 0.055 : 1;
+    starCtx.save();
+    starCtx.translate(x, y);
+    starCtx.rotate(STAR_MAP_ENABLE_PULSE ? time * 0.00026 : 0.18);
+    starCtx.beginPath();
+    starCtx.ellipse(0, 0, radius * pulse, radius * 0.42 * pulse, 0, 0, Math.PI * 2);
+    starCtx.strokeStyle = hexToRgba(color || '#f0c060', active ? 0.46 : 0.22);
+    starCtx.lineWidth = active ? 1.8 : 1.1;
+    starCtx.shadowColor = hexToRgba(color || '#f0c060', active ? 0.28 : 0.12);
+    starCtx.shadowBlur = active ? 14 : 7;
+    starCtx.stroke();
+    starCtx.restore();
+  }
+
+  function targetKeyForClub(club) {
+    return 'club:' + (club && (club.country || club._country || 'china')) + ':' + (club && (club.club_id || club.id));
+  }
+
+  function targetKeyForUnion(union) {
+    return 'union:' + (union && union.id);
+  }
+
+  function triggerStarBurst(target) {
+    if (!target || prefersReducedMotion()) return;
+    StarState._activeBurst = {
+      x: target.x,
+      y: target.y,
+      color: target.color || '#f0c060',
+      start: performance.now(),
+      radius: target.radius || 28
+    };
+    StarState._lastRenderKey = '';
+  }
+
+  function drawStarBurst(x, y, color, startedAt, radius) {
+    if (prefersReducedMotion()) return false;
+    var elapsed = performance.now() - startedAt;
+    var duration = 280;
+    if (elapsed > duration) return false;
+    var t = Math.max(0, Math.min(1, elapsed / duration));
+    var ease = 1 - Math.pow(1 - t, 3);
+    var r = (radius || 28) * (1 + ease * 1.55);
+    var alpha = (1 - t) * 0.52;
+    drawStarGlow(x, y, color, r * 1.55, alpha * 0.34);
+    starCtx.save();
+    starCtx.beginPath();
+    starCtx.arc(x, y, r, 0, Math.PI * 2);
+    starCtx.strokeStyle = hexToRgba(color, alpha);
+    starCtx.lineWidth = 2.4 - t;
+    starCtx.shadowColor = hexToRgba(color, alpha * 0.7);
+    starCtx.shadowBlur = 18;
+    starCtx.stroke();
+    starCtx.restore();
+    return true;
+  }
+
+  function drawLineFlowParticle(x1, y1, x2, y2, options) {
+    if (prefersReducedMotion()) return;
+    var maxBudget = window.innerWidth <= 768 ? 18 : 34;
+    if (StarState._lineFlowBudget >= maxBudget) return;
+    StarState._lineFlowBudget++;
+    options = options || {};
+    var light = currentTheme() === 'light';
+    var index = options.index || 0;
+    var speed = options.speed || 0.00018;
+    var t = ((StarState.animationTime || performance.now()) * speed + index * 0.173) % 1;
+    var px = x1 + (x2 - x1) * t;
+    var py = y1 + (y2 - y1) * t;
+    var size = options.sparkSize || 6;
+    var spark = starCtx.createRadialGradient(px, py, 0, px, py, size);
+    spark.addColorStop(0, light ? 'rgba(255,247,224,0.76)' : 'rgba(255,255,255,0.82)');
+    spark.addColorStop(0.44, light ? 'rgba(40,124,154,0.26)' : 'rgba(95,183,215,0.30)');
+    spark.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(px, py, size, 0, Math.PI * 2);
+    starCtx.fillStyle = spark;
+    starCtx.fill();
+  }
+
+  function drawConstellationLine(x1, y1, x2, y2, options) {
+    options = options || {};
+    var light = currentTheme() === 'light';
+    var time = (!STAR_MAP_ENABLE_PULSE || prefersReducedMotion()) ? 0 : (StarState.animationTime || 0);
+    var alpha = Math.max(0.07, Math.min(options.strength || 0.18, 0.72));
+    var index = options.index || 0;
+    var grad = starCtx.createLinearGradient(x1, y1, x2, y2);
+    grad.addColorStop(0, light ? 'rgba(183,121,37,' + alpha + ')' : 'rgba(240,192,96,' + alpha + ')');
+    grad.addColorStop(0.52, light ? 'rgba(40,124,154,' + (alpha * 0.86) + ')' : 'rgba(95,183,215,' + (alpha * 0.90) + ')');
+    grad.addColorStop(1, light ? 'rgba(64,48,34,' + (alpha * 0.46) + ')' : 'rgba(220,234,255,' + (alpha * 0.55) + ')');
+
+    starCtx.save();
+    starCtx.strokeStyle = grad;
+    starCtx.lineWidth = options.width || (0.72 + alpha * 2.1);
+    starCtx.shadowColor = light ? 'rgba(40,124,154,0.13)' : 'rgba(136,187,238,0.20)';
+    starCtx.shadowBlur = options.glow === false ? 0 : 7;
+    starCtx.beginPath();
+    starCtx.moveTo(x1, y1);
+    if (options.curved) {
+      var mx = (x1 + x2) / 2;
+      var my = (y1 + y2) / 2 - (options.curveOffset || 18);
+      starCtx.quadraticCurveTo(mx, my, x2, y2);
+    } else {
+      starCtx.lineTo(x2, y2);
+    }
+    starCtx.stroke();
+    starCtx.restore();
+
+    if (options.flow && options.spark !== false) {
+      drawLineFlowParticle(x1, y1, x2, y2, options);
+    }
+
+    if (STAR_MAP_ENABLE_PULSE && options.spark !== false && !prefersReducedMotion()) {
+      var t = (time * 0.00008 + index * 0.137) % 1;
+      var px = x1 + (x2 - x1) * t;
+      var py = y1 + (y2 - y1) * t;
+      var spark = starCtx.createRadialGradient(px, py, 0, px, py, options.sparkSize || 9);
+      spark.addColorStop(0, light ? 'rgba(255,246,226,0.56)' : 'rgba(255,255,255,0.70)');
+      spark.addColorStop(0.45, light ? 'rgba(40,124,154,0.18)' : 'rgba(95,183,215,0.24)');
+      spark.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(px, py, options.sparkSize || 9, 0, Math.PI * 2);
+      starCtx.fillStyle = spark;
+      starCtx.fill();
+    }
+  }
+
+  function renderPersonalStarMap() {
+    var W = starViewportWidth(), H = starViewportHeight();
+    starCtx.clearRect(0, 0, W, H);
+    drawObservatoryBackdrop(W, H, 0.7);
+
+    starCtx.save();
+    starCtx.translate(StarState.panX, StarState.panY);
+    starCtx.scale(StarState.zoom, StarState.zoom);
+
+    // Center in world coords (canvas center mapped back through transform)
+    var isMobileView = W <= 768;
+    var cx = (W / 2 - StarState.panX) / StarState.zoom;
+    var cy = ((isMobileView ? H * 0.56 : H / 2) - StarState.panY) / StarState.zoom;
+
+    // Draw subtle nebula gradient behind center
+    var grad = starCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.45);
+    grad.addColorStop(0, 'rgba(200,160,80,0.04)');
+    grad.addColorStop(0.5, 'rgba(100,80,180,0.02)');
+    grad.addColorStop(1, 'transparent');
+    starCtx.fillStyle = grad;
+    starCtx.fillRect(0, 0, W, H);
+
+    // Draw user avatar / center
+    drawUserCenter(cx, cy);
+
+    var clubs = StarState.personalClubs;
+    if (!clubs.length) return;
+
+    // Sort clubs by role priority: representative > manager > member
+    var roleOrder = { representative: 3, manager: 2, member: 1 };
+    clubs.sort(function (a, b) {
+      return (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
+    });
+
+    // Distribute clubs on concentric elliptical orbits
+    var goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    var shortSide = Math.min(W, H);
+    var baseRadius = isMobileView ? Math.max(86, shortSide * 0.22) : shortSide * 0.11;
+    var ringSpacing = isMobileView ? Math.max(72, shortSide * 0.16) : shortSide * 0.095;
+    var firstRingCapacity = isMobileView ? 3 : 4;
+    var orbitXScale = isMobileView ? 0.82 : 0.68;
+    var orbitYScale = isMobileView ? 0.95 : 1;
+
+    var positions = [];
+    var idx = 0;
+    var ring = 0;
+    var remaining = clubs.length;
+    while (idx < clubs.length && ring < 8) {
+      var capacity = ring === 0 ? firstRingCapacity : Math.floor(firstRingCapacity * Math.pow(isMobileView ? 1.45 : 1.35, ring));
+      var count = Math.min(capacity, remaining);
+      var radius = baseRadius + ring * ringSpacing;
+      var rotOffset = ring * goldenAngle;
+      for (var j = 0; j < count; j++) {
+        var angle = (2 * Math.PI * j / count) + rotOffset;
+        var x = cx + Math.cos(angle) * radius * orbitXScale;
+        var y = cy + Math.sin(angle) * radius * orbitYScale;
+        positions.push({ x: x, y: y, club: clubs[idx], ring: ring });
+        idx++;
+      }
+      remaining -= count;
+      ring++;
+    }
+
+    // Draw constellation lines from center
+    for (var i = 0; i < positions.length; i++) {
+      var lineKey = targetKeyForClub(positions[i].club);
+      var lineActive = StarState.searchHighlightKey === lineKey || (StarState.hoveredStar && targetKeyForClub(StarState.hoveredStar) === lineKey);
+      drawConstellationLine(cx, cy, positions[i].x, positions[i].y, { strength: lineActive ? 0.27 : 0.17, index: i, spark: false, flow: lineActive || i % 3 === 0 });
+    }
+
+    // Draw same-province connections
+    var byProvince = {};
+    for (var i = 0; i < positions.length; i++) {
+      var prov = positions[i].club.province || '__unknown__';
+      if (!byProvince[prov]) byProvince[prov] = [];
+      byProvince[prov].push(positions[i]);
+    }
+    for (var prov in byProvince) {
+      var group = byProvince[prov];
+      if (group.length < 2) continue;
+      group.sort(function (a, b) {
+        return Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx);
+      });
+      for (var a = 0; a < group.length - 1; a++) {
+        drawConstellationLine(group[a].x, group[a].y, group[a + 1].x, group[a + 1].y, { strength: 0.09, index: a, spark: false, width: 0.75, flow: StarState.searchHighlightKey && (targetKeyForClub(group[a].club) === StarState.searchHighlightKey || targetKeyForClub(group[a + 1].club) === StarState.searchHighlightKey) });
+      }
+    }
+
+    // Draw stars
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      var isHovered = StarState.hoveredStar && StarState.hoveredStar.club_id === p.club.club_id && StarState.hoveredStar.country === p.club.country;
+      var isSearchHit = StarState.searchHighlightKey === targetKeyForClub(p.club);
+      drawClubStar(p.x, p.y, p.club, isHovered, p.ring, p.club.role, StarState.animationTime);
+      if (isSearchHit) drawFocusRing(p.x, p.y, 28, '#5fb7d7', true);
+    }
+
+    if (StarState._activeBurst) {
+      if (!drawStarBurst(StarState._activeBurst.x, StarState._activeBurst.y, StarState._activeBurst.color, StarState._activeBurst.start, StarState._activeBurst.radius)) {
+        StarState._activeBurst = null;
+      }
+    }
+
+    // Store positions for hit testing
+    StarState._positions = positions;
+    StarState._cx = cx;
+    StarState._cy = cy;
+
+    starCtx.restore();
+  }
+
+  function drawUserCenter(cx, cy) {
+    var light = currentTheme() === 'light';
+    drawStarGlow(cx, cy, '#f0c060', 72, light ? 0.17 : 0.24);
+    drawFocusRing(cx, cy, 42, '#f0c060', true);
+
+    // Avatar circle
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, 22, 0, Math.PI * 2);
+    starCtx.fillStyle = light ? 'rgba(255,244,220,0.86)' : 'rgba(231,76,60,0.18)';
+    starCtx.fill();
+    starCtx.strokeStyle = light ? 'rgba(183,121,37,0.54)' : 'rgba(240,200,100,0.62)';
+    starCtx.lineWidth = 2;
+    starCtx.stroke();
+
+    // Initial letter
+    var initial = 'U';
+    if (StarState.user) {
+      initial = (StarState.user.nickname || StarState.user.username || 'U').charAt(0).toUpperCase();
+    }
+    starCtx.fillStyle = light ? 'rgba(42,31,24,0.82)' : 'rgba(255,255,255,0.88)';
+    starCtx.font = '700 18px "Noto Sans SC", sans-serif';
+    starCtx.textAlign = 'center';
+    starCtx.textBaseline = 'middle';
+    starCtx.fillText(initial, cx, cy + 1);
+
+    // Label
+    starCtx.fillStyle = light ? 'rgba(82,64,52,0.62)' : 'rgba(255,255,255,0.50)';
+    starCtx.font = '10px "Noto Sans SC", sans-serif';
+    starCtx.fillText('我', cx, cy + 38);
+  }
+
+  function drawClubStar(x, y, club, isHovered, ring, role, time) {
+    var light = currentTheme() === 'light';
+    var memberPalette = [
+      '#f0c060', '#88bbee', '#c8a0e0', '#7ec8a0',
+      '#e8a0a0', '#a0d8e8', '#d8a0c0', '#90c8c0'
+    ];
+
+    var roleSize = 0;
+    var roleColor = '';
+    var roleLabel = '';
+    var isSpecial = false;
+
+    if (role === 'representative') {
+      roleSize = 4; roleColor = '#f0c060'; roleLabel = '负责人'; isSpecial = true;
+    } else if (role === 'manager') {
+      roleSize = 2; roleColor = '#5fb7d7'; roleLabel = '管理'; isSpecial = true;
+    } else {
+      var colorIdx = ((ring || 0) * 3 + ((club.club_id || 0) % 3)) % memberPalette.length;
+      roleColor = memberPalette[colorIdx];
+    }
+
+    var baseSize = 5;
+    var hoverPulse = 1;
+    var size = isHovered ? ((baseSize + 4 + roleSize) * hoverPulse) : (baseSize + ring * 0.4 + roleSize);
+    drawStarGlow(x, y, roleColor, size * (isHovered ? 4.8 : 3.0), isHovered ? 0.24 : 0.13);
+    if (isHovered) drawFocusRing(x, y, size + 9, roleColor, true);
+
+    if (isSpecial) {
+      var t = time || 0;
+      for (var g = 3; g >= 1; g--) {
+        var pulseScale = 1;
+        if (STAR_MAP_ENABLE_PULSE && t) {
+          pulseScale = 1 + Math.sin(t * 0.003 + (club.club_id || 0) * 0.7) * 0.08;
+        }
+        var glowRadius = size * (2.5 + g * 1.3) * pulseScale;
+        var alpha = 0.2 - g * 0.05;
+        var glow = starCtx.createRadialGradient(x, y, size * 0.4, x, y, glowRadius);
+        glow.addColorStop(0, hexToRgba(roleColor, alpha + 0.08));
+        glow.addColorStop(0.5, hexToRgba(roleColor, alpha * 0.6));
+        glow.addColorStop(1, 'transparent');
+        starCtx.beginPath();
+        starCtx.arc(x, y, glowRadius, 0, Math.PI * 2);
+        starCtx.fillStyle = glow;
+        starCtx.fill();
+      }
+
+      // Outer ring
+      var ringAlpha = (STAR_MAP_ENABLE_PULSE && t) ? (0.4 + Math.sin(t * 0.004 + (club.club_id || 0)) * 0.08) : 0.4;
+      starCtx.beginPath();
+      starCtx.arc(x, y, size + 4, 0, Math.PI * 2);
+      starCtx.strokeStyle = hexToRgba(roleColor, ringAlpha);
+      starCtx.lineWidth = 2;
+      starCtx.stroke();
+
+      // Sparkle particles for representative
+      if (STAR_MAP_ENABLE_PULSE && role === 'representative' && t) {
+        var sparkCount = 6;
+        for (var s = 0; s < sparkCount; s++) {
+          var sparkAngle = t * 0.001 + (s * Math.PI * 2) / sparkCount;
+          var sparkDist = size + 7 + Math.sin(t * 0.005 + s) * 3;
+          var sx = x + Math.cos(sparkAngle) * sparkDist;
+          var sy = y + Math.sin(sparkAngle) * sparkDist;
+          var sparkAlpha = 0.25 + Math.sin(t * 0.008 + s * 1.5) * 0.15;
+          starCtx.beginPath();
+          starCtx.arc(sx, sy, 1.4, 0, Math.PI * 2);
+          starCtx.fillStyle = 'rgba(240,220,160,' + Math.max(0, Math.min(1, sparkAlpha)) + ')';
+          starCtx.fill();
+        }
+      }
+    } else {
+      // Simple glow for regular members
+      var glow = starCtx.createRadialGradient(x, y, 0, x, y, size * 2.5);
+      glow.addColorStop(0, hexToRgba(roleColor, 0.18));
+      glow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(x, y, size * 2.5, 0, Math.PI * 2);
+      starCtx.fillStyle = glow;
+      starCtx.fill();
+    }
+
+    // Star body
+    starCtx.beginPath();
+    starCtx.arc(x, y, size, 0, Math.PI * 2);
+    starCtx.fillStyle = roleColor;
+    starCtx.fill();
+
+    // Bright center highlight
+    starCtx.beginPath();
+    starCtx.arc(x, y, size * 0.35, 0, Math.PI * 2);
+    starCtx.fillStyle = 'rgba(255,255,255,0.22)';
+    starCtx.fill();
+
+    // Stroke
+    if (isHovered || isSpecial) {
+      starCtx.strokeStyle = light
+        ? 'rgba(66,42,28,' + (isSpecial ? '0.30' : '0.24') + ')'
+        : 'rgba(255,255,255,' + (isSpecial ? '0.55' : '0.5') + ')';
+      starCtx.lineWidth = isSpecial ? 2 : 1.5;
+      starCtx.stroke();
+    }
+
+    // Name label
+    var label = club.name || '';
+    if (label.length > 10) label = label.substring(0, 9) + '...';
+    starCtx.fillStyle = light
+      ? 'rgba(44,31,24,' + (isHovered ? '0.86' : '0.58') + ')'
+      : 'rgba(255,255,255,' + (isHovered ? '0.85' : '0.45') + ')';
+    starCtx.font = (isHovered ? '11' : '9') + 'px "Noto Sans SC", sans-serif';
+    starCtx.textAlign = 'center';
+    starCtx.fillText(label, x, y + size + 12);
+
+    // Role label
+    if (roleLabel) {
+      starCtx.fillStyle = roleColor;
+      starCtx.font = 'bold 9px "Noto Sans SC", sans-serif';
+      starCtx.fillText(roleLabel, x, y + size + 23);
+    }
+  }
+
+  // ── Union Star Map ──
+  function renderUnionStarMapLegacyA() {
+    var W = starViewportWidth(), H = starViewportHeight();
+    starCtx.clearRect(0, 0, W, H);
+
+    // Reset union member positions for hit testing
+    StarState._allUnionMemberPositions = [];
+
+    // Vignette (screen space)
+    (function() {
+      var vignette = starCtx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.35, W/2, H/2, Math.max(W,H)*0.75);
+      vignette.addColorStop(0, 'transparent');
+      vignette.addColorStop(0.5, 'rgba(20,10,40,0.03)');
+      vignette.addColorStop(1, 'rgba(5,2,10,0.18)');
+      starCtx.fillStyle = vignette;
+      starCtx.fillRect(0, 0, W, H);
+    })();
+
+    starCtx.save();
+    starCtx.translate(StarState.panX, StarState.panY);
+    starCtx.scale(StarState.zoom, StarState.zoom);
+
+    // Canvas dimensions in world coords
+    var wW = (W - StarState.panX) / StarState.zoom;
+    var wH = (H - StarState.panY) / StarState.zoom;
+
+    var unions = StarState.unions;
+    if (!unions.length) { starCtx.restore(); return; }
+
+    // Separate large (>=6 members) and small (<6 members) unions
+    var largeUnions = [];
+    var smallUnions = [];
+    for (var i = 0; i < unions.length; i++) {
+      var mc = unions[i].member_count || 0;
+      if (mc >= 6) { largeUnions.push(unions[i]); }
+      else { smallUnions.push(unions[i]); }
+    }
+
+    var marginX = wW * 0.06, marginY = wH * 0.08;
+    var centerX = wW / 2, centerY = wH * 0.42;
+    var clusterPositions = [];
+    var gag = Math.PI * (3 - Math.sqrt(5));
+
+    // Large unions: golden spiral centered
+    for (var i = 0; i < largeUnions.length; i++) {
+      var u = largeUnions[i];
+      var mc = u.member_count || 0;
+      var weight = Math.min(mc, 20);
+      var clusterRadius = 40 + weight * 3.2;
+      var angle = i * gag;
+      var dist = i === 0 ? 0 : (Math.min(wW, wH) * 0.05 + i * 55);
+
+      var cx = centerX + Math.cos(angle) * dist;
+      var cy = centerY + Math.sin(angle) * dist * 0.65;
+
+      cx = Math.max(marginX + clusterRadius, Math.min(wW - marginX - clusterRadius, cx));
+      cy = Math.max(marginY + clusterRadius, Math.min(wH - marginY - clusterRadius, cy));
+
+      drawUnionCluster(cx, cy, u, i, clusterRadius);
+      drawUnionMembers(cx, cy, u, clusterRadius);
+      clusterPositions.push({ x: cx, y: cy, union: u, index: i, clusterRadius: clusterRadius });
+    }
+
+    // Small unions: compact grid in bottom-right quadrant
+    if (smallUnions.length > 0) {
+      var gridCols = Math.min(smallUnions.length, Math.max(2, Math.ceil(Math.sqrt(smallUnions.length * 2))));
+      var gridStartX = wW * 0.48;
+      var gridStartY = wH * 0.36;
+      var gridCellW = (wW * 0.44) / gridCols;
+      var gridRows = Math.ceil(smallUnions.length / gridCols);
+      var gridCellH = Math.min(88, (wH * 0.44) / Math.max(gridRows, 1));
+
+      for (var i = 0; i < smallUnions.length; i++) {
+        var u = smallUnions[i];
+        var row = Math.floor(i / gridCols);
+        var col = i % gridCols;
+        var cx = gridStartX + col * gridCellW + gridCellW / 2;
+        var cy = gridStartY + row * gridCellH + gridCellH / 2;
+        var clusterRadius = 45;
+
+        drawUnionCluster(cx, cy, u, largeUnions.length + i, clusterRadius);
+        drawUnionMembers(cx, cy, u, clusterRadius);
+        clusterPositions.push({ x: cx, y: cy, union: u, index: largeUnions.length + i, clusterRadius: clusterRadius });
+      }
+    }
+
+    // Draw region connections between unions
+    var connections = buildUnionConnections(clusterPositions);
+    starCtx.strokeStyle = 'rgba(240,200,160,0.12)';
+    starCtx.lineWidth = 0.8;
+    for (var i = 0; i < connections.length; i++) {
+      var conn = connections[i];
+      starCtx.beginPath();
+      starCtx.moveTo(conn.from.x, conn.from.y);
+      starCtx.lineTo(conn.to.x, conn.to.y);
+      starCtx.stroke();
+    }
+
+    StarState._unionPositions = clusterPositions;
+
+    starCtx.restore();
+  }
+
+  function drawUnionMembersLegacyA(cx, cy, union, clusterRadius) {
+    var members = union._members || [];
+    if (!members.length) return;
+    var cr = clusterRadius || 40;
+    var count = members.length;
+    var orbitR = Math.max(cr * 0.9, 35);
+
+    for (var j = 0; j < count; j++) {
+      var angle = (2 * Math.PI * j / count) - Math.PI / 2;
+      var sx = cx + Math.cos(angle) * orbitR;
+      var sy = cy + Math.sin(angle) * orbitR * 0.7;
+
+      // Core → member connection line
+      starCtx.beginPath();
+      starCtx.moveTo(cx, cy);
+      starCtx.lineTo(sx, sy);
+      starCtx.strokeStyle = 'rgba(200,180,220,0.25)';
+      starCtx.setLineDash([3, 4]);
+      starCtx.lineWidth = 0.8;
+      starCtx.stroke();
+      starCtx.setLineDash([]);
+
+      // Star glow
+      var sg = starCtx.createRadialGradient(sx, sy, 0, sx, sy, 8);
+      sg.addColorStop(0, 'rgba(200,200,240,0.4)');
+      sg.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, 8, 0, Math.PI * 2);
+      starCtx.fillStyle = sg;
+      starCtx.fill();
+
+      // Star body
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, 3, 0, Math.PI * 2);
+      starCtx.fillStyle = 'rgba(240,220,200,0.85)';
+      starCtx.fill();
+
+      // Center highlight
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+      starCtx.fillStyle = 'rgba(255,255,255,0.4)';
+      starCtx.fill();
+
+      // Name label
+      var label = members[j].club_name || ('同好会#' + members[j].club_id);
+      if (label.length > 10) label = label.substring(0, 9) + '...';
+      var labelOffX = Math.cos(angle) * 12;
+      var labelOffY = Math.sin(angle) * 12 + 4;
+      starCtx.fillStyle = 'rgba(255,255,255,0.55)';
+      starCtx.font = '8px "Noto Sans SC", sans-serif';
+      starCtx.textAlign = 'center';
+      starCtx.fillText(label, sx + labelOffX, sy + labelOffY);
+
+      // Store position for hit testing
+      if (!StarState._allUnionMemberPositions) StarState._allUnionMemberPositions = [];
+      StarState._allUnionMemberPositions.push({ x: sx, y: sy, club: {
+        club_id: members[j].club_id,
+        country: members[j].club_country || 'china',
+        name: members[j].club_name || ('同好会#' + members[j].club_id)
+      }, unionId: union.id });
+    }
+  }
+
+  function hitTestUnionMember(mx, my) {
+    var allPos = StarState._allUnionMemberPositions;
+    if (!allPos) return null;
+    var w = screenToWorld(mx, my);
+    for (var i = 0; i < allPos.length; i++) {
+      var dx = w.x - allPos[i].x, dy = w.y - allPos[i].y;
+      if (Math.sqrt(dx * dx + dy * dy) < 12) return allPos[i].club;
+    }
+    return null;
+  }
+
+  function drawUnionClusterLegacyA(cx, cy, union, index, clusterRadius) {
+    var cr = clusterRadius || 40;
+    // Nebula background
+    var nebula = starCtx.createRadialGradient(cx, cy, 0, cx, cy, cr * 1.6);
+    nebula.addColorStop(0, 'rgba(120,100,200,0.06)');
+    nebula.addColorStop(0.5, 'rgba(200,160,80,0.03)');
+    nebula.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, cr * 1.6, 0, Math.PI * 2);
+    starCtx.fillStyle = nebula;
+    starCtx.fill();
+
+    // Faint ring
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, cr, 0, Math.PI * 2);
+    starCtx.strokeStyle = 'rgba(255,255,255,0.04)';
+    starCtx.lineWidth = 1;
+    starCtx.stroke();
+
+    // Central union star
+    var count = union.member_count || 0;
+    var isSelected = StarState.selectedUnion && StarState.selectedUnion.id === union.id;
+    var centerSize = isSelected ? 16 : 12;
+    var starColor = union.star_color || '#f0c060';
+    // Glow
+    for (var r = 2; r >= 1; r--) {
+      var glow = starCtx.createRadialGradient(cx, cy, 0, cx, cy, centerSize + r * 8);
+      var glowColor = hexToRgba(starColor, 0.4 - r * 0.12);
+      glow.addColorStop(0, glowColor);
+      glow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(cx, cy, centerSize + r * 8, 0, Math.PI * 2);
+      starCtx.fillStyle = glow;
+      starCtx.fill();
+    }
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, centerSize, 0, Math.PI * 2);
+    starCtx.fillStyle = starColor;
+    starCtx.fill();
+    if (isSelected) {
+      starCtx.strokeStyle = 'rgba(255,255,255,0.6)';
+      starCtx.lineWidth = 2;
+      starCtx.stroke();
+    }
+
+    // Name / labels
+    {
+      var name = union.name || '';
+      if (name.length > 14) name = name.substring(0, 13) + '...';
+      starCtx.fillStyle = 'rgba(255,255,255,0.7)';
+      starCtx.font = '11px "Noto Sans SC", sans-serif';
+      starCtx.textAlign = 'center';
+      starCtx.fillText(name, cx, cy + centerSize + 16);
+
+      // Member count
+      starCtx.fillStyle = 'rgba(255,255,255,0.35)';
+      starCtx.font = '9px "Noto Sans SC", sans-serif';
+      starCtx.fillText(count + ' 个同好会', cx, cy + centerSize + 30);
+
+      // Bound club name
+      if (union.bound_club_id) {
+        var boundName = union.bound_club_name || ('同好会#' + union.bound_club_id);
+        if (boundName.length > 10) boundName = boundName.substring(0, 9) + '...';
+        starCtx.fillStyle = 'rgba(240,192,96,0.55)';
+        starCtx.font = '8px "Noto Sans SC", sans-serif';
+        starCtx.fillText('群: ' + boundName, cx, cy + centerSize + 41);
+      }
+    }
+
+    // Manageable indicator dot
+    if (union.can_manage) {
+      var indX = cx + centerSize + 6, indY = cy - centerSize - 6;
+      var indGlow = starCtx.createRadialGradient(indX, indY, 0, indX, indY, 6);
+      indGlow.addColorStop(0, 'rgba(240,192,96,0.3)');
+      indGlow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(indX, indY, 6, 0, Math.PI * 2);
+      starCtx.fillStyle = indGlow;
+      starCtx.fill();
+      starCtx.beginPath();
+      starCtx.arc(indX, indY, 3.5, 0, Math.PI * 2);
+      starCtx.fillStyle = 'rgba(240,192,96,0.85)';
+      starCtx.fill();
+    }
+  }
+
+  // ── Hit Testing ──
+  function screenToWorld(mx, my) {
+    return {
+      x: (mx - StarState.panX) / StarState.zoom,
+      y: (my - StarState.panY) / StarState.zoom
+    };
+  }
+
+  function hitTestPersonal(mx, my) {
+    var positions = StarState._positions;
+    if (!positions) return null;
+    var w = screenToWorld(mx, my);
+    var best = null, bestDist = 22 / StarState.zoom;
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      var dx = w.x - p.x, dy = w.y - p.y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = p; }
+    }
+    return best ? best.club : null;
+  }
+
+  function hitTestUnion(mx, my) {
+    var positions = StarState._unionPositions;
+    if (!positions) return null;
+    var w = screenToWorld(mx, my);
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      var dx = w.x - p.x, dy = w.y - p.y;
+      var hitRadius = p.clusterRadius ? p.clusterRadius * 0.9 : 30;
+      if (Math.sqrt(dx * dx + dy * dy) < hitRadius) return p.union;
+    }
+    return null;
+  }
+
+  function buildUnionConnections(positions) {
+    var byRegion = {};
+    for (var i = 0; i < positions.length; i++) {
+      var region = positions[i].union.region || '__unknown__';
+      if (!byRegion[region]) byRegion[region] = [];
+      byRegion[region].push(positions[i]);
+    }
+    var connections = [];
+    for (var region in byRegion) {
+      var group = byRegion[region];
+      if (group.length < 2) continue;
+      for (var a = 0; a < group.length; a++) {
+        for (var b = a + 1; b < group.length; b++) {
+          connections.push({ from: group[a], to: group[b] });
+        }
+      }
+    }
+    return connections;
+  }
+
+  // ── Rendering Frame ──
+  function drawCanvasLabel(text, x, y, options) {
+    options = options || {};
+    text = String(text || '');
+    if (!text) return;
+    var font = options.font || '10px "Noto Sans SC", sans-serif';
+    var padX = options.padX || 8;
+    var padY = options.padY || 4;
+    starCtx.save();
+    starCtx.font = font;
+    var palette = unionThemePalette();
+    var width = starCtx.measureText(text).width + padX * 2;
+    var height = (options.height || 20);
+    var rx = x - width / 2;
+    var ry = y - height / 2;
+    starCtx.beginPath();
+    if (starCtx.roundRect) {
+      starCtx.roundRect(rx, ry, width, height, options.radius || 6);
+    } else {
+      var r = options.radius || 6;
+      starCtx.moveTo(rx + r, ry);
+      starCtx.lineTo(rx + width - r, ry);
+      starCtx.quadraticCurveTo(rx + width, ry, rx + width, ry + r);
+      starCtx.lineTo(rx + width, ry + height - r);
+      starCtx.quadraticCurveTo(rx + width, ry + height, rx + width - r, ry + height);
+      starCtx.lineTo(rx + r, ry + height);
+      starCtx.quadraticCurveTo(rx, ry + height, rx, ry + height - r);
+      starCtx.lineTo(rx, ry + r);
+      starCtx.quadraticCurveTo(rx, ry, rx + r, ry);
+    }
+    starCtx.fillStyle = options.bg || palette.labelBg;
+    starCtx.fill();
+    starCtx.strokeStyle = options.border || palette.labelBorder;
+    starCtx.lineWidth = 1;
+    starCtx.stroke();
+    starCtx.fillStyle = options.color || palette.labelText;
+    starCtx.textAlign = 'center';
+    starCtx.textBaseline = 'middle';
+    starCtx.fillText(text, x, y + 0.5);
+    starCtx.restore();
+  }
+
+  function drawUnionGalaxyFieldV2(cx, cy, width, height) {
+    var time = STAR_MAP_ENABLE_PULSE ? (StarState.animationTime || 0) : 0;
+    var palette = unionThemePalette();
+    for (var r = 0; r < 4; r++) {
+      starCtx.save();
+      starCtx.translate(cx, cy);
+      starCtx.rotate(r * 0.55 + (STAR_MAP_ENABLE_PULSE ? time * 0.000026 : 0));
+      starCtx.beginPath();
+      starCtx.ellipse(0, 0, width * (0.18 + r * 0.062), height * (0.075 + r * 0.028), 0, 0, Math.PI * 2);
+      starCtx.strokeStyle = r % 2 ? palette.galaxyA : palette.galaxyB;
+      starCtx.lineWidth = 1;
+      starCtx.stroke();
+      starCtx.restore();
+    }
+    var core = starCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(width, height) * 0.36);
+    core.addColorStop(0, palette.galaxyCoreA);
+    core.addColorStop(0.44, palette.galaxyCoreB);
+    core.addColorStop(1, 'transparent');
+    starCtx.fillStyle = core;
+    starCtx.fillRect(0, 0, width, height);
+  }
+
+  function getUnionLayoutCacheKey(unions) {
+    var parts = [
+      starViewportWidth(),
+      starViewportHeight(),
+      unions.length,
+      JSON.stringify(StarState._draggedUnionOffsets || {})
+    ];
+    for (var i = 0; i < unions.length; i++) {
+      var u = unions[i];
+      parts.push([
+        u.id,
+        u.member_count || 0,
+        (u._members && u._members.length) || 0,
+        u.region || '',
+        u.bound_club_id || ''
+      ].join(':'));
+    }
+    return parts.join('|');
+  }
+
+  function buildUnionConstellationLayout(unions) {
+    var cacheKey = getUnionLayoutCacheKey(unions);
+    if (StarState._unionLayoutCache && StarState._unionLayoutCacheKey === cacheKey) {
+      return StarState._unionLayoutCache;
+    }
+    var sorted = unions.slice().sort(function (a, b) {
+      return ((b.member_count || 0) - (a.member_count || 0)) || String(a.name || '').localeCompare(String(b.name || ''));
+    });
+    var world = getUnionWorldSize(sorted.length);
+    var centerX = world.width / 2;
+    var centerY = world.height / 2;
+    var positions = [];
+
+    for (var i = 0; i < sorted.length; i++) {
+      var union = sorted[i];
+      var memberCount = Math.max((union._members && union._members.length) || union.member_count || 0, 0);
+      var memberRings = Math.max(1, Math.ceil(Math.max(memberCount, 1) / 7));
+      var clusterRadius = Math.min(156, 92 + (memberRings - 1) * 30 + Math.sqrt(Math.max(memberCount, 1)) * 2.2);
+      var x = centerX;
+      var y = centerY;
+      if (i > 0) {
+        var remaining = i - 1;
+        var ring = 0;
+        var cap = 6;
+        while (remaining >= cap) {
+          remaining -= cap;
+          ring++;
+          cap = 6 + ring * 4;
+        }
+        var angle = (remaining / cap) * Math.PI * 2 + ring * 0.21 - Math.PI / 2;
+        var radius = 420 + ring * 440;
+        var oval = 0.82;
+        var jitter = ((union.id || i) % 7 - 3) * 16;
+        x = centerX + Math.cos(angle) * (radius + jitter);
+        y = centerY + Math.sin(angle) * (radius * oval + jitter * 0.5);
+      }
+      var margin = clusterRadius + 160;
+
+      x = Math.max(margin, Math.min(world.width - margin, x));
+      y = Math.max(margin, Math.min(world.height - margin, y));
+      var manualOffset = StarState._draggedUnionOffsets && StarState._draggedUnionOffsets[union.id];
+      if (manualOffset) {
+        x += manualOffset.x || 0;
+        y += manualOffset.y || 0;
+        x = Math.max(margin, Math.min(world.width - margin, x));
+        y = Math.max(margin, Math.min(world.height - margin, y));
+      }
+      positions.push({
+        x: x,
+        y: y,
+        union: union,
+        index: i,
+        layoutRing: i === 0 ? 0 : ring + 1,
+        clusterRadius: clusterRadius,
+        hitRadius: Math.max(28, Math.min(48, 24 + Math.sqrt(Math.max(memberCount, 1)) * 4)),
+        memberCount: memberCount
+      });
+    }
+    relaxUnionClusterSpacing(positions, world, centerX, centerY);
+    for (var p = 0; p < positions.length; p++) {
+      var pos = positions[p];
+      pos.memberPositions = buildUnionMemberPositions(pos.x, pos.y, pos.union._members || [], pos.clusterRadius, p);
+      for (var mp = 0; mp < pos.memberPositions.length; mp++) {
+        pos.memberPositions[mp].club._unionId = pos.union.id;
+        pos.memberPositions[mp].club._unionName = pos.union.name || '';
+      }
+    }
+    var layout = { positions: positions, world: world, centerX: centerX, centerY: centerY };
+    layout.sharedMembers = buildSharedUnionMembershipIndex(positions);
+    StarState._sharedUnionMembers = layout.sharedMembers;
+    StarState._unionLayoutCacheKey = cacheKey;
+    StarState._unionLayoutCache = layout;
+    StarState._unionConnectionCacheKey = '';
+    StarState._unionConnectionCache = null;
+    return layout;
+  }
+
+  function buildSharedUnionMembershipIndex(positions) {
+    var map = {};
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      var members = p.memberPositions || [];
+      for (var j = 0; j < members.length; j++) {
+        var key = targetKeyForClub(members[j].club);
+        if (!map[key]) map[key] = [];
+        map[key].push({ x: members[j].x, y: members[j].y, club: members[j].club, union: p.union, cluster: p });
+      }
+    }
+    for (var key in map) {
+      if (map[key].length < 2) {
+        delete map[key];
+        continue;
+      }
+      var names = [];
+      for (var n = 0; n < map[key].length; n++) {
+        if (map[key][n].union && map[key][n].union.name) names.push(map[key][n].union.name);
+      }
+      for (var e = 0; e < map[key].length; e++) {
+        map[key][e].club._sharedUnionCount = map[key].length;
+        map[key][e].club._sharedUnionNames = names;
+      }
+    }
+    return map;
+  }
+
+  function relaxUnionClusterSpacing(positions, world, centerX, centerY) {
+    if (!positions || positions.length < 2) return;
+    for (var pass = 0; pass < 5; pass++) {
+      for (var i = 0; i < positions.length; i++) {
+        for (var j = i + 1; j < positions.length; j++) {
+          var a = positions[i], b = positions[j];
+          var dx = b.x - a.x;
+          var dy = b.y - a.y;
+          var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          var desired = Math.max(360, (a.clusterRadius || 100) + (b.clusterRadius || 100) + 190);
+          if (dist >= desired) continue;
+          var push = (desired - dist) * 0.5;
+          var ux = dx / dist;
+          var uy = dy / dist;
+          if (i === 0) {
+            b.x += ux * push * 1.8;
+            b.y += uy * push * 1.8;
+          } else {
+            a.x -= ux * push;
+            a.y -= uy * push;
+            b.x += ux * push;
+            b.y += uy * push;
+          }
+        }
+      }
+      var centerWasDragged = positions[0] && StarState._draggedUnionOffsets && StarState._draggedUnionOffsets[positions[0].union.id];
+      if (!centerWasDragged) {
+        positions[0].x = centerX;
+        positions[0].y = centerY;
+      }
+      for (var k = 1; k < positions.length; k++) {
+        var p = positions[k];
+        if (StarState._draggedUnionOffsets && StarState._draggedUnionOffsets[p.union.id]) continue;
+        var margin = (p.clusterRadius || 100) + 180;
+        p.x = Math.max(margin, Math.min(world.width - margin, p.x));
+        p.y = Math.max(margin, Math.min(world.height - margin, p.y));
+      }
+    }
+  }
+
+  function buildUnionLayoutV2(unions) {
+    return buildUnionConstellationLayout(unions);
+  }
+
+  function getUserMembershipMap() {
+    var map = {};
+    var memberships = StarState.memberships || [];
+    for (var i = 0; i < memberships.length; i++) {
+      var m = memberships[i];
+      if (m.status && m.status !== 'active') continue;
+      map[(m.country || 'china') + '_' + m.club_id] = m;
+    }
+    return map;
+  }
+
+  function scoreUnionForCurrentUser(union, membershipMap) {
+    if (!union || !membershipMap) return 0;
+    var score = 0;
+    var roleWeight = { representative: 80, manager: 52, member: 24 };
+    var boundKey = (union.bound_club_country || 'china') + '_' + union.bound_club_id;
+    if (union.bound_club_id && membershipMap[boundKey]) {
+      var boundRole = membershipMap[boundKey].role || 'member';
+      score += 140 + (roleWeight[boundRole] || 18);
+    }
+    var members = union._members || [];
+    for (var i = 0; i < members.length; i++) {
+      var key = (members[i].club_country || 'china') + '_' + members[i].club_id;
+      if (!membershipMap[key]) continue;
+      var role = membershipMap[key].role || members[i].role || 'member';
+      score += roleWeight[role] || 18;
+    }
+    score += Math.min((union.member_count || members.length || 0), 30) * 0.4;
+    return score;
+  }
+
+  function findPreferredUnionForCurrentUser() {
+    var unions = StarState.unions || [];
+    if (!unions.length) return null;
+    var membershipMap = getUserMembershipMap();
+    var best = null;
+    var bestScore = 0;
+    for (var i = 0; i < unions.length; i++) {
+      var score = scoreUnionForCurrentUser(unions[i], membershipMap);
+      if (score > bestScore) {
+        bestScore = score;
+        best = unions[i];
+      }
+    }
+    return bestScore > 0 ? best : null;
+  }
+
+  function focusPreferredUnionIfNeeded() {
+    if (StarState._didAutoFocusUnion || StarState.submode !== 'union') return;
+    var preferred = findPreferredUnionForCurrentUser();
+    if (!preferred) return;
+    renderFrame();
+    var positions = StarState._unionPositions || [];
+    for (var i = 0; i < positions.length; i++) {
+      if (positions[i].union && positions[i].union.id === preferred.id) {
+        StarState.selectedUnion = preferred;
+        StarState._didAutoFocusUnion = true;
+        focusWorldPoint(positions[i].x, positions[i].y, Math.max(StarState.targetZoom, window.innerWidth <= 768 ? 0.72 : 0.96));
+        updateObservatoryHud();
+        renderFrame();
+        return;
+      }
+    }
+  }
+
+  function renderUnionStarMapLegacyB() {
+    var W = starViewportWidth(), H = starViewportHeight();
+    starCtx.clearRect(0, 0, W, H);
+    StarState._allUnionMemberPositions = [];
+    StarState._unionPositions = [];
+    var palette = unionThemePalette();
+
+    var screenGlow = starCtx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.18, W / 2, H / 2, Math.max(W, H) * 0.72);
+    screenGlow.addColorStop(0, 'transparent');
+    screenGlow.addColorStop(0.58, palette.galaxyCoreA);
+    screenGlow.addColorStop(1, palette.screenEdge);
+    starCtx.fillStyle = screenGlow;
+    starCtx.fillRect(0, 0, W, H);
+
+    starCtx.save();
+    starCtx.translate(StarState.panX, StarState.panY);
+    starCtx.scale(StarState.zoom, StarState.zoom);
+
+    var unions = StarState.unions;
+    if (!unions.length) { starCtx.restore(); return; }
+
+    var layout = buildUnionConstellationLayout(unions);
+    var positions = layout.positions;
+    drawUnionGalaxyFieldV2(layout.centerX, layout.centerY, layout.world.width, layout.world.height);
+
+    var connections = buildUnionConnections(positions);
+    for (var i = 0; i < connections.length; i++) {
+      var conn = connections[i];
+      var pulse = 0.08 + Math.sin((StarState.animationTime || 0) * 0.0014 + i) * 0.025;
+      var grad = starCtx.createLinearGradient(conn.from.x, conn.from.y, conn.to.x, conn.to.y);
+      grad.addColorStop(0, palette.linkB);
+      grad.addColorStop(0.5, palette.linkA);
+      grad.addColorStop(1, palette.linkC);
+      starCtx.beginPath();
+      starCtx.moveTo(conn.from.x, conn.from.y);
+      starCtx.quadraticCurveTo((conn.from.x + conn.to.x) / 2, (conn.from.y + conn.to.y) / 2 - 26, conn.to.x, conn.to.y);
+      starCtx.strokeStyle = grad;
+      starCtx.lineWidth = 1.1 / Math.max(0.85, StarState.zoom);
+      starCtx.stroke();
+    }
+
+    StarState._unionPositions = positions;
+    for (var m = 0; m < positions.length; m++) {
+      drawUnionMembers(positions[m].x, positions[m].y, positions[m].union, positions[m].clusterRadius, positions[m].index);
+    }
+    for (var c = 0; c < positions.length; c++) {
+      drawUnionCluster(positions[c].x, positions[c].y, positions[c].union, positions[c].index, positions[c].clusterRadius);
+    }
+
+    starCtx.restore();
+  }
+
+  function drawUnionMembersLegacyB(cx, cy, union, clusterRadius, unionIndex) {
+    var members = union._members || [];
+    if (!members.length) return;
+    var cr = clusterRadius || 48;
+    var count = members.length;
+    var time = StarState.animationTime || 0;
+    var palette = unionThemePalette();
+    var orbitBase = Math.max(cr * 0.92, 76);
+
+    for (var j = 0; j < count; j++) {
+      var ringSize = 6 + Math.min(4, Math.floor(count / 8));
+      var ring = Math.floor(j / ringSize);
+      var ringCount = Math.min(ringSize, count - ring * ringSize);
+      var ringIndex = j - ring * ringSize;
+      var orbitR = orbitBase + ring * 34;
+      var angle = (2 * Math.PI * ringIndex / Math.max(ringCount, 1)) - Math.PI / 2 + ring * 0.28 + (unionIndex % 3) * 0.08;
+      var sway = Math.sin(time * 0.001 + j * 1.7 + (union.id || 0)) * 1.4;
+      var sx = cx + Math.cos(angle) * (orbitR + sway);
+      var sy = cy + Math.sin(angle) * (orbitR * 0.76 + sway);
+      var isHovered = StarState.hoveredStar &&
+        StarState.hoveredStar.club_id === members[j].club_id &&
+        StarState.hoveredStar.country === (members[j].club_country || 'china');
+
+      var lineGrad = starCtx.createLinearGradient(cx, cy, sx, sy);
+      lineGrad.addColorStop(0, isHovered ? (currentTheme() === 'light' ? 'rgba(183,121,37,0.58)' : 'rgba(240,192,96,0.62)') : palette.linkA);
+      lineGrad.addColorStop(0.58, isHovered ? (currentTheme() === 'light' ? 'rgba(40,124,154,0.44)' : 'rgba(95,183,215,0.40)') : palette.linkB);
+      lineGrad.addColorStop(1, isHovered ? (currentTheme() === 'light' ? 'rgba(47,120,144,0.48)' : 'rgba(220,234,255,0.50)') : palette.linkC);
+      starCtx.beginPath();
+      starCtx.moveTo(cx, cy);
+      var bend = (j % 2 ? 1 : -1) * 12;
+      starCtx.quadraticCurveTo((cx + sx) / 2 + Math.sin(angle) * bend, (cy + sy) / 2 - Math.cos(angle) * bend, sx, sy);
+      starCtx.strokeStyle = lineGrad;
+      starCtx.lineWidth = isHovered ? 1.6 : 0.85;
+      starCtx.stroke();
+
+      var memberColor = isHovered ? '#5fb7d7' : palette.member;
+      var sg = starCtx.createRadialGradient(sx, sy, 0, sx, sy, isHovered ? 18 : 11);
+      sg.addColorStop(0, isHovered ? 'rgba(95,183,215,0.55)' : palette.memberSoft);
+      sg.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, isHovered ? 18 : 11, 0, Math.PI * 2);
+      starCtx.fillStyle = sg;
+      starCtx.fill();
+
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, isHovered ? 5.5 : 3.6, 0, Math.PI * 2);
+      starCtx.fillStyle = memberColor;
+      starCtx.fill();
+      starCtx.beginPath();
+      starCtx.arc(sx, sy, 1.2, 0, Math.PI * 2);
+      starCtx.fillStyle = 'rgba(255,255,255,0.72)';
+      starCtx.fill();
+
+      var country = members[j].club_country || 'china';
+      var label = resolveClubName(members[j].club_id, country, members[j].club_name);
+      if (isHovered || StarState.zoom > 1.02 || count <= 8) {
+        if (label.length > 10) label = label.substring(0, 9) + '...';
+        if (isHovered) {
+          drawCanvasLabel(label, sx, sy + 19, {
+            font: '10px "Noto Sans SC", sans-serif',
+            bg: palette.labelBgStrong,
+            border: currentTheme() === 'light' ? 'rgba(40,124,154,0.28)' : 'rgba(95,183,215,0.36)',
+            color: palette.labelText,
+            height: 20
+          });
+        } else {
+          starCtx.fillStyle = palette.mutedText;
+          starCtx.font = '8px "Noto Sans SC", sans-serif';
+          starCtx.textAlign = 'center';
+          starCtx.fillText(label, sx, sy + 13);
+        }
+      }
+
+      StarState._allUnionMemberPositions.push({
+        x: sx,
+        y: sy,
+        club: {
+          club_id: members[j].club_id,
+          country: country,
+          name: label,
+          school: members[j].club_school || ''
+        },
+        unionId: union.id
+      });
+    }
+  }
+
+  function hitTestUnionMember(mx, my) {
+    var allPos = StarState._allUnionMemberPositions;
+    if (!allPos) return null;
+    var w = screenToWorld(mx, my);
+    var best = null;
+    var bestDist = Math.max(9, 16 / Math.max(StarState.zoom, 0.5));
+    for (var i = 0; i < allPos.length; i++) {
+      var dx = w.x - allPos[i].x, dy = w.y - allPos[i].y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = allPos[i].club; }
+    }
+    return best;
+  }
+
+  function drawUnionClusterLegacyB(cx, cy, union, index, clusterRadius) {
+    var cr = clusterRadius || 48;
+    var time = StarState.animationTime || 0;
+    var isSelected = StarState.selectedUnion && StarState.selectedUnion.id === union.id;
+    var isHovered = StarState.hoveredUnion && StarState.hoveredUnion.id === union.id;
+    var starColor = union.star_color || '#f0c060';
+    var count = union.member_count || ((union._members && union._members.length) || 0);
+    var palette = unionThemePalette();
+
+    var nebula = starCtx.createRadialGradient(cx, cy, 0, cx, cy, cr * 1.45);
+    nebula.addColorStop(0, hexToRgba(starColor, isSelected ? 0.18 : 0.10));
+    nebula.addColorStop(0.5, 'rgba(95,183,215,0.045)');
+    nebula.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, cr * 1.45, 0, Math.PI * 2);
+    starCtx.fillStyle = nebula;
+    starCtx.fill();
+
+    for (var k = 0; k < 2; k++) {
+      starCtx.save();
+      starCtx.translate(cx, cy);
+      starCtx.rotate(time * (0.00012 + k * 0.00004) + index * 0.6);
+      starCtx.beginPath();
+      starCtx.ellipse(0, 0, cr * (0.72 + k * 0.24), cr * (0.30 + k * 0.08), 0, 0, Math.PI * 2);
+      starCtx.strokeStyle = k === 0 ? hexToRgba(starColor, isSelected ? 0.28 : 0.14) : palette.linkB;
+      starCtx.lineWidth = isSelected && k === 0 ? 1.6 : 0.9;
+      starCtx.stroke();
+      starCtx.restore();
+    }
+
+    var centerSize = (isSelected ? 18 : 13) + Math.min(7, Math.sqrt(Math.max(count, 1)) * 1.05);
+    if (isHovered && !isSelected) centerSize += 2;
+    for (var r = 3; r >= 1; r--) {
+      var glow = starCtx.createRadialGradient(cx, cy, 0, cx, cy, centerSize + r * 12);
+      glow.addColorStop(0, hexToRgba(starColor, (isSelected ? 0.55 : 0.36) - r * 0.09));
+      glow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(cx, cy, centerSize + r * 8, 0, Math.PI * 2);
+      starCtx.fillStyle = glow;
+      starCtx.fill();
+    }
+
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, centerSize, 0, Math.PI * 2);
+    var core = starCtx.createRadialGradient(cx - centerSize * 0.35, cy - centerSize * 0.35, 0, cx, cy, centerSize);
+    core.addColorStop(0, '#ffffff');
+    core.addColorStop(0.28, starColor);
+    core.addColorStop(1, hexToRgba(starColor, 0.54));
+    starCtx.fillStyle = core;
+    starCtx.fill();
+
+    if (isSelected || isHovered) {
+      starCtx.strokeStyle = isSelected ? 'rgba(255,255,255,0.75)' : 'rgba(95,183,215,0.62)';
+      starCtx.lineWidth = 2;
+      starCtx.stroke();
+    }
+
+    var name = union.name || '';
+    if (name.length > 16) name = name.substring(0, 15) + '...';
+    drawCanvasLabel(name, cx, cy - centerSize - 18, {
+      font: (isSelected || isHovered ? '700 12px' : '700 11px') + ' "Noto Sans SC", sans-serif',
+      bg: isSelected || isHovered ? palette.labelBgStrong : palette.labelBg,
+      border: isSelected ? hexToRgba(starColor, 0.42) : palette.labelBorder,
+      color: palette.coreText,
+      height: 22
+    });
+
+    var hubName = union.bound_club_id ? resolveClubName(union.bound_club_id, union.bound_club_country || 'china', union.bound_club_name) : '未绑定联合群';
+    if (hubName.length > 12) hubName = hubName.substring(0, 11) + '...';
+    drawCanvasLabel(hubName, cx, cy + centerSize + 17, {
+      font: '9px "Noto Sans SC", sans-serif',
+      bg: union.bound_club_id ? palette.hubBg : palette.labelBg,
+      border: union.bound_club_id ? palette.hubBorder : palette.labelBorder,
+      color: union.bound_club_id ? palette.hubText : palette.mutedText,
+      height: 19
+    });
+    starCtx.fillStyle = palette.mutedText;
+    starCtx.font = '8px "Noto Sans SC", sans-serif';
+    starCtx.textAlign = 'center';
+    starCtx.fillText(count + ' 个同好会', cx, cy + centerSize + 34);
+
+    if (union.can_manage) {
+      var indX = cx + centerSize + 6, indY = cy - centerSize - 6;
+      var indGlow = starCtx.createRadialGradient(indX, indY, 0, indX, indY, 7);
+      indGlow.addColorStop(0, 'rgba(240,192,96,0.35)');
+      indGlow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(indX, indY, 7, 0, Math.PI * 2);
+      starCtx.fillStyle = indGlow;
+      starCtx.fill();
+      starCtx.beginPath();
+      starCtx.arc(indX, indY, 3.5, 0, Math.PI * 2);
+      starCtx.fillStyle = 'rgba(240,192,96,0.9)';
+      starCtx.fill();
+    }
+  }
+
+  function hitTestUnion(mx, my) {
+    var positions = StarState._unionPositions;
+    if (!positions) return null;
+    var w = screenToWorld(mx, my);
+    var best = null;
+    var bestDist = Infinity;
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      var dx = w.x - p.x, dy = w.y - p.y;
+      var hitRadius = Math.max(p.hitRadius || 30, 24 / Math.max(StarState.zoom, 0.45));
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < hitRadius && dist < bestDist) { bestDist = dist; best = p.union; }
+    }
+    return best;
+  }
+
+  function buildUnionConnections(positions) {
+    var cacheKey = StarState._unionLayoutCacheKey || '';
+    if (StarState._unionConnectionCache && StarState._unionConnectionCacheKey === cacheKey) {
+      return StarState._unionConnectionCache;
+    }
+    var byRegion = {};
+    for (var i = 0; i < positions.length; i++) {
+      var region = positions[i].union.region || '';
+      if (!region) continue;
+      if (!byRegion[region]) byRegion[region] = [];
+      byRegion[region].push(positions[i]);
+    }
+    var connections = [];
+    for (var region in byRegion) {
+      var group = byRegion[region].slice().sort(function (a, b) { return (b.memberCount || 0) - (a.memberCount || 0); });
+      if (group.length < 2) continue;
+      for (var a = 1; a < group.length; a++) {
+        connections.push({ from: group[0], to: group[a] });
+      }
+    }
+    StarState._unionConnectionCacheKey = cacheKey;
+    StarState._unionConnectionCache = connections;
+    return connections;
+  }
+
+  function getUnionMemberClub(member) {
+    var country = member.club_country || 'china';
+    var full = StarState.clubLookup[country + '_' + member.club_id];
+    return {
+      club_id: member.club_id,
+      country: country,
+      name: (full && (full.name || full.display_name)) || member.club_name || ('同好会#' + member.club_id),
+      school: (full && full.school) || member.club_school || '',
+      province: (full && (full.province || full.prefecture)) || member.club_province || '',
+      role: member.role || 'member'
+    };
+  }
+
+  function buildUnionMemberPositions(cx, cy, members, clusterRadius, unionIndex) {
+    var clubs = members.map(getUnionMemberClub);
+    var roleOrder = { representative: 3, manager: 2, member: 1 };
+    clubs.sort(function (a, b) {
+      return (roleOrder[b.role] || 0) - (roleOrder[a.role] || 0);
+    });
+    var positions = [];
+    var goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    var baseRadius = Math.max(102, Math.min(132, clusterRadius * 0.82));
+    var ringSpacing = Math.max(46, Math.min(58, clusterRadius * 0.34));
+    var ringCaps = [6, 10, 14, 18, 22, 26];
+    var idx = 0;
+    var ring = 0;
+    var remaining = clubs.length;
+
+    while (idx < clubs.length && ring < 6) {
+      var capacity = ringCaps[ring] || 26;
+      var count = Math.min(capacity, remaining);
+      var radius = baseRadius + ring * ringSpacing;
+      var rotOffset = ring * goldenAngle + unionIndex * 0.19 - Math.PI / 2;
+      for (var j = 0; j < count; j++) {
+        var angle = (2 * Math.PI * j / count) + rotOffset;
+        var fineOffset = ((clubs[idx].club_id || idx) % 5 - 2) * 0.018;
+        positions.push({
+          x: cx + Math.cos(angle + fineOffset) * radius * 0.9,
+          y: cy + Math.sin(angle + fineOffset) * radius * 0.82,
+          club: clubs[idx],
+          ring: ring
+        });
+        idx++;
+      }
+      remaining -= count;
+      ring++;
+    }
+    return positions;
+  }
+
+  function drawUnionNebula(cx, cy, radius, index) {
+    var light = currentTheme() === 'light';
+    var time = (STAR_MAP_ENABLE_PULSE && !prefersReducedMotion()) ? (StarState.animationTime || 0) : 0;
+    var pulse = STAR_MAP_ENABLE_PULSE ? 1 + Math.sin(time * 0.0012 + index * 1.7) * 0.045 : 1;
+    var nebula = starCtx.createRadialGradient(cx, cy, 0, cx, cy, radius * pulse);
+    nebula.addColorStop(0, light ? 'rgba(40,124,154,0.105)' : 'rgba(95,183,215,0.13)');
+    nebula.addColorStop(0.38, light ? 'rgba(183,121,37,0.050)' : 'rgba(240,192,96,0.050)');
+    nebula.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, radius * pulse, 0, Math.PI * 2);
+    starCtx.fillStyle = nebula;
+    starCtx.fill();
+  }
+
+  function drawUnionConstellationLine(x1, y1, x2, y2, strength, index, curved, flow) {
+    drawConstellationLine(x1, y1, x2, y2, {
+      strength: strength,
+      index: index,
+      curved: curved,
+      curveOffset: 22,
+      spark: false,
+      flow: flow
+    });
+  }
+
+  function drawUnionHubCenter(cx, cy, union, isSelected, isHovered) {
+    var palette = unionThemePalette();
+    var starColor = union.star_color || '#f0c060';
+    var light = currentTheme() === 'light';
+    var coreSize = isSelected ? 20 : (isHovered ? 18 : 17);
+    drawStarGlow(cx, cy, starColor, isSelected || isHovered ? 84 : 64, light ? 0.18 : 0.26);
+    if (isSelected || isHovered) drawFocusRing(cx, cy, isSelected ? 48 : 42, starColor, true);
+
+    for (var r = 3; r >= 1; r--) {
+      var glow = starCtx.createRadialGradient(cx, cy, 0, cx, cy, 30 + r * 10);
+      glow.addColorStop(0, hexToRgba(starColor, (light ? 0.16 : 0.25) - r * 0.035));
+      glow.addColorStop(0.55, light ? 'rgba(183,121,37,0.035)' : 'rgba(200,160,80,0.055)');
+      glow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(cx, cy, 30 + r * 10, 0, Math.PI * 2);
+      starCtx.fillStyle = glow;
+      starCtx.fill();
+    }
+
+    starCtx.save();
+    starCtx.translate(cx, cy);
+    starCtx.rotate(STAR_MAP_ENABLE_PULSE ? (StarState.animationTime || 0) * 0.00022 : 0.18);
+    starCtx.beginPath();
+    starCtx.ellipse(0, 0, 38, 15, 0, 0, Math.PI * 2);
+    starCtx.strokeStyle = hexToRgba(starColor, isSelected || isHovered ? 0.46 : 0.24);
+    starCtx.lineWidth = isSelected ? 2 : 1.2;
+    starCtx.stroke();
+    starCtx.restore();
+
+    starCtx.beginPath();
+    starCtx.arc(cx, cy, coreSize, 0, Math.PI * 2);
+    var core = starCtx.createRadialGradient(cx - coreSize * 0.35, cy - coreSize * 0.35, 0, cx, cy, coreSize);
+    core.addColorStop(0, '#fff');
+    core.addColorStop(0.34, starColor);
+    core.addColorStop(1, hexToRgba(starColor, light ? 0.72 : 0.58));
+    starCtx.fillStyle = core;
+    starCtx.fill();
+    starCtx.strokeStyle = isSelected ? 'rgba(255,255,255,0.78)' : (light ? 'rgba(84,54,28,0.26)' : 'rgba(255,255,255,0.32)');
+    starCtx.lineWidth = isSelected ? 2 : 1.3;
+    starCtx.stroke();
+
+    var initial = (union.bound_club_name || union.name || 'U').charAt(0).toUpperCase();
+    starCtx.fillStyle = light ? 'rgba(46,31,20,0.78)' : 'rgba(255,255,255,0.84)';
+    starCtx.font = '800 13px "Noto Sans SC", sans-serif';
+    starCtx.textAlign = 'center';
+    starCtx.textBaseline = 'middle';
+    starCtx.fillText(initial, cx, cy + 1);
+
+    var name = union.name || '联合';
+    if (name.length > 14) name = name.substring(0, 13) + '...';
+    starCtx.fillStyle = palette.coreText;
+    starCtx.font = '700 11px "Noto Sans SC", sans-serif';
+    starCtx.fillText(name, cx, cy + 38);
+
+    var hub = union.bound_club_id ? resolveClubName(union.bound_club_id, union.bound_club_country || 'china', union.bound_club_name) : '未绑定联合群';
+    if (hub.length > 13) hub = hub.substring(0, 12) + '...';
+    starCtx.fillStyle = union.bound_club_id ? palette.hubText : palette.mutedText;
+    starCtx.font = '9px "Noto Sans SC", sans-serif';
+    starCtx.fillText(hub, cx, cy + 53);
+  }
+
+  function drawUnionMemberStar(x, y, club, isHovered, ring, time, sharedCount) {
+    var palette = unionThemePalette();
+    var light = currentTheme() === 'light';
+    var memberPalette = light
+      ? ['#b77925', '#287c9a', '#8060a8', '#3d8a66', '#b85f5b', '#2d8ca3']
+      : ['#f0c060', '#88bbee', '#c8a0e0', '#7ec8a0', '#e8a0a0', '#a0d8e8'];
+    var colorIdx = ((ring || 0) * 3 + ((club.club_id || 0) % 3)) % memberPalette.length;
+    var roleColor = memberPalette[colorIdx];
+    var baseSize = 6.8;
+    var hoverPulse = 1;
+    var size = isHovered ? 10.2 * hoverPulse : baseSize + Math.min(1.4, (ring || 0) * 0.28);
+    drawStarGlow(x, y, roleColor, size * (isHovered ? 4.1 : 2.8), isHovered ? 0.22 : 0.12);
+    if (isHovered || sharedCount > 1) drawFocusRing(x, y, size + (isHovered ? 8 : 5), sharedCount > 1 ? '#5fb7d7' : roleColor, !!isHovered);
+
+    var glow = starCtx.createRadialGradient(x, y, 0, x, y, size * (isHovered ? 3.5 : 2.4));
+    glow.addColorStop(0, hexToRgba(roleColor, isHovered ? 0.28 : 0.18));
+    glow.addColorStop(1, 'transparent');
+    starCtx.beginPath();
+    starCtx.arc(x, y, size * (isHovered ? 3.5 : 2.4), 0, Math.PI * 2);
+    starCtx.fillStyle = glow;
+    starCtx.fill();
+
+    starCtx.beginPath();
+    starCtx.arc(x, y, size, 0, Math.PI * 2);
+    starCtx.fillStyle = roleColor;
+    starCtx.fill();
+
+    starCtx.beginPath();
+    starCtx.arc(x, y, size * 0.38, 0, Math.PI * 2);
+    starCtx.fillStyle = 'rgba(255,255,255,0.30)';
+    starCtx.fill();
+
+    if (isHovered) {
+      starCtx.strokeStyle = light ? 'rgba(66,42,28,0.32)' : 'rgba(255,255,255,0.55)';
+      starCtx.lineWidth = 1.6;
+      starCtx.stroke();
+    }
+
+    if (sharedCount > 1) {
+      starCtx.save();
+      starCtx.beginPath();
+      starCtx.arc(x + size * 0.82, y - size * 0.82, Math.max(4.2, size * 0.42), 0, Math.PI * 2);
+      starCtx.fillStyle = light ? 'rgba(255,252,246,0.92)' : 'rgba(10,18,32,0.92)';
+      starCtx.strokeStyle = light ? 'rgba(40,124,154,0.42)' : 'rgba(95,183,215,0.58)';
+      starCtx.lineWidth = 1;
+      starCtx.fill();
+      starCtx.stroke();
+      starCtx.fillStyle = light ? 'rgba(24,83,104,0.90)' : 'rgba(190,235,255,0.92)';
+      starCtx.font = '800 7px "Noto Sans SC", sans-serif';
+      starCtx.textAlign = 'center';
+      starCtx.textBaseline = 'middle';
+      starCtx.fillText(String(Math.min(sharedCount, 9)), x + size * 0.82, y - size * 0.82 + 0.3);
+      starCtx.restore();
+    }
+
+    var label = club.name || '';
+    if (label.length > 10) label = label.substring(0, 9) + '...';
+    starCtx.fillStyle = light
+      ? 'rgba(44,31,24,' + (isHovered ? '0.88' : '0.62') + ')'
+      : 'rgba(255,255,255,' + (isHovered ? '0.86' : '0.50') + ')';
+    starCtx.font = (isHovered ? '11' : '9') + 'px "Noto Sans SC", sans-serif';
+    starCtx.textAlign = 'center';
+    starCtx.textBaseline = 'alphabetic';
+    starCtx.fillText(label, x, y + size + 12);
+  }
+
+  function getWorldViewportBounds(pad) {
+    pad = pad || 0;
+    var z = Math.max(StarState.zoom || 1, 0.001);
+    var W = starViewportWidth();
+    var H = starViewportHeight();
+    return {
+      left: (-StarState.panX / z) - pad,
+      top: (-StarState.panY / z) - pad,
+      right: ((W - StarState.panX) / z) + pad,
+      bottom: ((H - StarState.panY) / z) + pad
+    };
+  }
+
+  function isPointNearWorldBounds(x, y, radius, bounds) {
+    return x + radius >= bounds.left && x - radius <= bounds.right && y + radius >= bounds.top && y - radius <= bounds.bottom;
+  }
+
+  function drawSharedUnionMembershipLinks(sharedMembers, bounds) {
+    if (!sharedMembers) return;
+    var drawCount = 0;
+    var maxLinks = window.innerWidth <= 768 ? 18 : 36;
+    for (var key in sharedMembers) {
+      var entries = sharedMembers[key];
+      if (!entries || entries.length < 2) continue;
+      var active = StarState.searchHighlightKey === key || (StarState.hoveredStar && targetKeyForClub(StarState.hoveredStar) === key);
+      if (!active && drawCount > maxLinks * 0.55) continue;
+      for (var i = 0; i < entries.length - 1; i++) {
+        var a = entries[i], b = entries[i + 1];
+        var minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
+        var minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
+        if (maxX < bounds.left || minX > bounds.right || maxY < bounds.top || minY > bounds.bottom) continue;
+        drawConstellationLine(a.x, a.y, b.x, b.y, {
+          strength: active ? 0.22 : 0.075,
+          index: 700 + drawCount,
+          width: active ? 1.2 : 0.7,
+          curved: true,
+          curveOffset: active ? 34 : 24,
+          spark: false,
+          flow: active
+        });
+        drawCount++;
+        if (drawCount >= maxLinks) return;
+      }
+    }
+  }
+
+  function renderUnionStarMap() {
+    var W = starViewportWidth(), H = starViewportHeight();
+    starCtx.clearRect(0, 0, W, H);
+    StarState._allUnionMemberPositions = [];
+    StarState._unionPositions = [];
+
+    drawObservatoryBackdrop(W, H, 0.86);
+
+    starCtx.save();
+    starCtx.translate(StarState.panX, StarState.panY);
+    starCtx.scale(StarState.zoom, StarState.zoom);
+
+    var unions = StarState.unions;
+    if (!unions.length) { starCtx.restore(); return; }
+    var layout = buildUnionConstellationLayout(unions);
+    drawUnionGalaxyFieldV2(layout.centerX, layout.centerY, layout.world.width, layout.world.height);
+
+    var positions = layout.positions;
+    var bounds = getWorldViewportBounds(260);
+    StarState._unionPositions = positions;
+    var regionConnections = buildUnionConnections(positions);
+    for (var rc = 0; rc < regionConnections.length; rc++) {
+      var conn = regionConnections[rc];
+      var minX = Math.min(conn.from.x, conn.to.x), maxX = Math.max(conn.from.x, conn.to.x);
+      var minY = Math.min(conn.from.y, conn.to.y), maxY = Math.max(conn.from.y, conn.to.y);
+      if (maxX < bounds.left || minX > bounds.right || maxY < bounds.top || minY > bounds.bottom) continue;
+      var regionActive = (StarState.selectedUnion && (StarState.selectedUnion.id === conn.from.union.id || StarState.selectedUnion.id === conn.to.union.id)) ||
+        (StarState.hoveredUnion && (StarState.hoveredUnion.id === conn.from.union.id || StarState.hoveredUnion.id === conn.to.union.id)) ||
+        (StarState.searchHighlightKey && (StarState.searchHighlightKey === targetKeyForUnion(conn.from.union) || StarState.searchHighlightKey === targetKeyForUnion(conn.to.union)));
+      drawUnionConstellationLine(conn.from.x, conn.from.y, conn.to.x, conn.to.y, regionActive ? 0.22 : 0.10, rc, true, regionActive || rc % 2 === 0);
+    }
+    drawSharedUnionMembershipLinks(layout.sharedMembers, bounds);
+
+    for (var i = 0; i < positions.length; i++) {
+      var p = positions[i];
+      if (!isPointNearWorldBounds(p.x, p.y, (p.clusterRadius || 120) + 130, bounds)) continue;
+      var union = p.union;
+      var memberPositions = p.memberPositions || [];
+      var clusterActive = (StarState.selectedUnion && StarState.selectedUnion.id === union.id) ||
+        (StarState.hoveredUnion && StarState.hoveredUnion.id === union.id);
+
+      drawUnionNebula(p.x, p.y, p.clusterRadius + 86, i);
+
+      var orbitRadius = p.clusterRadius + 42;
+      starCtx.save();
+      starCtx.translate(p.x, p.y);
+      starCtx.rotate((STAR_MAP_ENABLE_PULSE ? ((StarState.animationTime || 0) * 0.00009) : 0) + i * 0.12);
+      starCtx.beginPath();
+      starCtx.ellipse(0, 0, orbitRadius * 0.92, orbitRadius * 0.76, 0, 0, Math.PI * 2);
+      starCtx.strokeStyle = clusterActive
+        ? (currentTheme() === 'light' ? 'rgba(183,121,37,0.28)' : 'rgba(240,192,96,0.24)')
+        : (currentTheme() === 'light' ? 'rgba(40,124,154,0.12)' : 'rgba(136,187,238,0.10)');
+      starCtx.lineWidth = clusterActive ? 1.2 : 0.8;
+      starCtx.stroke();
+      starCtx.restore();
+
+      for (var a = 0; a < memberPositions.length; a++) {
+        if (!isPointNearWorldBounds(memberPositions[a].x, memberPositions[a].y, 44, bounds)) continue;
+        var memberActive = StarState.hoveredStar &&
+          StarState.hoveredStar.club_id === memberPositions[a].club.club_id &&
+          StarState.hoveredStar.country === memberPositions[a].club.country;
+        var memberSearchActive = StarState.searchHighlightKey === targetKeyForClub(memberPositions[a].club);
+        drawUnionConstellationLine(p.x, p.y, memberPositions[a].x, memberPositions[a].y, clusterActive || memberActive || memberSearchActive ? 0.28 : 0.15, i * 31 + a, false, clusterActive || memberActive || memberSearchActive || a % 4 === 0);
+      }
+
+      var byProvince = {};
+      for (var b = 0; b < memberPositions.length; b++) {
+        if (!isPointNearWorldBounds(memberPositions[b].x, memberPositions[b].y, 36, bounds)) continue;
+        var prov = memberPositions[b].club.province || '__unknown__';
+        if (!byProvince[prov]) byProvince[prov] = [];
+        byProvince[prov].push(memberPositions[b]);
+      }
+      for (var provKey in byProvince) {
+        var group = byProvince[provKey];
+        if (group.length < 2) continue;
+        group.sort(function (a, b) {
+          return Math.atan2(a.y - p.y, a.x - p.x) - Math.atan2(b.y - p.y, b.x - p.x);
+        });
+        for (var g1 = 0; g1 < group.length - 1; g1++) {
+          drawUnionConstellationLine(group[g1].x, group[g1].y, group[g1 + 1].x, group[g1 + 1].y, clusterActive ? 0.14 : 0.08, i * 47 + g1, false);
+        }
+      }
+    }
+
+    for (var j = 0; j < positions.length; j++) {
+      var cluster = positions[j];
+      if (!isPointNearWorldBounds(cluster.x, cluster.y, (cluster.clusterRadius || 120) + 130, bounds)) continue;
+      var mp = cluster.memberPositions || [];
+      for (var k = 0; k < mp.length; k++) {
+        if (!isPointNearWorldBounds(mp[k].x, mp[k].y, 40, bounds)) continue;
+        var isMemberHovered = StarState.hoveredStar &&
+          StarState.hoveredStar.club_id === mp[k].club.club_id &&
+          StarState.hoveredStar.country === mp[k].club.country;
+        var memberIsSearchHit = StarState.searchHighlightKey === targetKeyForClub(mp[k].club);
+        var sharedCount = (layout.sharedMembers && layout.sharedMembers[targetKeyForClub(mp[k].club)] || []).length;
+        drawUnionMemberStar(mp[k].x, mp[k].y, mp[k].club, isMemberHovered || memberIsSearchHit, mp[k].ring, StarState.animationTime, sharedCount);
+        if (memberIsSearchHit) drawFocusRing(mp[k].x, mp[k].y, 22, '#5fb7d7', true);
+        StarState._allUnionMemberPositions.push({ x: mp[k].x, y: mp[k].y, club: mp[k].club, unionId: cluster.union.id });
+      }
+    }
+    for (var h = 0; h < positions.length; h++) {
+      var hubCluster = positions[h];
+      if (!isPointNearWorldBounds(hubCluster.x, hubCluster.y, (hubCluster.clusterRadius || 120) + 150, bounds)) continue;
+      var isSelected = StarState.selectedUnion && StarState.selectedUnion.id === hubCluster.union.id;
+      var isHovered = StarState.hoveredUnion && StarState.hoveredUnion.id === hubCluster.union.id;
+      drawUnionHubCenter(hubCluster.x, hubCluster.y, hubCluster.union, isSelected, isHovered);
+      if (StarState.searchHighlightKey === targetKeyForUnion(hubCluster.union)) drawFocusRing(hubCluster.x, hubCluster.y, 56, '#5fb7d7', true);
+    }
+
+    if (StarState._activeBurst) {
+      if (!drawStarBurst(StarState._activeBurst.x, StarState._activeBurst.y, StarState._activeBurst.color, StarState._activeBurst.start, StarState._activeBurst.radius)) {
+        StarState._activeBurst = null;
+      }
+    }
+
+    starCtx.restore();
+  }
+
+  function hitTestUnionMember(mx, my) {
+    var allPos = StarState._allUnionMemberPositions;
+    if (!allPos) return null;
+    var w = screenToWorld(mx, my);
+    var best = null;
+    var bestDist = Math.max(18 / Math.max(StarState.zoom, 0.55), 12);
+    for (var i = 0; i < allPos.length; i++) {
+      var dx = w.x - allPos[i].x, dy = w.y - allPos[i].y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = allPos[i].club; }
+    }
+    return best;
+  }
+
+  function hitTestUnion(mx, my) {
+    var positions = StarState._unionPositions;
+    if (!positions) return null;
+    var w = screenToWorld(mx, my);
+    var best = null;
+    var bestDist = Math.max(36 / Math.max(StarState.zoom, 0.55), 28);
+    for (var i = 0; i < positions.length; i++) {
+      var dx = w.x - positions[i].x, dy = w.y - positions[i].y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = positions[i].union; }
+    }
+    return best;
+  }
+
+  function getStarRenderKey() {
+    var hoverStar = StarState.hoveredStar ? ((StarState.hoveredStar.country || 'china') + '_' + StarState.hoveredStar.club_id) : '';
+    var hoverUnion = StarState.hoveredUnion ? StarState.hoveredUnion.id : '';
+    var selectedUnion = StarState.selectedUnion ? StarState.selectedUnion.id : '';
+    var dataKey = StarState.submode === 'union'
+      ? StarState.unions.length + ':' + StarState.unions.reduce(function (sum, u) { return sum + ((u._members && u._members.length) || 0); }, 0)
+      : StarState.personalClubs.length;
+    return [
+      currentTheme(),
+      StarState.submode,
+      starViewportWidth(),
+      starViewportHeight(),
+      Math.round(StarState.zoom * 1000),
+      Math.round(StarState.panX),
+      Math.round(StarState.panY),
+      Math.round(StarState.targetZoom * 1000),
+      Math.round(StarState.targetPanX),
+      Math.round(StarState.targetPanY),
+      hoverStar,
+      hoverUnion,
+      selectedUnion,
+      StarState.searchHighlightKey || '',
+      StarState._draggingUnionId || '',
+      JSON.stringify(StarState._draggedUnionOffsets || {}),
+      dataKey
+    ].join('|');
+  }
+
+  function drawSceneTransitionOverlay(W, H) {
+    var t = StarState._submodeTransition;
+    if (!t || prefersReducedMotion()) return;
+    var elapsed = performance.now() - t.start;
+    var p = Math.max(0, Math.min(1, elapsed / t.duration));
+    var alpha = p < 0.5 ? p * 2 : (1 - p) * 2;
+    var light = currentTheme() === 'light';
+    starCtx.save();
+    starCtx.setTransform(1, 0, 0, 1, 0, 0);
+    var grad = starCtx.createRadialGradient(W * 0.5, H * 0.48, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.82);
+    grad.addColorStop(0, light ? 'rgba(255,248,236,' + (alpha * 0.20) + ')' : 'rgba(95,183,215,' + (alpha * 0.16) + ')');
+    grad.addColorStop(0.56, light ? 'rgba(183,121,37,' + (alpha * 0.10) + ')' : 'rgba(8,16,34,' + (alpha * 0.32) + ')');
+    grad.addColorStop(1, light ? 'rgba(246,238,224,' + (alpha * 0.50) + ')' : 'rgba(0,0,0,' + (alpha * 0.62) + ')');
+    starCtx.fillStyle = grad;
+    starCtx.fillRect(0, 0, W, H);
+    starCtx.restore();
+  }
+
+  function renderFrame() {
+    // Frame skip guard
+    var now = performance.now();
+    if (now - (StarState._lastRenderTime || 0) < 5) return;
+    StarState._lastRenderTime = now;
+    var hasViewportMotion =
+      StarState.isDragging ||
+      Math.abs(StarState.targetZoom - StarState.zoom) > 0.001 ||
+      Math.abs(StarState.targetPanX - StarState.panX) > 0.6 ||
+      Math.abs(StarState.targetPanY - StarState.panY) > 0.6;
+    updateSubmodeTransition();
+    var hasTransientMotion = !!StarState._submodeTransition || !!StarState._activeBurst || (!prefersReducedMotion() && now - (StarState._lastEffectFrame || 0) >= 48);
+    var nextRenderKey = getStarRenderKey();
+    if (!STAR_MAP_ENABLE_PULSE && !hasViewportMotion && !hasTransientMotion && StarState._lastRenderKey === nextRenderKey) return;
+    if (!hasViewportMotion && !StarState._submodeTransition && !StarState._activeBurst) StarState._lastEffectFrame = now;
+
+    // Smooth zoom/pan interpolation
+    var lerp = 0.18;
+    StarState.zoom += (StarState.targetZoom - StarState.zoom) * lerp;
+    StarState.panX += (StarState.targetPanX - StarState.panX) * lerp;
+    StarState.panY += (StarState.targetPanY - StarState.panY) * lerp;
+    if (Math.abs(StarState.targetZoom - StarState.zoom) < 0.001) {
+      StarState.zoom = StarState.targetZoom;
+      StarState.panX = StarState.targetPanX;
+      StarState.panY = StarState.targetPanY;
+    }
+    StarState._parallaxX += (StarState.panX - StarState._parallaxX) * 0.08;
+    StarState._parallaxY += (StarState.panY - StarState._parallaxY) * 0.08;
+    StarState._lineFlowBudget = 0;
+    if (StarState.submode === 'personal') {
+      renderPersonalStarMap();
+    } else {
+      renderUnionStarMap();
+    }
+    drawSceneTransitionOverlay(starViewportWidth(), starViewportHeight());
+    updateObservatoryHud();
+    StarState._lastRenderKey = getStarRenderKey();
+  }
+
+  function startStarRenderLoop() {
+    if (StarState._renderLoopId) return;
+    function loop() {
+      StarState._renderLoopId = requestAnimationFrame(loop);
+      StarState.animationTime = performance.now();
+      renderFrame();
+    }
+    StarState._renderLoopId = requestAnimationFrame(loop);
+  }
+
+  function stopStarRenderLoop() {
+    if (StarState._renderLoopId) {
+      cancelAnimationFrame(StarState._renderLoopId);
+      StarState._renderLoopId = 0;
+    }
+  }
+
+  // ── Club Detail Modal ──
+  function openClubDetail(club) {
+    var full = StarState.clubLookup[(club.country || 'china') + '_' + club.club_id];
+    if (!full) return;
+
+    var name = full.name || full.display_name || '未命名';
+    var school = full.school || '';
+    var province = full.province || full.prefecture || '';
+    var info = full.info || '';
+    var remark = full.remark || '';
+    var typeName = full.type === 'region' ? '地区联合' : '学校';
+    var verified = full.verified == 1;
+    var logoUrl = full.logo_url || '';
+    var extLinks = full.external_links || [];
+    var createdAt = full.created_at || '';
+    var country = full._country || 'china';
+
+    var html = '';
+
+    // Header
+    html += '<div class="cd-header">';
+    html += '<div class="cd-avatar">';
+    if (logoUrl) {
+      html += '<img src="' + esc(logoUrl) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + esc(name.charAt(0)) + '\';">';
+    } else {
+      html += esc(name.charAt(0));
+    }
+    html += '</div>';
+    html += '<div class="cd-header-info">';
+    html += '<div class="cd-name">' + esc(name) + '</div>';
+    html += '<div class="cd-meta">';
+    if (province) html += '<span class="cd-chip primary">' + esc(province) + '</span>';
+    html += '<span class="cd-chip">' + esc(typeName) + '</span>';
+    if (verified) html += '<span class="cd-chip verified">已验证</span>';
+    html += '</div></div></div>';
+
+    // Description
+    var desc = remark || (info && info.length < 200 ? info : '');
+    if (desc) {
+      html += '<div class="cd-section">';
+      html += '<div class="cd-section-title">简介</div>';
+      html += '<div class="cd-description">' + esc(desc) + '</div>';
+      html += '</div>';
+    }
+
+    // Contact info
+    if (info) {
+      html += '<div class="cd-section">';
+      html += '<div class="cd-section-title">联系方式</div>';
+      html += '<div class="cd-contact">';
+      html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;">' + esc(info) + '</span>';
+      html += '<button class="cd-copy-btn" data-copy="' + esc(info) + '">复制</button>';
+      html += '</div></div>';
+    }
+
+    // External links
+    if (extLinks.length) {
+      html += '<div class="cd-section">';
+      html += '<div class="cd-section-title">外部链接</div>';
+      for (var i = 0; i < extLinks.length; i++) {
+        var l = extLinks[i];
+        html += '<div style="margin-bottom:4px;"><a href="' + esc(l.url || '') + '" target="_blank" rel="noopener noreferrer" style="color:var(--accent-cool);font-size:13px;word-break:break-all;">' + esc(l.platform || l.label || l.url) + '</a></div>';
+      }
+      html += '</div>';
+    }
+
+    // Footer
+    html += '<div class="cd-footer">';
+    if (school) html += '<div>学校：' + esc(school) + '</div>';
+    if (createdAt) html += '<div>收录时间：' + esc(createdAt) + '</div>';
+    html += '</div>';
+
+    $('clubDetailBody').innerHTML = html;
+    $('clubDetailOverlay').style.display = '';
+    $('clubDetailOverlay').setAttribute('aria-hidden', 'false');
+    StarState.hoveredStar = full;
+    updateObservatoryHud();
+
+    // Bind copy button
+    var copyBtn = document.querySelector('.cd-copy-btn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function () {
+        var text = this.dataset.copy;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(function () {
+            copyBtn.textContent = '已复制';
+            copyBtn.classList.add('copied');
+            setTimeout(function () { copyBtn.textContent = '复制'; copyBtn.classList.remove('copied'); }, 2000);
+          });
+        }
+      });
+    }
+  }
+
+  function closeClubDetail() {
+    $('clubDetailOverlay').style.display = 'none';
+    $('clubDetailOverlay').setAttribute('aria-hidden', 'true');
+    StarState.hoveredStar = null;
+    updateObservatoryHud();
+  }
+
+  // ── Tooltip ──
+  function showTooltip(club, x, y) {
+    var tt = $('starTooltip');
+    $('ttName').textContent = club.name || '';
+    $('ttSchool').textContent = club.school || '';
+    var province = club.province || '';
+    if (club._sharedUnionCount > 1) {
+      var names = (club._sharedUnionNames || []).slice(0, 3).join(' / ');
+      province = province ? (province + ' · ' + club._sharedUnionCount + ' 个联合') : (club._sharedUnionCount + ' 个联合');
+      if (names) province += ' · ' + names;
+    }
+    $('ttProvince').textContent = province;
+    var tx = x + 18, ty = y - 60;
+    if (tx + 270 > window.innerWidth) tx = x - 280;
+    if (ty < 70) ty = y + 24;
+    if (ty + 80 > window.innerHeight) ty = window.innerHeight - 90;
+    tt.style.left = tx + 'px';
+    tt.style.top = ty + 'px';
+    tt.classList.add('visible');
+  }
+
+  function hideTooltip() {
+    $('starTooltip').classList.remove('visible');
+  }
+
+  // ── Detail Panel ──
+  function openDetailPanel(union) {
+    StarState.selectedUnion = union;
+    updateObservatoryHud();
+    var panel = $('detailPanel');
+    $('detailTitle').textContent = union.name;
+    var body = $('detailBody');
+    var isManager = union.can_manage || false;
+
+    var html = '<div class="detail-meta">';
+    if (union.description) html += '<div>' + esc(union.description) + '</div>';
+    if (union.region) html += '<div>地区：' + esc(union.region) + '</div>';
+    if (union.bound_club_id) html += '<div>绑定联合群：' + esc(union.bound_club_name || '同好会#' + union.bound_club_id) + (union.bound_club_school ? '（' + esc(union.bound_club_school) + '）' : '') + '</div>';
+    html += '<div>同好会数量：' + (union.member_count || 0) + '</div>';
+    html += '</div>';
+
+    if (isManager) {
+      html += '<div class="detail-actions" style="margin-top:12px;">';
+      html += '<button class="detail-action-btn" id="detailEditBtn">编辑联合</button>';
+      html += '<button class="detail-action-btn danger" id="detailDeleteBtn">删除联合</button>';
+      html += '</div>';
+    }
+
+    // Fetch full union details
+    apiGet('./api/star_unions.php?action=get&id=' + union.id).then(function (res) {
+      if (!res.success) return;
+      StarState.selectedUnion = res.union;
+      var u = res.union;
+      var members = res.members || [];
+      // Rebuild meta section with resolved bound club info
+      var html2 = '<div class="detail-meta">';
+      if (u.description) html2 += '<div>' + esc(u.description) + '</div>';
+      if (u.region) html2 += '<div>地区：' + esc(u.region) + '</div>';
+      if (u.bound_club_id) html2 += '<div>绑定联合群：' + esc(u.bound_club_name || '同好会#' + u.bound_club_id) + (u.bound_club_school ? '（' + esc(u.bound_club_school) + '）' : '') + '</div>';
+      html2 += '<div>同好会数量：' + (u.member_count || 0) + '</div>';
+      html2 += '</div>';
+      if (members.length > 0) {
+        html2 += '<div class="detail-section-title">成员同好会</div><ul class="member-list">';
+        for (var i = 0; i < members.length; i++) {
+          var m = members[i];
+          html2 += '<li class="member-item">';
+          html2 += '<span class="member-item-name" title="' + esc(m.club_name) + '">' + esc(m.club_name) + '</span>';
+          html2 += '<span class="member-item-school">' + esc(m.club_school || '') + '</span>';
+          if (isManager) {
+            html2 += '<button class="member-remove-btn" data-club-id="' + m.club_id + '" data-club-country="' + esc(m.club_country) + '" title="移除">×</button>';
+          }
+          html2 += '</li>';
+        }
+        html2 += '</ul>';
+      }
+      if (isManager) {
+        html2 += '<div class="detail-actions">';
+        html2 += '<button class="detail-action-btn" id="detailEditBtn">编辑联合</button>';
+        html2 += '<button class="detail-action-btn danger" id="detailDeleteBtn">删除联合</button>';
+        html2 += '</div>';
+      }
+      body.innerHTML = html2;
+      bindDetailEvents(union);
+    });
+
+    body.innerHTML = html + '<div style="text-align:center;padding:20px;color:var(--muted);">加载中...</div>';
+    if (isManager) bindDetailEvents(union);
+    panel.classList.add('open');
+    renderFrame();
+  }
+
+  function bindDetailEvents(union) {
+    var removeBtns = document.querySelectorAll('.member-remove-btn');
+    for (var i = 0; i < removeBtns.length; i++) {
+      removeBtns[i].addEventListener('click', function (e) {
+        e.stopPropagation();
+        var clubId = parseInt(this.dataset.clubId);
+        var clubCountry = this.dataset.clubCountry;
+        removeClubFromUnion(union.id, clubId, clubCountry);
+      });
+    }
+    var editBtn = $('detailEditBtn');
+    if (editBtn) editBtn.addEventListener('click', function () { openEditor(union); });
+    var delBtn = $('detailDeleteBtn');
+    if (delBtn) {
+      delBtn.addEventListener('click', function () {
+        if (delBtn.textContent === '确认删除？') {
+          deleteUnion(union.id);
+        } else {
+          delBtn.textContent = '确认删除？';
+          delBtn.style.background = 'var(--primary)';
+          delBtn.style.color = '#fff';
+          setTimeout(function () { if (delBtn) { delBtn.textContent = '删除联合'; delBtn.style.background = ''; delBtn.style.color = ''; } }, 3000);
+        }
+      });
+    }
+  }
+
+  function closeDetailPanel() {
+    $('detailPanel').classList.remove('open');
+    StarState.selectedUnion = null;
+    renderFrame();
+    updateObservatoryHud();
+  }
+
+  // ── Union CRUD ──
+  function openEditor(union) {
+    StarState.editingUnionId = union ? union.id : null;
+    StarState.pendingClubTags = [];
+    StarState.boundClub = union && union.bound_club_id ? { club_id: union.bound_club_id, country: union.bound_club_country || 'china', name: union.bound_club_name || '' } : null;
+    $('editorTitle').textContent = union ? '编辑联合' : '创建联合';
+    $('edName').value = union ? (union.name || '') : '';
+    $('edRegion').value = union ? (union.region || '') : '';
+    $('edDesc').value = union ? (union.description || '') : '';
+    $('edCountry').value = union ? (union.country || 'china') : 'china';
+    $('edClubSection').style.display = union ? '' : 'none';
+    $('edDeleteBtn').style.display = union ? '' : 'none';
+    $('edClubSearch').value = '';
+    $('edClubResults').classList.remove('visible');
+    $('edClubTags').innerHTML = '';
+    $('edBoundSearch').value = '';
+    $('edBoundResults').classList.remove('visible');
+    renderBoundTag();
+    // Reset search mode
+    StarState.searchMode = 'club';
+    document.querySelectorAll('.search-mode-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === 'club'); });
+    $('edClubSearch').placeholder = '搜索同好会...';
+    // Reset color picker
+    var starColor = union ? (union.star_color || '#f0c060') : '#f0c060';
+    document.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.toggle('active', s.dataset.color === starColor); });
+    $('editorModal').style.display = '';
+    $('editorModal').setAttribute('aria-hidden', 'false');
+
+    if (union) {
+      // Load existing members as tags
+      apiGet('./api/star_unions.php?action=get&id=' + union.id).then(function (res) {
+        if (res.success) {
+          if (res.members) {
+            StarState.pendingClubTags = res.members.map(function (m) {
+              return { club_id: m.club_id, country: m.club_country, name: m.club_name };
+            });
+            renderClubTags();
+          }
+          // Update bound club with resolved name
+          if (res.union && res.union.bound_club_id) {
+            StarState.boundClub = {
+              club_id: res.union.bound_club_id,
+              country: res.union.bound_club_country || 'china',
+              name: res.union.bound_club_name || ''
+            };
+            renderBoundTag();
+          }
+        }
+      });
+    }
+  }
+
+  function renderBoundTag() {
+    var container = $('edBoundTag');
+    if (StarState.boundClub && StarState.boundClub.club_id) {
+      container.innerHTML = '<span class="bound-tag">' + esc(StarState.boundClub.name) + '<button class="tag-remove" id="boundRemoveBtn">×</button></span>';
+      $('boundRemoveBtn').addEventListener('click', function () {
+        StarState.boundClub = null;
+        renderBoundTag();
+      });
+    } else {
+      container.innerHTML = '';
+    }
+  }
+
+  function closeEditor() {
+    $('editorModal').style.display = 'none';
+    $('editorModal').setAttribute('aria-hidden', 'true');
+    StarState.editingUnionId = null;
+    StarState.pendingClubTags = [];
+  }
+
+  function renderClubTags() {
+    var container = $('edClubTags');
+    var html = '';
+    var tags = StarState.pendingClubTags;
+    for (var i = 0; i < tags.length; i++) {
+      html += '<span class="tag-item">' + esc(tags[i].name) + '<button class="tag-remove" data-idx="' + i + '">×</button></span>';
+    }
+    container.innerHTML = html;
+    var btns = container.querySelectorAll('.tag-remove');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', function () {
+        var idx = parseInt(this.dataset.idx);
+        StarState.pendingClubTags.splice(idx, 1);
+        renderClubTags();
+      });
+    }
+  }
+
+  function saveUnion() {
+    var btn = $('edSaveBtn');
+    if (btn.disabled) return;
+    var name = $('edName').value.trim();
+    if (!name) { alert('请输入联合名称'); return; }
+    var activeSwatch = document.querySelector('.color-swatch.active');
+    var data = {
+      name: name,
+      description: $('edDesc').value.trim(),
+      region: $('edRegion').value.trim(),
+      country: $('edCountry').value,
+      star_color: activeSwatch ? activeSwatch.dataset.color : '#f0c060'
+    };
+    if (StarState.boundClub) {
+      data.bound_club_id = StarState.boundClub.club_id;
+      data.bound_club_country = StarState.boundClub.country;
+    } else {
+      data.bound_club_id = null;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
+    function done() {
+      btn.disabled = false;
+      btn.textContent = '保存';
+    }
+
+    function handleError(err) {
+      console.error('saveUnion error:', err);
+      alert('保存失败，请检查网络连接或重试');
+      done();
+    }
+
+    if (StarState.editingUnionId) {
+      data.id = StarState.editingUnionId;
+      apiPost('./api/star_unions.php?action=update', data).then(function (res) {
+        if (res.success) {
+          syncUnionClubs(StarState.editingUnionId).then(function () {
+            closeEditor();
+            loadUnions();
+            done();
+          }).catch(handleError);
+        } else { alert(res.message || '更新失败'); done(); }
+      }).catch(handleError);
+    } else {
+      apiPost('./api/star_unions.php?action=create', data).then(function (res) {
+        if (res.success) {
+          var newId = res.union.id;
+          StarState.editingUnionId = newId;
+          syncUnionClubs(newId).then(function () {
+            closeEditor();
+            loadUnions();
+            done();
+          }).catch(handleError);
+        } else { alert(res.message || '创建失败'); done(); }
+      }).catch(handleError);
+    }
+  }
+
+  function syncUnionClubs(unionId) {
+    // Get current members
+    return apiGet('./api/star_unions.php?action=get&id=' + unionId).then(function (res) {
+      var current = res.members || [];
+      var wanted = StarState.pendingClubTags;
+      // Remove clubs not in wanted list
+      var removals = [];
+      for (var i = 0; i < current.length; i++) {
+        var found = false;
+        for (var j = 0; j < wanted.length; j++) {
+          if (wanted[j].club_id === current[i].club_id && wanted[j].country === current[i].club_country) { found = true; break; }
+        }
+        if (!found) removals.push(current[i]);
+      }
+      // Add clubs not in current list
+      var additions = [];
+      for (var j = 0; j < wanted.length; j++) {
+        var found = false;
+        for (var i = 0; i < current.length; i++) {
+          if (current[i].club_id === wanted[j].club_id && current[i].club_country === wanted[j].country) { found = true; break; }
+        }
+        if (!found) additions.push(wanted[j]);
+      }
+
+      var promises = [];
+      for (var i = 0; i < removals.length; i++) {
+        promises.push(apiPost('./api/star_unions.php?action=remove_club', { union_id: unionId, club_id: removals[i].club_id, club_country: removals[i].club_country }));
+      }
+      for (var j = 0; j < additions.length; j++) {
+        promises.push(apiPost('./api/star_unions.php?action=add_club', { union_id: unionId, club_id: additions[j].club_id, club_country: additions[j].country }));
+      }
+      return Promise.all(promises);
+    });
+  }
+
+  function deleteUnion(id) {
+    apiPost('./api/star_unions.php?action=delete', { id: id }).then(function (res) {
+      if (res.success) {
+        closeDetailPanel();
+        closeEditor();
+        loadUnions();
+      } else { alert(res.message || '删除失败'); }
+    });
+  }
+
+  function removeClubFromUnion(unionId, clubId, country) {
+    apiPost('./api/star_unions.php?action=remove_club', { union_id: unionId, club_id: clubId, club_country: country }).then(function (res) {
+      if (res.success) {
+        openDetailPanel(StarState.selectedUnion);
+        loadUnions();
+      } else { alert(res.message || '移除失败'); }
+    });
+  }
+
+  // ── Club/School Search ──
+  var searchTimeout = null;
+
+  function getClubList() {
+    var all = [];
+    for (var key in StarState.clubLookup) { all.push(StarState.clubLookup[key]); }
+    return all;
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function findStarSearchTargets(query) {
+    var q = normalizeSearchText(query);
+    if (!q) return [];
+    var results = [];
+    if (StarState.submode === 'personal') {
+      var clubs = StarState.personalClubs || [];
+      for (var i = 0; i < clubs.length; i++) {
+        var c = clubs[i];
+        var hay = [c.name, c.display_name, c.school, c.province].map(normalizeSearchText).join(' ');
+        if (hay.indexOf(q) < 0) continue;
+        results.push({ type: 'club', mode: 'personal', club: c, key: targetKeyForClub(c), title: c.name || c.display_name || '同好会', meta: [c.school, c.province].filter(Boolean).join(' · ') || '个人星图' });
+      }
+      return results.slice(0, 8);
+    }
+    var unions = StarState.unions || [];
+    for (var u = 0; u < unions.length; u++) {
+      var union = unions[u];
+      var unionHay = [union.name, union.region, union.description, union.bound_club_name].map(normalizeSearchText).join(' ');
+      if (unionHay.indexOf(q) >= 0) {
+        results.push({ type: 'union', mode: 'union', union: union, key: targetKeyForUnion(union), title: union.name || '联合', meta: (union.bound_club_name || union.region || '联合星团') });
+      }
+      var members = union._members || [];
+      for (var m = 0; m < members.length; m++) {
+        var club = getUnionMemberClub(members[m]);
+        var memberHay = [club.name, club.school, club.province, union.name, union.region].map(normalizeSearchText).join(' ');
+        if (memberHay.indexOf(q) < 0) continue;
+        var shared = StarState._sharedUnionMembers && StarState._sharedUnionMembers[targetKeyForClub(club)];
+        var sharedMeta = shared && shared.length > 1 ? ('加入 ' + shared.length + ' 个联合') : (union.name || '联合星图');
+        results.push({ type: 'club', mode: 'union', union: union, club: club, key: targetKeyForClub(club), title: club.name || '同好会', meta: [club.school, sharedMeta].filter(Boolean).join(' · ') });
+        if (results.length >= 8) return results;
+      }
+      if (results.length >= 8) return results.slice(0, 8);
+    }
+    return results.slice(0, 8);
+  }
+
+  function renderStarSearchResults() {
+    var wrap = $('starSearchWrap');
+    var resultsEl = $('starSearchResults');
+    var q = $('starSearchInput').value.trim();
+    StarState.searchQuery = q;
+    wrap.classList.toggle('has-value', !!q);
+    if (!q) {
+      StarState.searchResults = [];
+      StarState.searchHighlightKey = '';
+      resultsEl.classList.remove('visible');
+      resultsEl.innerHTML = '';
+      renderFrame();
+      return;
+    }
+    var results = findStarSearchTargets(q);
+    StarState.searchResults = results;
+    if (!results.length) {
+      resultsEl.innerHTML = '<div class="star-search-empty">未找到匹配的星点</div>';
+      resultsEl.classList.add('visible');
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < results.length; i++) {
+      html += '<button class="star-search-result" type="button" data-index="' + i + '" role="option"><strong>' + esc(results[i].title) + '</strong><span>' + esc(results[i].meta || '') + '</span></button>';
+    }
+    resultsEl.innerHTML = html;
+    resultsEl.classList.add('visible');
+    resultsEl.querySelectorAll('.star-search-result').forEach(function (btn) {
+      btn.addEventListener('click', function () { focusSearchResult(StarState.searchResults[parseInt(btn.dataset.index, 10)]); });
+    });
+  }
+
+  function focusSearchResult(result) {
+    if (!result) return;
+    $('starSearchResults').classList.remove('visible');
+    StarState.searchTarget = result;
+    StarState.searchHighlightKey = result.key;
+    if (result.mode && result.mode !== StarState.submode) applySubmode(result.mode);
+    renderFrame();
+    var target = locateSearchResult(result);
+    if (!target) return;
+    focusWorldPoint(target.x, target.y, Math.max(StarState.targetZoom, result.type === 'union' ? 0.98 : 1.16));
+    triggerStarBurst({ x: target.x, y: target.y, color: target.color || '#5fb7d7', radius: result.type === 'union' ? 40 : 22 });
+    if (result.type === 'union' && result.union) StarState.selectedUnion = result.union;
+    if (result.type === 'club' && result.club) StarState.hoveredStar = result.club;
+    updateObservatoryHud();
+  }
+
+  function locateSearchResult(result) {
+    if (!result) return null;
+    if (result.mode === 'personal') {
+      var personal = StarState._positions || [];
+      for (var i = 0; i < personal.length; i++) {
+        if (targetKeyForClub(personal[i].club) === result.key) return { x: personal[i].x, y: personal[i].y, color: '#5fb7d7' };
+      }
+      return null;
+    }
+    var layout = buildUnionConstellationLayout(StarState.unions || []);
+    var positions = layout.positions || [];
+    for (var u = 0; u < positions.length; u++) {
+      var p = positions[u];
+      if (result.type === 'union' && targetKeyForUnion(p.union) === result.key) return { x: p.x, y: p.y, color: p.union.star_color || '#f0c060' };
+      var members = p.memberPositions || [];
+      for (var m = 0; m < members.length; m++) {
+        if (targetKeyForClub(members[m].club) === result.key) return { x: members[m].x, y: members[m].y, color: '#5fb7d7' };
+      }
+    }
+    return null;
+  }
+
+  function clearStarSearch() {
+    $('starSearchInput').value = '';
+    StarState.searchQuery = '';
+    StarState.searchResults = [];
+    StarState.searchTarget = null;
+    StarState.searchHighlightKey = '';
+    $('starSearchWrap').classList.remove('has-value');
+    $('starSearchResults').classList.remove('visible');
+    $('starSearchResults').innerHTML = '';
+    renderFrame();
+  }
+
+  function setupStarSearch() {
+    var input = $('starSearchInput');
+    var results = $('starSearchResults');
+    var clearBtn = $('starSearchClear');
+    var timer = null;
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(renderStarSearchResults, 80);
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (StarState.searchResults && StarState.searchResults[0]) focusSearchResult(StarState.searchResults[0]);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        clearStarSearch();
+      }
+    });
+    clearBtn.addEventListener('click', clearStarSearch);
+    document.addEventListener('click', function (e) {
+      if (!input.contains(e.target) && !results.contains(e.target) && !clearBtn.contains(e.target)) results.classList.remove('visible');
+    });
+  }
+
+  function setupClubSearch() {
+    var input = $('edClubSearch');
+    var results = $('edClubResults');
+
+    // Search mode toggle buttons
+    $('edSearchModeClub').addEventListener('click', function () {
+      StarState.searchMode = 'club';
+      document.querySelectorAll('.search-mode-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === 'club'); });
+      input.placeholder = '搜索同好会...';
+      input.value = '';
+      results.classList.remove('visible');
+    });
+    $('edSearchModeSchool').addEventListener('click', function () {
+      StarState.searchMode = 'school';
+      document.querySelectorAll('.search-mode-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.mode === 'school'); });
+      input.placeholder = '搜索学校名称...';
+      input.value = '';
+      results.classList.remove('visible');
+    });
+
+    input.addEventListener('input', function () {
+      clearTimeout(searchTimeout);
+      var q = input.value.trim().toLowerCase();
+      if (q.length < 1) { results.classList.remove('visible'); return; }
+      searchTimeout = setTimeout(function () {
+        if (StarState.searchMode === 'school') {
+          // School search: group by school, show each school with count
+          var allClubs = getClubList();
+          var schoolMap = {};
+          for (var i = 0; i < allClubs.length; i++) {
+            var c = allClubs[i];
+            var school = (c.school || '').trim();
+            if (!school || school.toLowerCase().indexOf(q) < 0) continue;
+            if (!schoolMap[school]) schoolMap[school] = { school: school, count: 0, clubs: [] };
+            schoolMap[school].count++;
+            schoolMap[school].clubs.push({ club_id: c.id, country: c._country || 'china', name: c.name || c.display_name || '' });
+          }
+          var schools = [];
+          for (var s in schoolMap) schools.push(schoolMap[s]);
+          schools.sort(function (a, b) { return b.count - a.count; });
+          schools = schools.slice(0, 15);
+          var html = '';
+          for (var i = 0; i < schools.length; i++) {
+            var sc = schools[i];
+            html += '<div class="club-search-item" data-action="add-school" data-school="' + esc(sc.school) + '">';
+            html += '<div style="font-weight:600;">' + esc(sc.school) + '</div>';
+            html += '<div class="cs-school">' + sc.count + ' 个同好会</div>';
+            html += '</div>';
+          }
+          if (!schools.length) html = '<div class="club-search-item" style="color:var(--muted);">未找到匹配的学校</div>';
+          results.innerHTML = html;
+          results.classList.add('visible');
+          // Bind school clicks: add all clubs from this school
+          var schoolItems = results.querySelectorAll('.club-search-item[data-action="add-school"]');
+          for (var j = 0; j < schoolItems.length; j++) {
+            schoolItems[j].addEventListener('click', function () {
+              var schoolName = this.dataset.school;
+              var clubList = schoolMap[schoolName].clubs;
+              for (var k = 0; k < clubList.length; k++) {
+                var already = false;
+                for (var t = 0; t < StarState.pendingClubTags.length; t++) {
+                  if (StarState.pendingClubTags[t].club_id === clubList[k].club_id && StarState.pendingClubTags[t].country === clubList[k].country) { already = true; break; }
+                }
+                if (!already) StarState.pendingClubTags.push(clubList[k]);
+              }
+              renderClubTags();
+              input.value = '';
+              results.classList.remove('visible');
+            });
+          }
+        } else {
+          // Club search (original)
+          var allClubs2 = getClubList();
+          var matches = allClubs2.filter(function (c) {
+            var name = (c.name || c.display_name || '').toLowerCase();
+            var school = (c.school || '').toLowerCase();
+            return name.indexOf(q) >= 0 || school.indexOf(q) >= 0;
+          }).slice(0, 15);
+          var html2 = '';
+          for (var i2 = 0; i2 < matches.length; i2++) {
+            var m = matches[i2];
+            html2 += '<div class="club-search-item" data-club-id="' + m.id + '" data-country="' + (m._country || 'china') + '" data-name="' + esc(m.name || m.display_name || '') + '">';
+            html2 += '<div>' + esc(m.name || m.display_name || '') + '</div>';
+            html2 += '<div class="cs-school">' + esc(m.school || '') + ' &middot; ' + esc(m.province || m.prefecture || '') + '</div>';
+            html2 += '</div>';
+          }
+          if (!matches.length) html2 = '<div class="club-search-item" style="color:var(--muted);">未找到匹配的同好会</div>';
+          results.innerHTML = html2;
+          results.classList.add('visible');
+          var items = results.querySelectorAll('.club-search-item[data-club-id]');
+          for (var i3 = 0; i3 < items.length; i3++) {
+            items[i3].addEventListener('click', function () {
+              var cid = parseInt(this.dataset.clubId);
+              var ctry = this.dataset.country;
+              var cname = this.dataset.name;
+              var already = false;
+              for (var j2 = 0; j2 < StarState.pendingClubTags.length; j2++) {
+                if (StarState.pendingClubTags[j2].club_id === cid && StarState.pendingClubTags[j2].country === ctry) { already = true; break; }
+              }
+              if (!already) {
+                StarState.pendingClubTags.push({ club_id: cid, country: ctry, name: cname });
+                renderClubTags();
+              }
+              input.value = '';
+              results.classList.remove('visible');
+            });
+          }
+        }
+      }, 200);
+    });
+    // Hide results on outside click
+    document.addEventListener('click', function (e) {
+      if (!input.contains(e.target) && !results.contains(e.target)) {
+        results.classList.remove('visible');
+      }
+    });
+  }
+
+  // ── Bound Club Search ──
+  function setupBoundSearch() {
+    var input = $('edBoundSearch');
+    var results = $('edBoundResults');
+    input.addEventListener('input', function () {
+      clearTimeout(searchTimeout);
+      var q = input.value.trim().toLowerCase();
+      if (q.length < 1) { results.classList.remove('visible'); return; }
+      searchTimeout = setTimeout(function () {
+        var allClubs = getClubList();
+        var matches = allClubs.filter(function (c) {
+          var name = (c.name || c.display_name || '').toLowerCase();
+          var school = (c.school || '').toLowerCase();
+          return name.indexOf(q) >= 0 || school.indexOf(q) >= 0;
+        }).slice(0, 15);
+        var html = '';
+        for (var i = 0; i < matches.length; i++) {
+          var m = matches[i];
+          html += '<div class="club-search-item" data-club-id="' + m.id + '" data-country="' + (m._country || 'china') + '" data-name="' + esc(m.name || m.display_name || '') + '">';
+          html += '<div>' + esc(m.name || m.display_name || '') + '</div>';
+          html += '<div class="cs-school">' + esc(m.school || '') + ' &middot; ' + esc(m.province || m.prefecture || '') + '</div>';
+          html += '</div>';
+        }
+        if (!matches.length) html = '<div class="club-search-item" style="color:var(--muted);">未找到匹配的同好会</div>';
+        results.innerHTML = html;
+        results.classList.add('visible');
+        var items = results.querySelectorAll('.club-search-item[data-club-id]');
+        for (var i2 = 0; i2 < items.length; i2++) {
+          items[i2].addEventListener('click', function () {
+            var cid = parseInt(this.dataset.clubId);
+            var ctry = this.dataset.country;
+            var cname = this.dataset.name;
+            StarState.boundClub = { club_id: cid, country: ctry, name: cname };
+            renderBoundTag();
+            input.value = '';
+            results.classList.remove('visible');
+          });
+        }
+      }, 200);
+    });
+    document.addEventListener('click', function (e) {
+      if (!input.contains(e.target) && !results.contains(e.target)) {
+        results.classList.remove('visible');
+      }
+    });
+  }
+
+  // ── Data Loading ──
+  function loadUnions() {
+    apiGet('./api/star_unions.php?action=list').then(function (res) {
+      if (!res.success) { renderFrame(); updateEmptyState(); return; }
+      var unions = res.unions || [];
+      // Fetch member details for each union in parallel
+      var fetches = unions.map(function (u) {
+        return apiGet('./api/star_unions.php?action=get&id=' + u.id).then(function (data) {
+          u._members = (data.success && data.members) ? data.members : [];
+          return u;
+        }).catch(function () { u._members = []; return u; });
+      });
+      Promise.all(fetches).then(function () {
+        StarState.unions = unions;
+        invalidateUnionLayoutCache();
+        renderFrame();
+        if (StarState.submode === 'union') setTimeout(focusPreferredUnionIfNeeded, 80);
+        updateEmptyState();
+      });
+    }).catch(function () { renderFrame(); updateEmptyState(); });
+  }
+
+  function updateEmptyState() {
+    var empty = $('emptyState');
+    if (StarState.submode === 'personal') {
+      if (!StarState.personalClubs.length) {
+        empty.style.display = '';
+        $('emptyTitle').textContent = '个人星域尚未点亮';
+        $('emptyDesc').textContent = '加入同好会后，它们会成为你的星点；也可以先切换到联合星图探索现有高校联合。';
+      } else {
+        empty.style.display = 'none';
+      }
+    } else {
+      if (!StarState.unions.length) {
+        empty.style.display = '';
+        $('emptyTitle').textContent = '联合星域等待建立';
+        $('emptyDesc').textContent = '点击右上角创建联合，绑定群组并添加成员同好会，星图会自动生成连接关系。';
+      } else {
+        empty.style.display = 'none';
+      }
+    }
+    updateObservatoryHud();
+  }
+
+  // ── Hex to RGBA ──
+  function hexToRgba(hex, alpha) {
+    var r = 240, g = 200, b = 96;
+    var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (m) { r = parseInt(m[1], 16); g = parseInt(m[2], 16); b = parseInt(m[3], 16); }
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  // ── HTML Escape ──
+  function esc(text) {
+    return String(text || '').replace(/[&<>"']/g, function (ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+    });
+  }
+
+  // ── Event Bindings ──
+  function bindEvents() {
+    // Theme
+    $('themeBtn').addEventListener('click', function () {
+      applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+      setTimeout(renderFrame, 50);
+    });
+
+    // Back
+    $('backBtn').addEventListener('click', function () {
+      window.location.href = './index.html';
+    });
+
+    // Submode switch
+    document.querySelectorAll('.submode-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        switchSubmode(t.dataset.submode);
+      });
+    });
+
+    $('zoomOutBtn').addEventListener('click', function () { zoomBy(0.86); });
+    $('zoomInBtn').addEventListener('click', function () { zoomBy(1.16); });
+    $('resetViewBtn').addEventListener('click', resetView);
+    $('focusSelectedBtn').addEventListener('click', focusSelectedTarget);
+    $('toggleImmersiveBtn').addEventListener('click', function () {
+      document.body.classList.toggle('is-immersive');
+      this.textContent = document.body.classList.contains('is-immersive') ? '显示' : '沉浸';
+      this.title = document.body.classList.contains('is-immersive') ? '显示辅助面板' : '隐藏辅助面板';
+    });
+
+    // ── Drag-to-Pan + Hover ──
+    starCanvas.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      var rect = starCanvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      if (StarState.submode === 'union') {
+        var dragUnion = hitTestUnion(mx, my);
+        if (dragUnion) {
+          var startWorld = screenToWorld(mx, my);
+          var existingOffset = StarState._draggedUnionOffsets[dragUnion.id] || { x: 0, y: 0 };
+          StarState._draggingUnionId = dragUnion.id;
+          StarState._draggingUnionStartWorldX = startWorld.x;
+          StarState._draggingUnionStartWorldY = startWorld.y;
+          StarState._draggingUnionBaseOffsetX = existingOffset.x || 0;
+          StarState._draggingUnionBaseOffsetY = existingOffset.y || 0;
+          StarState.isDragging = true;
+          StarState.hasDragged = false;
+          StarState.dragStartX = e.clientX;
+          StarState.dragStartY = e.clientY;
+          StarState._dragVelX = 0;
+          StarState._dragVelY = 0;
+          StarState.hoveredUnion = dragUnion;
+          starCanvas.style.cursor = 'grabbing';
+          hideTooltip();
+          e.preventDefault();
+          return;
+        }
+      }
+      StarState.isDragging = true;
+      StarState.hasDragged = false;
+      StarState.dragStartX = e.clientX;
+      StarState.dragStartY = e.clientY;
+      StarState.dragStartPanX = StarState.panX;
+      StarState.dragStartPanY = StarState.panY;
+      StarState.targetPanX = StarState.panX;
+      StarState.targetPanY = StarState.panY;
+      StarState._dragVelX = 0;
+      StarState._dragVelY = 0;
+      StarState._dragLastX = e.clientX;
+      StarState._dragLastY = e.clientY;
+      StarState._dragLastTime = performance.now();
+      starCanvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    starCanvas.addEventListener('mousemove', function (e) {
+      if (StarState.isDragging) {
+        if (StarState._draggingUnionId) {
+          var dragRect = starCanvas.getBoundingClientRect();
+          var dragWorld = screenToWorld(e.clientX - dragRect.left, e.clientY - dragRect.top);
+          var odx = dragWorld.x - StarState._draggingUnionStartWorldX;
+          var ody = dragWorld.y - StarState._draggingUnionStartWorldY;
+          if (Math.abs(e.clientX - StarState.dragStartX) > 3 || Math.abs(e.clientY - StarState.dragStartY) > 3) StarState.hasDragged = true;
+          StarState._draggedUnionOffsets[StarState._draggingUnionId] = {
+            x: StarState._draggingUnionBaseOffsetX + odx,
+            y: StarState._draggingUnionBaseOffsetY + ody
+          };
+          invalidateUnionLayoutCache();
+          StarState._lastRenderKey = '';
+          renderFrame();
+          hideTooltip();
+          starCanvas.style.cursor = 'grabbing';
+          return;
+        }
+        var dx = e.clientX - StarState.dragStartX;
+        var dy = e.clientY - StarState.dragStartY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) StarState.hasDragged = true;
+        StarState.panX = StarState.dragStartPanX + dx;
+        StarState.panY = StarState.dragStartPanY + dy;
+        StarState.targetPanX = StarState.panX;
+        StarState.targetPanY = StarState.panY;
+        var now = performance.now();
+        var dt = now - StarState._dragLastTime;
+        if (dt > 5) {
+          StarState._dragVelX = (e.clientX - StarState._dragLastX) / dt * 16;
+          StarState._dragVelY = (e.clientY - StarState._dragLastY) / dt * 16;
+          StarState._dragLastX = e.clientX;
+          StarState._dragLastY = e.clientY;
+          StarState._dragLastTime = now;
+        }
+        hideTooltip();
+        return;
+      }
+
+      var rect = starCanvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      if (StarState.submode === 'personal') {
+        var club = hitTestPersonal(mx, my);
+        if (club && (!StarState.hoveredStar || StarState.hoveredStar.club_id !== club.club_id)) {
+          StarState.hoveredStar = club;
+          renderFrame();
+          showTooltip(club, e.clientX, e.clientY);
+          starCanvas.style.cursor = 'pointer';
+        } else if (!club && StarState.hoveredStar) {
+          StarState.hoveredStar = null;
+          renderFrame();
+          hideTooltip();
+          starCanvas.style.cursor = 'grab';
+        } else if (club) {
+          showTooltip(club, e.clientX, e.clientY);
+        }
+      } else {
+        var hoverNow = performance.now();
+        if (hoverNow - (StarState._lastUnionHoverTime || 0) < 24) {
+          if (StarState.hoveredStar) showTooltip(StarState.hoveredStar, e.clientX, e.clientY);
+          return;
+        }
+        StarState._lastUnionHoverTime = hoverNow;
+        var union = hitTestUnion(mx, my);
+        var memberClub = hitTestUnionMember(mx, my);
+        if (memberClub && (!StarState.hoveredStar || StarState.hoveredStar.club_id !== memberClub.club_id)) {
+          StarState.hoveredStar = memberClub;
+          StarState.hoveredUnion = null;
+          renderFrame();
+          showTooltip(memberClub, e.clientX, e.clientY);
+          starCanvas.style.cursor = 'pointer';
+        } else if (!union && !memberClub && StarState.hoveredStar) {
+          StarState.hoveredStar = null;
+          StarState.hoveredUnion = null;
+          renderFrame();
+          hideTooltip();
+          starCanvas.style.cursor = 'grab';
+        } else if (memberClub) {
+          showTooltip(memberClub, e.clientX, e.clientY);
+          starCanvas.style.cursor = 'pointer';
+        } else if (union) {
+          if (!StarState.hoveredUnion || StarState.hoveredUnion.id !== union.id || StarState.hoveredStar) {
+            StarState.hoveredUnion = union;
+            StarState.hoveredStar = null;
+            hideTooltip();
+            renderFrame();
+          }
+          starCanvas.style.cursor = 'pointer';
+        } else {
+          if (StarState.hoveredUnion) {
+            StarState.hoveredUnion = null;
+            renderFrame();
+          }
+          starCanvas.style.cursor = 'grab';
+        }
+      }
+    });
+
+    window.addEventListener('mouseup', function (e) {
+      if (!StarState.isDragging) return;
+      if (StarState._draggingUnionId) {
+        StarState.isDragging = false;
+        StarState._draggingUnionId = null;
+        StarState._dragVelX = 0;
+        StarState._dragVelY = 0;
+        StarState._lastRenderKey = '';
+        renderFrame();
+        starCanvas.style.cursor = StarState.hoveredUnion ? 'pointer' : 'grab';
+        return;
+      }
+      StarState.isDragging = false;
+      if (!StarState.hasDragged) { // it was a click, let click handler fire
+        StarState._dragVelX = 0;
+        StarState._dragVelY = 0;
+        return;
+      }
+      // Apply restrained inertia so the map feels physical without drifting away.
+      var inertia = StarState.submode === 'union' ? 1.15 : 2.0;
+      StarState.targetPanX = StarState.panX + StarState._dragVelX * inertia;
+      StarState.targetPanY = StarState.panY + StarState._dragVelY * inertia;
+      StarState._dragVelX = 0;
+      StarState._dragVelY = 0;
+      starCanvas.style.cursor = StarState.hoveredStar ? 'pointer' : 'grab';
+    });
+
+    starCanvas.addEventListener('mouseleave', function () {
+      if (StarState.isDragging) StarState.isDragging = false;
+      StarState._draggingUnionId = null;
+      StarState.hoveredStar = null;
+      StarState.hoveredUnion = null;
+      renderFrame();
+      hideTooltip();
+      starCanvas.style.cursor = 'grab';
+    });
+
+    starCanvas.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) {
+        var t = e.touches[0];
+        var touchRect = starCanvas.getBoundingClientRect();
+        if (StarState.submode === 'union') {
+          var touchUnion = hitTestUnion(t.clientX - touchRect.left, t.clientY - touchRect.top);
+          if (touchUnion) {
+            var touchWorld = screenToWorld(t.clientX - touchRect.left, t.clientY - touchRect.top);
+            var touchOffset = StarState._draggedUnionOffsets[touchUnion.id] || { x: 0, y: 0 };
+            StarState._touchMode = 'union-drag';
+            StarState.isDragging = true;
+            StarState.hasDragged = false;
+            StarState.dragStartX = t.clientX;
+            StarState.dragStartY = t.clientY;
+            StarState._draggingUnionId = touchUnion.id;
+            StarState._draggingUnionStartWorldX = touchWorld.x;
+            StarState._draggingUnionStartWorldY = touchWorld.y;
+            StarState._draggingUnionBaseOffsetX = touchOffset.x || 0;
+            StarState._draggingUnionBaseOffsetY = touchOffset.y || 0;
+            StarState.hoveredUnion = touchUnion;
+            return;
+          }
+        }
+        StarState._touchMode = 'pan';
+        StarState.isDragging = true;
+        StarState.hasDragged = false;
+        StarState.dragStartX = t.clientX;
+        StarState.dragStartY = t.clientY;
+        StarState.dragStartPanX = StarState.panX;
+        StarState.dragStartPanY = StarState.panY;
+      } else if (e.touches.length === 2) {
+        var a = e.touches[0], b = e.touches[1];
+        var rect = starCanvas.getBoundingClientRect();
+        StarState._touchMode = 'pinch';
+        StarState.isDragging = false;
+        StarState.hasDragged = true;
+        StarState._touchStartDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        StarState._touchStartZoom = StarState.targetZoom;
+        StarState._touchStartPanX = StarState.targetPanX;
+        StarState._touchStartPanY = StarState.targetPanY;
+        StarState._touchCenterX = ((a.clientX + b.clientX) / 2) - rect.left;
+        StarState._touchCenterY = ((a.clientY + b.clientY) / 2) - rect.top;
+      }
+    }, { passive: false });
+
+    starCanvas.addEventListener('touchmove', function (e) {
+      if (!StarState._touchMode) return;
+      e.preventDefault();
+      if (StarState._touchMode === 'pan' && e.touches.length === 1) {
+        var t = e.touches[0];
+        var dx = t.clientX - StarState.dragStartX;
+        var dy = t.clientY - StarState.dragStartY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) StarState.hasDragged = true;
+        StarState.panX = StarState.dragStartPanX + dx;
+        StarState.panY = StarState.dragStartPanY + dy;
+        StarState.targetPanX = StarState.panX;
+        StarState.targetPanY = StarState.panY;
+      } else if (StarState._touchMode === 'union-drag' && e.touches.length === 1) {
+        var tu = e.touches[0];
+        var uRect = starCanvas.getBoundingClientRect();
+        var wpos = screenToWorld(tu.clientX - uRect.left, tu.clientY - uRect.top);
+        var udx = wpos.x - StarState._draggingUnionStartWorldX;
+        var udy = wpos.y - StarState._draggingUnionStartWorldY;
+        if (Math.abs(tu.clientX - StarState.dragStartX) > 4 || Math.abs(tu.clientY - StarState.dragStartY) > 4) StarState.hasDragged = true;
+        if (StarState._draggingUnionId) {
+          StarState._draggedUnionOffsets[StarState._draggingUnionId] = {
+            x: StarState._draggingUnionBaseOffsetX + udx,
+            y: StarState._draggingUnionBaseOffsetY + udy
+          };
+          invalidateUnionLayoutCache();
+          StarState._lastRenderKey = '';
+          renderFrame();
+        }
+      } else if (StarState._touchMode === 'pinch' && e.touches.length === 2) {
+        var a = e.touches[0], b = e.touches[1];
+        var rect = starCanvas.getBoundingClientRect();
+        var centerX = ((a.clientX + b.clientX) / 2) - rect.left;
+        var centerY = ((a.clientY + b.clientY) / 2) - rect.top;
+        var nextDistance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        if (!StarState._touchStartDistance) return;
+        var nextZoom = Math.max(0.35, Math.min(3.2, StarState._touchStartZoom * (nextDistance / StarState._touchStartDistance)));
+        var worldX = (StarState._touchCenterX - StarState._touchStartPanX) / StarState._touchStartZoom;
+        var worldY = (StarState._touchCenterY - StarState._touchStartPanY) / StarState._touchStartZoom;
+        StarState.targetZoom = nextZoom;
+        StarState.zoom = nextZoom;
+        StarState.targetPanX = centerX - worldX * nextZoom;
+        StarState.targetPanY = centerY - worldY * nextZoom;
+        StarState.panX = StarState.targetPanX;
+        StarState.panY = StarState.targetPanY;
+      }
+      hideTooltip();
+      updateObservatoryHud();
+    }, { passive: false });
+
+    starCanvas.addEventListener('touchend', function (e) {
+      if (!e.touches || e.touches.length === 0) {
+        StarState._touchMode = null;
+        StarState.isDragging = false;
+        StarState._draggingUnionId = null;
+      }
+    });
+
+    starCanvas.addEventListener('click', function (e) {
+      if (StarState.hasDragged) { StarState.hasDragged = false; return; }
+      var rect = starCanvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      if (StarState.submode === 'personal') {
+        var club = hitTestPersonal(mx, my);
+        if (club) {
+          var wClub = screenToWorld(mx, my);
+          triggerStarBurst({ x: wClub.x, y: wClub.y, color: '#5fb7d7', radius: 24 });
+          setTimeout(function () { openClubDetail(club); }, prefersReducedMotion() ? 0 : 120);
+        }
+        else {
+          StarState.hoveredStar = null;
+          hideTooltip();
+          updateObservatoryHud();
+        }
+      } else {
+        var memberClub = hitTestUnionMember(mx, my);
+        if (memberClub) {
+          var wMember = screenToWorld(mx, my);
+          triggerStarBurst({ x: wMember.x, y: wMember.y, color: '#5fb7d7', radius: 22 });
+          setTimeout(function () { openClubDetail(memberClub); }, prefersReducedMotion() ? 0 : 120);
+          return;
+        }
+        var union = hitTestUnion(mx, my);
+        if (union) {
+          var positions = StarState._unionPositions || [];
+          for (var i = 0; i < positions.length; i++) {
+            if (positions[i].union && positions[i].union.id === union.id) {
+              focusWorldPoint(positions[i].x, positions[i].y, Math.max(StarState.targetZoom, 0.92));
+              triggerStarBurst({ x: positions[i].x, y: positions[i].y, color: union.star_color || '#f0c060', radius: 40 });
+              break;
+            }
+          }
+          setTimeout(function () { openDetailPanel(union); }, prefersReducedMotion() ? 0 : 120);
+        } else if ($('detailPanel').classList.contains('open')) {
+          closeDetailPanel();
+        }
+      }
+    });
+
+    starCanvas.addEventListener('dblclick', function (e) {
+      e.preventDefault();
+      var rect = starCanvas.getBoundingClientRect();
+      var w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+      focusWorldPoint(w.x, w.y, Math.min(3.2, Math.max(1.15, StarState.targetZoom * 1.45)));
+    });
+
+    // Detail panel close
+    $('detailCloseBtn').addEventListener('click', closeDetailPanel);
+
+    // Create union button
+    $('createUnionBtn').addEventListener('click', function () { openEditor(null); });
+
+    // Club detail modal
+    $('clubDetailCloseBtn').addEventListener('click', closeClubDetail);
+    $('clubDetailOverlay').addEventListener('click', function (e) {
+      if (e.target === this) closeClubDetail();
+    });
+    document.addEventListener('keydown', function (e) {
+      var tag = (e.target && e.target.tagName || '').toLowerCase();
+      var isTyping = tag === 'input' || tag === 'textarea' || tag === 'select';
+      if (e.key === 'Escape') {
+        if ($('clubDetailOverlay').style.display !== 'none') closeClubDetail();
+        if ($('editorModal').style.display !== 'none') closeEditor();
+        if ($('detailPanel').classList.contains('open')) closeDetailPanel();
+        return;
+      }
+      if (isTyping) return;
+      if (e.key === '1') switchSubmode('personal');
+      if (e.key === '2') switchSubmode('union');
+      if (e.key === '0') resetView();
+      if (e.key === '+' || e.key === '=') zoomBy(1.16);
+      if (e.key === '-' || e.key === '_') zoomBy(0.86);
+    });
+
+    // Editor modal
+    $('editorModal').addEventListener('click', function (e) {
+      if (e.target === this) closeEditor();
+    });
+    $('edCancelBtn').addEventListener('click', closeEditor);
+    $('edSaveBtn').addEventListener('click', saveUnion);
+    $('edDeleteBtn').addEventListener('click', function () { deleteUnion(StarState.editingUnionId); });
+    // Color swatch click
+    document.querySelectorAll('.color-swatch').forEach(function (s) {
+      s.addEventListener('click', function () {
+        document.querySelectorAll('.color-swatch').forEach(function (x) { x.classList.remove('active'); });
+        s.classList.add('active');
+      });
+    });
+
+    // Close detail panel on outside click (only for union mode)
+    document.addEventListener('click', function (e) {
+      var panel = $('detailPanel');
+      if (!panel.classList.contains('open')) return;
+      if (!panel.contains(e.target) && !e.target.closest('#starCanvas')) {
+        // Don't auto-close; user must click close button or X
+      }
+    });
+
+    // Zoom with mouse wheel
+    starCanvas.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      // Throttle lightly: keep high-resolution trackpads smooth without flooding frames.
+      var wheelNow = performance.now();
+      if (wheelNow - (StarState._lastWheelTime || 0) < 8) return;
+      StarState._lastWheelTime = wheelNow;
+
+      var rect = starCanvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      // Use target values for anchor to prevent drift during rapid scroll
+      var worldX = (mx - StarState.targetPanX) / StarState.targetZoom;
+      var worldY = (my - StarState.targetPanY) / StarState.targetZoom;
+      var newZoom = StarState.targetZoom * Math.exp(-e.deltaY * 0.0018);
+      newZoom = Math.max(0.35, Math.min(3.2, newZoom));
+      StarState.targetZoom = newZoom;
+      StarState.targetPanX = mx - worldX * newZoom;
+      StarState.targetPanY = my - worldY * newZoom;
+      updateObservatoryHud();
+    }, { passive: false });
+
+    // Resize
+    window.addEventListener('resize', function () {
+      resizeParticles();
+      resizeStarCanvas();
+      renderFrame();
+    });
+  }
+
+  // ── Init ──
+  async function init() {
+    initThemePreference();
+
+    // Check auth
+    var auth = await apiGet('./api/auth.php?action=me&_=' + Date.now()).catch(function () { return null; });
+    if (!auth || !auth.logged_in) {
+      window.location.replace('./login.html?redirect=star_map.html');
+      return;
+    }
+    StarState.user = auth.user;
+    StarState.memberships = auth.memberships || [];
+
+    // Init canvases
+    initParticles();
+    initStarCanvas();
+
+    // Load club data
+    var clubs = await loadClubData();
+    StarState.clubLookup = buildClubLookup(clubs);
+
+    // Resolve personal clubs
+    resolvePersonalClubs();
+
+    // Load unions
+    loadUnions();
+
+    // Bind events
+    bindEvents();
+    setupStarSearch();
+    setupClubSearch();
+    setupBoundSearch();
+    bindSystemThemePreference();
+
+    // Initial render + start continuous rAF loop
+    startStarRenderLoop();
+    updateEmptyState();
+
+    // Hide canvas loading flash
+    document.body.style.opacity = '1';
+  }
+
+  // Start
+  document.body.style.opacity = '0';
+  init();
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,9 @@ var CONFIG = window.CONFIG || {
   PUBLIC_BASE_URL: 'https://www.map.vnfest.top'
 };
 
+var VNFEST_MEDIA_PRELOADS = window.VNFEST_MEDIA_PRELOADS || new Set();
+var VNFEST_IMAGE_URL_RE = /\.(?:avif|gif|ico|jpe?g|png|svg|webp)(?:[?#].*)?$/i;
+
 var Utils = window.Utils || {
   isMobileViewport: () => window.matchMedia('(max-width: 720px)').matches,
   extractUrl: (item) => {
@@ -68,6 +71,31 @@ var Utils = window.Utils || {
     }
     return url;
   },
+  preloadMediaUrl: (value) => {
+    const url = Utils.resolveMediaUrl(value);
+    if (!url || !VNFEST_IMAGE_URL_RE.test(url) || VNFEST_MEDIA_PRELOADS.has(url)) return url;
+    VNFEST_MEDIA_PRELOADS.add(url);
+    if (typeof Image === 'undefined') return url;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    return url;
+  },
+  enhanceImages: (root) => {
+    const scope = root && root.querySelectorAll ? root : document;
+    const images = scope.tagName === 'IMG' ? [scope] : Array.from(scope.querySelectorAll('img'));
+    images.forEach((img) => {
+      if (!img.hasAttribute('decoding')) img.setAttribute('decoding', 'async');
+      if (
+        !img.hasAttribute('loading') &&
+        !img.closest('[data-eager-images]') &&
+        !img.closest('[style*="display:none"]') &&
+        !img.id
+      ) {
+        img.setAttribute('loading', 'lazy');
+      }
+    });
+  },
   debounce: (fn, delay) => {
     let timer;
     return (...args) => {
@@ -80,3 +108,26 @@ var Utils = window.Utils || {
 window.CONFIG = CONFIG;
 window.Utils = Utils;
 window.AppCore = { CONFIG, Utils };
+window.VNFEST_MEDIA_PRELOADS = VNFEST_MEDIA_PRELOADS;
+
+function setupVNFestImageDefaults() {
+  if (!document.querySelectorAll) return;
+  Utils.enhanceImages(document);
+  if (!window.MutationObserver) return;
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) Utils.enhanceImages(node);
+      });
+    });
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupVNFestImageDefaults, { once: true });
+  } else {
+    setupVNFestImageDefaults();
+  }
+}

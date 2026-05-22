@@ -291,6 +291,43 @@ if ($isMysql) {
     $tryIndex("CREATE INDEX idx_announce_status ON announcements(status)");
     echo "[OK] announcements 表已创建\n";
 
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS star_unions (
+            id          INT AUTO_INCREMENT PRIMARY KEY,
+            name        VARCHAR(255) NOT NULL,
+            description TEXT,
+            region      VARCHAR(100) DEFAULT '',
+            country     VARCHAR(50) DEFAULT 'china',
+            created_by  INT NOT NULL,
+            created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    $tryIndex("CREATE INDEX idx_star_unions_country ON star_unions(country)");
+    $tryIndex("CREATE INDEX idx_star_unions_created_by ON star_unions(created_by)");
+    echo "[OK] star_unions 表已创建\n";
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS star_union_members (
+            id           INT AUTO_INCREMENT PRIMARY KEY,
+            union_id     INT NOT NULL,
+            club_id      INT NOT NULL,
+            club_country VARCHAR(50) DEFAULT 'china',
+            added_by     INT,
+            added_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(union_id, club_id, club_country),
+            FOREIGN KEY (union_id) REFERENCES star_unions(id) ON DELETE CASCADE,
+            FOREIGN KEY (added_by) REFERENCES users(id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    $tryIndex("CREATE INDEX idx_star_union_members_union ON star_union_members(union_id)");
+    echo "[OK] star_union_members 表已创建\n";
+
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN bound_club_id INT DEFAULT NULL");
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN bound_club_country VARCHAR(50) DEFAULT 'china'");
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN star_color VARCHAR(20) DEFAULT '#f0c060'");
+    echo "[OK] star_unions 新列已添加 (bound_club_id, bound_club_country, star_color)\n";
+
     $tryAlter("ALTER TABLE users ADD COLUMN is_audit TINYINT(1) NOT NULL DEFAULT 0");
     echo "[OK] users.is_audit 列已添加\n";
 
@@ -570,6 +607,43 @@ if ($isMysql) {
     ");
     $db->exec("CREATE INDEX IF NOT EXISTS idx_galonly_votes_app ON galonly_votes(application_id)");
     echo "[OK] galonly_votes 表已创建\n";
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS star_unions (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            region      TEXT DEFAULT '',
+            country     TEXT DEFAULT 'china',
+            created_by  INTEGER NOT NULL REFERENCES users(id),
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            bound_club_id INTEGER DEFAULT NULL,
+            bound_club_country TEXT DEFAULT 'china',
+            star_color  TEXT DEFAULT '#f0c060'
+        )
+    ");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_star_unions_country ON star_unions(country)");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_star_unions_created_by ON star_unions(created_by)");
+    echo "[OK] star_unions 表已创建\n";
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS star_union_members (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            union_id     INTEGER NOT NULL REFERENCES star_unions(id) ON DELETE CASCADE,
+            club_id      INTEGER NOT NULL,
+            club_country TEXT DEFAULT 'china',
+            added_by     INTEGER REFERENCES users(id),
+            added_at     TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(union_id, club_id, club_country)
+        )
+    ");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_star_union_members_union ON star_union_members(union_id)");
+    echo "[OK] star_union_members 表已创建\n";
+
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN bound_club_id INTEGER DEFAULT NULL");
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN bound_club_country TEXT DEFAULT 'china'");
+    $tryAlter("ALTER TABLE star_unions ADD COLUMN star_color TEXT DEFAULT '#f0c060'");
+    echo "[OK] star_unions 新列已添加 (bound_club_id, bound_club_country, star_color)\n";
 
     $tryAlter("ALTER TABLE users ADD COLUMN is_audit INTEGER NOT NULL DEFAULT 0");
     echo "[OK] users.is_audit 列已添加\n";
