@@ -17,7 +17,55 @@ require_once __DIR__ . '/../includes/audit.php';
 
 $action = $_GET['action'] ?? '';
 
+function getClubIndex($country = 'china') {
+    static $cache = [];
+    $country = $country === 'japan' ? 'japan' : 'china';
+    if (isset($cache[$country])) return $cache[$country];
+    $file = $country === 'japan'
+        ? __DIR__ . '/../data/clubs_japan.json'
+        : __DIR__ . '/../data/clubs.json';
+    $index = [];
+    if (file_exists($file)) {
+        $json = json_decode(file_get_contents($file), true);
+        if (is_array($json)) {
+            foreach (($json['data'] ?? []) as $club) {
+                if (isset($club['id'])) $index[(int)$club['id']] = $club;
+            }
+        }
+    }
+    $cache[$country] = $index;
+    return $index;
+}
+
 function getClubName($clubId, $country = 'china') {
+    $club = getClubIndex($country)[(int)$clubId] ?? null;
+    if ($club) return $club['name'] ?? $club['display_name'] ?? '鍚屽ソ浼?' . $clubId;
+    return '鍚屽ソ浼?' . $clubId;
+}
+
+function getClubSchool($clubId, $country = 'china') {
+    $club = getClubIndex($country)[(int)$clubId] ?? null;
+    return $club ? ($club['school'] ?? '') : '';
+}
+
+function getClubProvince($clubId, $country = 'china') {
+    $club = getClubIndex($country)[(int)$clubId] ?? null;
+    return $club ? ($club['province'] ?? $club['prefecture'] ?? '') : '';
+}
+
+function enrichUnionMember(array $member): array {
+    $country = $member['club_country'] ?? 'china';
+    $member['club_name'] = getClubName($member['club_id'] ?? 0, $country);
+    $member['club_school'] = getClubSchool($member['club_id'] ?? 0, $country);
+    $member['club_province'] = getClubProvince($member['club_id'] ?? 0, $country);
+    return $member;
+}
+
+function clubExists($clubId, $country = 'china'): bool {
+    return isset(getClubIndex($country)[(int)$clubId]);
+}
+
+function getClubNameLegacy($clubId, $country = 'china') {
     $file = $country === 'japan'
         ? __DIR__ . '/../data/clubs_japan.json'
         : __DIR__ . '/../data/clubs.json';
@@ -32,7 +80,7 @@ function getClubName($clubId, $country = 'china') {
     return '同好会#' . $clubId;
 }
 
-function getClubSchool($clubId, $country = 'china') {
+function getClubSchoolLegacy($clubId, $country = 'china') {
     $file = $country === 'japan'
         ? __DIR__ . '/../data/clubs_japan.json'
         : __DIR__ . '/../data/clubs.json';
@@ -47,7 +95,7 @@ function getClubSchool($clubId, $country = 'china') {
     return '';
 }
 
-function getClubProvince($clubId, $country = 'china') {
+function getClubProvinceLegacy($clubId, $country = 'china') {
     $file = $country === 'japan'
         ? __DIR__ . '/../data/clubs_japan.json'
         : __DIR__ . '/../data/clubs.json';
@@ -85,11 +133,32 @@ switch ($action) {
         }
         $unions = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $user = getCurrentUser();
+        $ids = array_map(function ($u) { return (int)$u['id']; }, $unions);
+        $memberCounts = [];
+        $membersByUnion = [];
+        $includeMembers = ($_GET['include_members'] ?? '') === '1';
+        if ($ids) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $cnt = $db->prepare("SELECT union_id, COUNT(*) AS member_count FROM star_union_members WHERE union_id IN ($placeholders) GROUP BY union_id");
+            $cnt->execute($ids);
+            foreach ($cnt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $memberCounts[(int)$row['union_id']] = (int)$row['member_count'];
+            }
+            if ($includeMembers) {
+                $mStmt = $db->prepare("SELECT * FROM star_union_members WHERE union_id IN ($placeholders) ORDER BY union_id ASC, added_at ASC");
+                $mStmt->execute($ids);
+                foreach ($mStmt->fetchAll(PDO::FETCH_ASSOC) as $member) {
+                    $unionId = (int)$member['union_id'];
+                    if (!isset($membersByUnion[$unionId])) $membersByUnion[$unionId] = [];
+                    $membersByUnion[$unionId][] = enrichUnionMember($member);
+                }
+            }
+        }
         foreach ($unions as &$u) {
-            $cnt = $db->prepare('SELECT COUNT(*) FROM star_union_members WHERE union_id = ?');
-            $cnt->execute([$u['id']]);
-            $u['member_count'] = (int)$cnt->fetchColumn();
+            $unionId = (int)$u['id'];
+            $u['member_count'] = $memberCounts[$unionId] ?? 0;
             $u['can_manage'] = $user ? canManageUnion($user, $u) : false;
+            if ($includeMembers) $u['_members'] = $membersByUnion[$unionId] ?? [];
         }
         echo json_encode(['success' => true, 'unions' => $unions]);
         break;
@@ -107,9 +176,7 @@ switch ($action) {
         $mStmt->execute([$id]);
         $members = $mStmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($members as &$m) {
-            $m['club_name'] = getClubName($m['club_id'], $m['club_country']);
-            $m['club_school'] = getClubSchool($m['club_id'], $m['club_country']);
-            $m['club_province'] = getClubProvince($m['club_id'], $m['club_country']);
+            $m = enrichUnionMember($m);
         }
 
         $user = getCurrentUser();
@@ -214,7 +281,7 @@ switch ($action) {
 
         // 检查同好会是否存在于 JSON 数据中
         $clubName = getClubName($clubId, $clubCountry);
-        if (strpos($clubName, '同好会#') === 0) { echo json_encode(['success' => false, 'message' => '同好会不存在']); break; }
+        if (!clubExists($clubId, $clubCountry)) { echo json_encode(['success' => false, 'message' => '同好会不存在']); break; }
 
         // 插入（UNIQUE 约束防重复）
         try {

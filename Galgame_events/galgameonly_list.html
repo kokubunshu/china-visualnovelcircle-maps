@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -265,7 +265,8 @@ body {
         var regOpen = event.registration_open;
 
         if (status === 'approved') {
-            return '<button class="btn-apply" disabled>已通过</button>';
+            var appId = event.user_application_id || '';
+            return '<a class="btn-apply" href="Shanghai_Galonly_submit.html?event_id=' + eventId + '&amp;application_id=' + appId + '">编辑</a>';
         }
 
         // If already applied and still editable, show edit and delete buttons
@@ -421,3 +422,5 @@ body {
 <script src="../js/page-background.js" data-picker="compact"></script>
 </body>
 </html>
+
+

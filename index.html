@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="referrer" content="no-referrer" />
     <title>全国Galgame同好会地图 - 视觉小说同好组织导航</title>
     <meta name="description" content="全国Galgame同好会地图，聚合展示全国各省、高校及海外地区的视觉小说同好组织信息，支持地图选省、全局搜索、联系方式复制与快速查找同好。" />
     <meta name="keywords" content="全国Galgame同好会地图,视觉小说,Galgame,同好会,高校社团,地图导航,同好社群" />
@@ -35,11 +36,9 @@
         } catch (e) {}
         var resolved = systemDark ? 'dark' : 'light';
         if (saved === 'light' || saved === 'dark') {
-            root.setAttribute('data-theme', saved);
             resolved = saved;
-        } else {
-            root.removeAttribute('data-theme');
         }
+        root.setAttribute('data-theme', resolved);
         root.style.colorScheme = resolved;
     })();
     </script>
@@ -51,8 +50,6 @@
     <meta name="format-detection" content="telephone=no,email=no,address=no" />
     
     <!-- Preconnect & Preload -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdn.jsdmirror.com" crossorigin />
     <link rel="dns-prefetch" href="https://cdn.jsdmirror.com" />
     <link rel="dns-prefetch" href="https://count.getloli.com" />
@@ -62,10 +59,6 @@
     <link rel="preload" href="./css/styles.css" as="style" />
     
     <!-- 字体 -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    </noscript>
     
     <!-- 样式表 -->
     <link rel="stylesheet" href="./css/styles.css" />
@@ -135,7 +128,7 @@
         <button id="topLoginBtn" class="top-login-btn">登录 / 注册</button>
         <a id="topAccountBtn" class="top-account-btn" href="./user.html" style="display:none;">账号</a>
         <a id="topAdminBtn" class="top-admin-btn" href="admin/club_manager.html" style="display:none;">同好会管理</a>
-        <a class="top-admin-btn" href="moe/index.html">萌战活动</a>
+        <a class="top-admin-btn" href="./club_square.html">同好会广场</a>
         <div class="display-switch-container">
           <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="视图模式">
             <button class="mode-tab active" data-mode="map" role="tab" aria-selected="true" title="地图模式">
@@ -159,7 +152,7 @@
         <button class="user-nav-btn" data-action="japan">日本同好会</button>
         <button class="user-nav-btn" data-action="overseas">海外同好会</button>
         <button class="user-nav-btn" data-action="calendar">活动日历</button>
-        <button class="user-nav-btn" data-action="publication">刊物投稿</button>
+        <button class="user-nav-btn" data-action="project-hub">企划枢纽</button>
       </div>
     </div>
 
@@ -189,8 +182,8 @@
           <div class="submit-buttons">
             <a class="submit-btn" href="https://github.com/kokubunshu/china-visualnovelcircle-maps" target="_blank" rel="noopener noreferrer">开源仓库</a>
             <button class="submit-btn primary" id="submitClubBtnDrawer" type="button">提交同好会信息</button>
-            <button class="submit-btn" id="submitEventBtnDrawer" type="button">添加活动信息</button>
-            <button class="submit-btn" id="submitPublicationBtnDrawer" type="button">投稿刊物征集</button>
+            <button class="submit-btn" id="submitEventBtnDrawer" type="button">企划枢纽</button>
+            <button class="submit-btn" id="submitPublicationBtnDrawer" type="button" style="display:none;">企划枢纽</button>
             <button class="submit-btn galonly-glow" id="submitGalonlyBtnDrawer" style="background:linear-gradient(135deg,#e91e63,#ff9800,#9c27b0);color:#fff;border:none;" type="button">GalOnly 高校专属通道</button>
             <div class="lang-switch-group">
               <button class="lang-btn" id="langZhBtnDrawer"><span class="lang-text">中文</span></button>
@@ -201,7 +194,7 @@
             基于 <a href="https://github.com/HELPMEEADICE/china-bandori-maps" target="_blank">china-bandori-maps</a> 二次开发，遵循 <a href="./LICENSE" target="_blank">GPLv3</a>
           </p>
           <p class="card-body gpl-text" style="margin-top: 4px; font-size: 11px; text-align: center;">
-            <a href="./wiki/index.html">VNFest WIKI</a> · <a href="./moe/index.html">萌战活动</a> · <a href="./feedback.html">Bug 反馈与功能建议</a>
+            <a href="./wiki/index.html">VNFest WIKI</a> · <a href="./feedback.html">Bug 反馈与功能建议</a>
           </p>
         </div>
       </div>
@@ -238,9 +231,9 @@
                         📝 提交同好会信息
                     </button>
                     <button id="submitEventBtn" class="submit-btn" type="button">
-                        📅 添加活动信息
+                        企划枢纽
                     </button>
-                    <button id="submitPublicationBtn" class="submit-btn" type="button">
+                    <button id="submitPublicationBtn" class="submit-btn" type="button" style="display:none;">
                         📖 投稿刊物征集
                     </button>
                     <button id="submitGalonlyBtn" class="submit-btn galonly-glow" style="background:linear-gradient(135deg,#e91e63,#ff9800,#9c27b0);color:#fff;border:none;" type="button">
@@ -261,37 +254,34 @@
                     基于 <a href="https://github.com/HELPMEEADICE/china-bandori-maps" target="_blank">china-bandori-maps</a> 二次开发，遵循 <a href="./LICENSE" target="_blank">GPLv3</a>
                 </p>
                 <p class="card-body gpl-text" style="margin-top: 4px; font-size: 11px; text-align: center;">
-                    <a href="./wiki/index.html">VNFest WIKI</a> · <a href="./moe/index.html">萌战活动</a> · <a href="./feedback.html">Bug 反馈与功能建议</a>
+                    <a href="./wiki/index.html">VNFest WIKI</a> · <a href="./feedback.html">Bug 反馈与功能建议</a>
                 </p>
             </div>
         </section>
 
         <!-- 详情卡片（移动端抽屉） -->
         <section id="selectedCard" class="md3-card">
+            <div class="drawer-expand-tab" id="drawerExpandBtn">
+                <span class="tab-arrow">◀</span>
+                <span>展开</span>
+            </div>
+
             <div id="mobileSheetHandle" class="mobile-sheet-handle">
                 <div class="mobile-sheet-bar"></div>
             </div>
-            
-            <!-- 标题栏 + 控件（移动端） -->
+
+            <!-- 标题栏 -->
             <div class="drawer-header">
+                <div class="drawer-btn-group">
+                    <button class="drawer-collapse-btn" id="drawerCollapseBtn" type="button">收起</button>
+                </div>
                 <div class="drawer-title-area">
                     <h2 id="selectedTitle" class="card-title">全国Galgame同好会数据</h2>
                     <p id="selectedProvince" class="card-value">加载中...</p>
                     <p id="selectedMeta" class="card-body">正在获取最新数据</p>
                 </div>
-                <div class="drawer-controls" id="drawerControls">
-                    <button class="drawer-control-btn" id="drawerZoomInBtn" title="放大">
-                        <span>+</span>
-                    </button>
-                    <button class="drawer-control-btn" id="drawerZoomOutBtn" title="缩小">
-                        <span>−</span>
-                    </button>
-                    <button class="drawer-control-btn" id="drawerResetBtn" title="重置">
-                        <span>⟳</span>
-                    </button>
-                </div>
             </div>
-            
+
             <!-- 列表工具栏 -->
             <div id="listTools" class="list-tools">
                 <div class="search-row">
@@ -327,12 +317,18 @@
             <!-- ═══ 顶部：账号栏（嵌入，非悬浮） ═══ -->
             <div class="list-top-bar">
               <div class="list-top-row">
-                <div class="list-top-avatar" id="listUserAvatar">?</div>
-                <span class="list-top-name" id="listUserName">访客</span>
-                <span class="list-role-badge" id="listRoleBadge" style="display:none;"></span>
-                <button id="listLoginBtn" class="top-login-btn">登录 / 注册</button>
-                <a id="listAccountBtn" class="top-account-btn" href="./user.html" style="display:none;">账号</a>
-                <a id="listAdminBtn" class="top-admin-btn" href="admin/club_manager.html" style="display:none;">同好会管理</a>
+                <div class="list-user-identity">
+                  <div class="list-top-avatar" id="listUserAvatar">?</div>
+                  <span class="list-top-name" id="listUserName">访客</span>
+                  <span class="list-role-badge" id="listRoleBadge" style="display:none;"></span>
+                </div>
+                <div class="list-account-actions">
+                  <button id="listLoginBtn" class="top-login-btn">登录 / 注册</button>
+                  <a id="listAccountBtn" class="top-account-btn" href="./user.html" style="display:none;">账号</a>
+                  <a id="listAdminBtn" class="top-admin-btn" href="admin/club_manager.html" style="display:none;">同好会管理</a>
+                  <a class="top-admin-btn" href="./club_square.html">同好会广场</a>
+                </div>
+                <button id="listMenuBtn" class="list-menu-btn" type="button" aria-label="菜单">☰</button>
                 <div class="display-switch-container">
                   <div class="mode-switch">
                     <button class="mode-tab active" data-mode="map" role="tab" aria-selected="true"><span class="mode-tab-icon">🗺️</span><span class="mode-tab-label">地图</span></button>
@@ -346,7 +342,7 @@
                 <button class="user-nav-btn" data-action="japan">日本同好会</button>
                 <button class="user-nav-btn" data-action="overseas">海外同好会</button>
                 <button class="user-nav-btn" data-action="calendar">活动日历</button>
-                <button class="user-nav-btn" data-action="publication">刊物投稿</button>
+                <button class="user-nav-btn" data-action="project-hub">企划枢纽</button>
               </div>
               <div class="list-announcement-banner" id="listAnnBanner" style="display:none;">
                 <div class="announcement-banner-header" id="listAnnBannerToggle">
@@ -381,8 +377,8 @@
                   <div class="list-intro-links">
                     <div class="submit-buttons">
                       <button id="listSubmitClubBtn" class="submit-btn primary" type="button">📝 提交同好会信息</button>
-                      <button id="listSubmitEventBtn" class="submit-btn" type="button">📅 添加活动信息</button>
-                      <button id="listSubmitPublicationBtn" class="submit-btn" type="button">📖 投稿刊物征集</button>
+                      <button id="listSubmitEventBtn" class="submit-btn" type="button">企划枢纽</button>
+                      <button id="listSubmitPublicationBtn" class="submit-btn" type="button" style="display:none;">企划枢纽</button>
                       <button id="listSubmitGalonlyBtn" class="submit-btn galonly-glow" style="background:linear-gradient(135deg,#e91e63,#ff9800,#9c27b0);color:#fff;border:none;" type="button">GalOnly 高校专属通道</button>
                       <div class="lang-switch-group" id="listLangSwitchGroup">
                         <button id="listLangZhBtn" class="lang-btn"><span class="lang-icon">🇨🇳</span><span class="lang-text">中文</span></button>
@@ -391,7 +387,7 @@
                       <a class="submit-btn" href="https://github.com/kokubunshu/china-visualnovelcircle-maps" target="_blank" rel="noopener noreferrer">📦 开源仓库</a>
                     </div>
                     <p class="list-intro-gpl">基于 <a href="https://github.com/HELPMEEADICE/china-bandori-maps" target="_blank">china-bandori-maps</a> 二次开发，遵循 <a href="./LICENSE" target="_blank">GPLv3</a></p>
-                    <p class="list-intro-gpl"><a href="./wiki/index.html">VNFest WIKI</a> · <a href="./moe/index.html">萌战活动</a> · <a href="./feedback.html">Bug 反馈与功能建议</a></p>
+                    <p class="list-intro-gpl"><a href="./wiki/index.html">VNFest WIKI</a> · <a href="./feedback.html">Bug 反馈与功能建议</a></p>
                   </div>
                 </div>
 
@@ -419,6 +415,10 @@
                       <span class="list-toolbar-count" id="listToolbarCount"></span>
                     </div>
                     <div class="list-toolbar-subtitle">选择地区后查看同好会，也可以按名称、群号或类型快速筛选。</div>
+                  </div>
+                  <div class="list-secondary-actions" id="listSecondaryActions">
+                    <button class="user-nav-btn" data-action="calendar" type="button">活动日历</button>
+                    <button class="user-nav-btn" data-action="project-hub" type="button">企划枢纽</button>
                   </div>
                   <div class="list-toolbar-right">
                     <input id="listSearchInput" class="list-search-input" type="search" placeholder="搜索组织名 / 群号" />
@@ -450,8 +450,8 @@
         <div id="feedbackModal" class="feedback-modal" aria-hidden="true">
             <div class="feedback-modal-card" role="dialog" aria-modal="true">
                 <button id="feedbackModalClose" class="feedback-modal-close" type="button">×</button>
-                <img src="./images/qrcode.webp" alt="反馈群二维码" class="feedback-modal-image" loading="lazy" />
-                <a href="#" target="_blank" rel="noopener noreferrer" class="feedback-modal-link">前往加群链接</a>
+                <img src="./images/VNF.png" alt="VNFest" class="feedback-modal-image" loading="lazy" />
+                <a href="./feedback.html" class="feedback-modal-link">前往反馈页面</a>
             </div>
         </div>
 
@@ -465,45 +465,57 @@
         </div>
 
         <!-- 日历弹窗 -->
-        <div id="calendarModal" class="calendar-modal" aria-hidden="true">
-            <div class="calendar-modal-card" role="dialog" aria-modal="true">
-                <div class="modal-handle"></div>
-                <button id="calendarModalClose" class="calendar-modal-close" type="button">×</button>
-                <div class="calendar-modal-scroll">
-                    <!-- 视图切换标签栏 -->
-                    <div class="calendar-view-tabs">
-                        <button class="view-tab active" data-view="calendar">📅 月历</button>
-                        <button class="view-tab" data-view="list">📋 列表</button>
-                    </div>
-
-                    <!-- 月历视图 -->
-                    <div class="calendar-view-content" id="calendarGridView">
-                        <div class="calendar-header">
-                            <button id="calendarPrevBtn" class="calendar-nav-btn" type="button">‹</button>
-                            <h3 id="calendarTitle" class="calendar-title">Galgame活动日历</h3>
-                            <button id="calendarNextBtn" class="calendar-nav-btn" type="button">›</button>
+        <div id="calendarModal" class="calendar-modal calendar-modal-v2" aria-hidden="true">
+            <div class="calendar-modal-card calendar-shell-card" role="dialog" aria-modal="true" aria-labelledby="calendarModalHeading">
+                <button id="calendarModalClose" class="calendar-modal-close" type="button" aria-label="关闭">×</button>
+                <div class="calendar-shell">
+                    <header class="calendar-shell-header">
+                        <div>
+                            <p class="calendar-shell-eyebrow">VNFest Events</p>
+                            <h3 id="calendarModalHeading" class="calendar-shell-title">活动日历</h3>
                         </div>
-                        <div id="calendarGrid" class="calendar-grid"></div>
-                        <div id="calendarEventList" class="calendar-event-list"></div>
-
-                        <!-- 添加活动按钮（管理员模式显示） -->
-                        <button id="calendarAddEventBtn" class="md3-btn" style="margin-top: 20px; width: 100%; display: none;">添加活动</button>
-                    </div>
-
-                    <!-- 列表视图 -->
-                    <div class="calendar-view-content" id="listView" style="display:none;">
-                        <div class="list-view-filters">
-                            <button class="filter-tab active" data-filter="all">全部</button>
-                            <button class="filter-tab" data-filter="upcoming">即将开始</button>
-                            <button class="filter-tab" data-filter="ongoing">进行中</button>
-                            <button class="filter-tab" data-filter="ended">已结束</button>
+                        <div class="calendar-shell-tools">
+                            <div class="calendar-view-tabs" role="tablist" aria-label="活动日历视图">
+                                <button class="view-tab active" type="button" data-view="calendar">月历</button>
+                                <button class="view-tab" type="button" data-view="list">列表</button>
+                            </div>
+                            <button id="calendarAddEventBtn" class="calendar-primary-btn compact" type="button" style="display:none;">新增活动</button>
                         </div>
-                        <div class="event-list-container" id="eventListContainer"></div>
+                    </header>
+
+                    <div class="calendar-layout">
+                        <section class="calendar-left-pane" id="calendarGridPane" aria-label="月历">
+                            <div class="calendar-month-bar">
+                                <button id="calendarPrevBtn" class="calendar-nav-btn" type="button" aria-label="上个月">‹</button>
+                                <h4 id="calendarMonthTitle" class="calendar-month-title">2026年5月</h4>
+                                <button id="calendarNextBtn" class="calendar-nav-btn" type="button" aria-label="下个月">›</button>
+                            </div>
+                            <div id="calendarGrid" class="calendar-grid"></div>
+                            <div id="calendarFilterBar" class="calendar-filter-bar">
+                                <button class="filter-tab active" type="button" data-filter="all">全部</button>
+                                <button class="filter-tab" type="button" data-filter="upcoming">即将开始</button>
+                                <button class="filter-tab" type="button" data-filter="ongoing">进行中</button>
+                                <button class="filter-tab" type="button" data-filter="ended">已结束</button>
+                            </div>
+                        </section>
+
+                        <section class="calendar-right-pane" aria-live="polite">
+                            <div id="calendarListPanel" class="calendar-side-panel active">
+                                <div class="calendar-panel-title-row">
+                                    <div>
+                                        <h4 id="calendarListTitle">选中日期活动</h4>
+                                        <p id="calendarListSubtitle">点击活动查看详情。</p>
+                                    </div>
+                                </div>
+                                <div id="calendarEventList" class="calendar-event-list"></div>
+                            </div>
+                            <div id="calendarDetailPanel" class="calendar-side-panel"></div>
+                            <div id="calendarEditorPanel" class="calendar-side-panel"></div>
+                        </section>
                     </div>
                 </div>
             </div>
         </div>
-
         <!-- 刊物弹窗 -->
         <div id="publicationModal" class="calendar-modal" aria-hidden="true">
             <div class="calendar-modal-card" style="max-width: 800px;">
@@ -636,6 +648,52 @@
             </div>
         </div>
 
+        <!-- 企划枢纽弹窗 -->
+        <div id="hubModal" class="calendar-modal hub-modal-shell" aria-hidden="true">
+            <div class="calendar-modal-card hub-modal-card" role="dialog" aria-modal="true" aria-labelledby="hubModalTitle">
+                <button id="hubModalClose" class="calendar-modal-close" type="button" aria-label="关闭">×</button>
+                <div class="modal-handle" aria-hidden="true"></div>
+                <div class="hub-header">
+                    <div>
+                        <h3 id="hubModalTitle">企划枢纽</h3>
+                        <p>活动调控、刊物征集与同好会联合企划的发布、管理与参与入口</p>
+                    </div>
+                </div>
+                <div class="hub-body">
+                    <aside class="hub-sidebar">
+                        <div class="hub-filter-bar" id="hubTypeFilterBar">
+                            <button class="hub-filter-type active" type="button" data-type="all">全部</button>
+                            <button class="hub-filter-type" type="button" data-type="publication">刊物</button>
+                            <button class="hub-filter-type" type="button" data-type="activity">活动</button>
+                            <button class="hub-filter-type" type="button" data-type="content">征集</button>
+                            <button class="hub-filter-type" type="button" data-type="recruit">协力</button>
+                            <button class="hub-filter-type" type="button" data-type="other">其他</button>
+                        </div>
+                        <div class="hub-status-row" id="hubStatusFilterBar">
+                            <button class="hub-filter-status active" type="button" data-status="all">全部</button>
+                            <button class="hub-filter-status" type="button" data-status="draft">草稿</button>
+                            <button class="hub-filter-status" type="button" data-status="collecting">征集中</button>
+                            <button class="hub-filter-status" type="button" data-status="ongoing">进行中</button>
+                            <button class="hub-filter-status" type="button" data-status="completed">已完成</button>
+                            <button class="hub-filter-status" type="button" data-status="archived">已归档</button>
+                        </div>
+                        <div class="hub-list-wrap" id="hubProjectList"></div>
+                        <div class="create-btn-wrap">
+                            <button class="create-btn" id="hubCreateBtn" type="button">＋ 发起新企划</button>
+                        </div>
+                    </aside>
+                    <section class="hub-detail">
+                        <div class="hub-detail-empty" id="hubDetailEmpty">
+                            <div class="empty-icon">◈</div>
+                            <div class="empty-text">选择一个企划查看详情</div>
+                        </div>
+                        <div id="hubDetailContent"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+        <div id="hubFormModal" class="calendar-modal" aria-hidden="true"></div>
+
         <!-- 活动编辑器弹窗（管理员） -->
         <div id="eventEditorModal" class="calendar-modal" aria-hidden="true">
             <div class="calendar-modal-card" style="max-width: 500px;" role="dialog" aria-modal="true">
@@ -730,6 +788,11 @@
                 <div class="calendar-modal-scroll">
                     <h3 class="calendar-title" style="margin-top: 30px;">📝 申请绑定同好会</h3>
                     <div id="membershipApplyClubName" style="text-align: center; font-size: 16px; font-weight: 600; margin: 12px 0 20px; color: var(--md-on-surface);"></div>
+                    <div class="membership-apply-tabs" role="tablist" aria-label="加入方式">
+                        <button class="membership-apply-tab active" type="button" data-join-method="school_no_code">本校无绑定码</button>
+                        <button class="membership-apply-tab" type="button" data-join-method="school_code">本校有绑定码</button>
+                        <button class="membership-apply-tab" type="button" data-join-method="external_exchange">外校交流</button>
+                    </div>
                     <div style="display: flex; flex-direction: column; gap: 14px;">
                         <div>
                             <label style="display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600;">QQ账号 <span style="color: #999; font-weight: 400;">(非必填)</span></label>
@@ -748,6 +811,21 @@
                                 <input type="checkbox" id="applyIsStudent" checked />
                                 <span>是本校学生</span>
                             </label>
+                        </div>
+                        <div class="membership-apply-extra" data-join-panel="school_code" hidden>
+                            <label class="membership-field-label">绑定码</label>
+                            <input type="text" id="applyBindCode" class="md3-input" placeholder="输入同好会绑定码，直接加入" autocomplete="off" />
+                            <p class="membership-apply-hint">绑定码验证通过后会直接加入该同好会，不进入审核流程。</p>
+                        </div>
+                        <div class="membership-apply-extra" data-join-panel="external_exchange" hidden>
+                            <label class="membership-field-label">所属同好会</label>
+                            <input type="text" id="applyExternalClub" class="md3-input" placeholder="例：东京某某VN研究会" />
+                            <label class="membership-field-label">所属同好会身份</label>
+                            <input type="text" id="applyExternalRole" class="md3-input" placeholder="例：成员 / 管理员 / 负责人" />
+                            <label class="membership-field-label">QQ/Discord账号</label>
+                            <input type="text" id="applyExternalContact" class="md3-input" placeholder="用于审核联系" />
+                            <label class="membership-field-label">申请理由（备注）</label>
+                            <textarea id="applyExternalReason" class="md3-input" rows="3" placeholder="简述交流原因、合作关系或备注"></textarea>
                         </div>
                         <div id="membershipApplyMessage" style="font-size: 13px; text-align: center; min-height: 20px; color: var(--md-primary);"></div>
                         <button id="membershipApplySubmitBtn" class="submit-btn primary" type="button">提交申请</button>
@@ -1072,36 +1150,6 @@
                 <div id="prefectureGroup" style="display: none;">
                     <select id="editPrefecture">
                         <option value="">请选择都道府县</option>
-                        <optgroup label="北海道·东北">
-                            <option>北海道</option><option>青森县</option><option>岩手县</option>
-                            <option>宫城县</option><option>秋田县</option><option>山形县</option>
-                            <option>福岛县</option>
-                        </optgroup>
-                        <optgroup label="关东">
-                            <option>东京都</option><option>神奈川县</option><option>埼玉县</option>
-                            <option>千叶县</option><option>茨城县</option><option>栃木县</option>
-                            <option>群马县</option>
-                        </optgroup>
-                        <optgroup label="中部">
-                            <option>爱知县</option><option>静冈县</option><option>岐阜县</option>
-                            <option>长野县</option><option>新潟县</option><option>富山县</option>
-                            <option>石川县</option><option>福井县</option><option>山梨县</option>
-                        </optgroup>
-                        <optgroup label="关西·近畿">
-                            <option>大阪府</option><option>京都府</option><option>兵库县</option>
-                            <option>奈良县</option><option>滋贺县</option><option>和歌山县</option>
-                            <option>三重县</option>
-                        </optgroup>
-                        <optgroup label="中国·四国">
-                            <option>广岛县</option><option>冈山县</option><option>山口县</option>
-                            <option>岛根县</option><option>鸟取县</option><option>香川县</option>
-                            <option>德岛县</option><option>爱媛县</option><option>高知县</option>
-                        </optgroup>
-                        <optgroup label="九州·冲绳">
-                            <option>福冈县</option><option>佐贺县</option><option>长崎县</option>
-                            <option>熊本县</option><option>大分县</option><option>宫崎县</option>
-                            <option>鹿儿岛县</option><option>冲绳县</option>
-                        </optgroup>
                     </select>
                 </div>
 
@@ -1284,11 +1332,12 @@
     <!-- 脚本文件 -->
     <script defer src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
     <script defer src="https://cdn.jsdmirror.com/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script defer src="./js/app-core.js"></script>
     <script defer src="./js/china.js"></script>
     <script defer src="./js/japan.js"></script>
-    <script defer src="./js/app-core.js"></script>
     <script defer src="./js/app.js?v=20260519-user-center"></script>
-    <script defer src="./js/calendar.js"></script>
+    <script defer src="./js/calendar.js?v=20260530"></script>
+    <script defer src="./js/project-hub.js?v=20260601"></script>
     
     <script>
         // 补充按钮事件 - 提交页面跳转
@@ -1304,14 +1353,22 @@
             
             if (submitEventBtn) {
                 submitEventBtn.addEventListener('click', function() {
-                    window.open('./submit_event.html', '_blank');
+                    if (typeof window.openHubModal === 'function') {
+                        window.openHubModal();
+                    } else {
+                        window.open('./submit_event.html', '_blank');
+                    }
                 });
             }
 
             var submitPublicationBtn = document.getElementById('submitPublicationBtn');
             if (submitPublicationBtn) {
                 submitPublicationBtn.addEventListener('click', function() {
-                    window.open('./submit_publication.html', '_blank');
+                    if (typeof window.openHubModal === 'function') {
+                        window.openHubModal();
+                    } else {
+                        window.open('./submit_publication.html', '_blank');
+                    }
                 });
             }
 

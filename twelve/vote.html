@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>十二器投票 - Galgame 同好会地图</title>
+  <style>
+    :root {
+      --paper: #fffaf1;
+      --surface: #ffffff;
+      --ink: #171512;
+      --muted: #6f675d;
+      --line: #ddd1be;
+      --red: #b43d30;
+      --blue: #1f407e;
+      --green: #2f6e4f;
+      --gold: #b7832f;
+      --shadow: 0 12px 36px rgba(60, 48, 32, .12);
+      --wallpaper-image: none;
+      --wallpaper-opacity: 0.16;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(180, 61, 48, 0.12), transparent 28vw),
+        radial-gradient(circle at 92% 12%, rgba(31, 64, 126, 0.12), transparent 28vw),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background-image:
+        linear-gradient(180deg, rgba(255, 250, 241, .78), rgba(255, 250, 241, .94)),
+        var(--wallpaper-image);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      opacity: var(--wallpaper-opacity);
+      filter: saturate(.82) contrast(.96);
+      transform: scale(1.02);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(23, 21, 18, .035) 1px, transparent 1px);
+      background-size: 100% 34px;
+    }
+    a { color: inherit; text-decoration: none; }
+    .shell { max-width: 960px; margin: 0 auto; padding: 18px clamp(14px, 4vw, 28px) 112px; position: relative; z-index: 1; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    .topbar a { color: var(--blue); font-weight: 800; }
+    .hero { padding: 26px 0 22px; }
+    .eyebrow { color: var(--red); font-size: 13px; font-weight: 900; }
+    h1 { margin: 10px 0 8px; font-size: clamp(30px, 8vw, 56px); line-height: 1.05; font-family: "Noto Serif SC", "Source Han Serif SC", serif; }
+    .desc { margin: 0; color: var(--muted); line-height: 1.75; }
+    .round-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      margin: 22px 0;
+      backdrop-filter: blur(14px);
+    }
+    .round-strip div { padding: 14px; border-right: 1px solid var(--line); min-width: 0; }
+    .round-strip div:last-child { border-right: 0; }
+    .round-strip strong { display: block; font-size: 20px; color: var(--blue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .round-strip span { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .round-picker {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .round-picker select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      padding: 0 12px;
+      font-weight: 800;
+      outline: none;
+    }
+    .search-box {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 12px 0;
+      background: color-mix(in srgb, var(--paper) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .search-box input {
+      width: 100%;
+      min-height: 50px;
+      border: 2px solid var(--ink);
+      background: rgba(255,255,255,.92);
+      color: var(--ink);
+      padding: 0 16px;
+      font: 800 16px/1 "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      outline: none;
+    }
+    .search-box input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(180,61,48,.12); }
+    .work-list { display: grid; gap: 10px; }
+    .work-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 76px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      cursor: pointer;
+      transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+    }
+    .work-row:hover { transform: translateY(-1px); border-color: var(--blue); box-shadow: var(--shadow); }
+    .work-row.selected { border-color: var(--red); background: #fff7f2; }
+    .check {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      color: transparent;
+      flex: none;
+    }
+    .work-row.selected .check { border-color: var(--red); background: var(--red); color: #fff; }
+    .work-title { min-width: 0; }
+    .work-title strong { display: block; font-size: 17px; line-height: 1.35; }
+    .work-title span { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .pill { border: 1px solid var(--line); padding: 6px 8px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .notice { margin: 14px 0; padding: 14px; border: 1px solid var(--line); background: #f8efe0; color: #5f5144; line-height: 1.65; }
+    .nomination-panel {
+      display: none;
+      gap: 12px;
+      margin: 18px 0;
+    }
+    body.is-nomination .nomination-panel { display: grid; }
+    body.is-nomination #votingArea,
+    body.is-nomination .submit-bar { display: none; }
+    .source-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .source-btn {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      color: var(--ink);
+      padding: 0 12px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .source-btn.active { border-color: var(--blue); color: var(--blue); box-shadow: 0 0 0 3px rgba(31,64,126,.12); }
+    .nomination-search {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    .nomination-search input {
+      min-height: 48px;
+      border: 2px solid var(--ink);
+      background: rgba(255,255,255,.92);
+      padding: 0 14px;
+      font-weight: 800;
+      outline: none;
+    }
+    .external-results { display: grid; gap: 10px; }
+    .external-row {
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.92);
+    }
+    .external-cover {
+      width: 64px;
+      height: 82px;
+      object-fit: cover;
+      background: #efe4d2;
+      border: 1px solid var(--line);
+    }
+    .submit-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      background: rgba(255, 250, 241, .92);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 -12px 36px rgba(60,48,32,.12);
+    }
+    .submit-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 12px clamp(14px, 4vw, 28px);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .counter strong { color: var(--red); font-size: 24px; }
+    .counter span { color: var(--muted); display: block; font-size: 12px; margin-top: 3px; }
+    .selected-tray {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      max-height: 58px;
+      overflow: auto;
+    }
+    .selected-chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      color: var(--ink);
+      padding: 4px 7px;
+      font-size: 12px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .submit-btn {
+      min-height: 48px;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #fff;
+      padding: 0 18px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .submit-btn:disabled { background: #c7beb0; border-color: #c7beb0; cursor: not-allowed; }
+    .my-votes { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .my-votes h2 { margin: 0 0 12px; font-size: 20px; }
+    @media (max-width: 720px) {
+      .round-strip { grid-template-columns: repeat(2, 1fr); }
+      .round-strip div:nth-child(2) { border-right: 0; }
+      .round-strip div { border-bottom: 1px solid var(--line); }
+      .work-row { grid-template-columns: 28px 1fr; }
+      .nomination-search, .external-row { grid-template-columns: 1fr; }
+      .external-cover { width: 100%; height: 160px; }
+      .pill { grid-column: 2; justify-self: start; }
+      .submit-inner { grid-template-columns: 1fr; }
+      .submit-btn { width: 100%; }
+    }
+  </style>
+  <link rel="stylesheet" href="../css/vote-activity.css">
+  <script src="../js/vote-activity.js"></script>
+</head>
+<body>
+  <!-- Twelve Contest Vote Sheet -->
+  <main class="shell">
+    <header class="topbar">
+      <a href="./index.html">十二器评选</a>
+      <a href="../user.html">用户中心</a>
+      <button id="themeToggle" title="切换明亮/暗色模式" aria-label="切换明亮/暗色模式" style="background:none;border:none;cursor:pointer;padding:0 8px;color:inherit;font-size:16px;">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">成员评选表</div>
+      <h1 id="contestTitle">正在载入投票</h1>
+      <p id="contestDesc" class="desc">选择本轮最想支持的作品，提交前会再次确认。</p>
+      <div class="round-strip">
+        <div><strong id="roundTitle">-</strong><span>当前轮次</span></div>
+        <div><strong id="maxSelectText">-</strong><span>本轮每人最多选择</span></div>
+        <div><strong id="advanceText">-</strong><span>晋级规则</span></div>
+        <div><strong id="statusText">-</strong><span>投票状态</span></div>
+      </div>
+      <label class="round-picker">切换轮次
+        <select id="roundSelect"></select>
+      </label>
+    </section>
+
+    <section id="nominationPanel" class="nomination-panel">
+      <div id="nominationNotice" class="notice">提名期开放时，可以从 Bangumi 或 VNDB 搜索作品并提交提名。</div>
+      <div class="source-tabs" role="tablist" aria-label="作品搜索来源">
+        <button class="source-btn active" type="button" data-source="bangumi">Bangumi</button>
+        <button class="source-btn" type="button" data-source="vndb">VNDB</button>
+      </div>
+      <div class="nomination-search">
+        <input id="externalSearchInput" type="search" placeholder="搜索作品名，例如 沙耶の唄 / Ever17 / CLANNAD" autocomplete="off">
+        <button id="externalSearchBtn" class="submit-btn" type="button">搜索作品</button>
+      </div>
+      <div id="externalResults" class="external-results"></div>
+      <section class="my-votes">
+        <h2>我的提名</h2>
+        <div id="myNominations" class="notice">登录后可查看已提交的提名。</div>
+      </section>
+    </section>
+
+    <section id="votingArea">
+      <div id="notice" class="notice">读取活动信息中。</div>
+      <div class="search-box">
+        <input id="workSearch" type="search" placeholder="搜索作品名、别名、会社或年份" autocomplete="off">
+      </div>
+      <section id="workList" class="work-list"></section>
+
+      <section class="my-votes">
+        <h2>我的投票状态</h2>
+        <div id="myVotes" class="notice">登录后可查看已投作品。</div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="submit-bar">
+    <div class="submit-inner">
+      <div class="counter">
+        <strong><span id="selectedCount">0</span>/<span id="maxSelectCount">0</span></strong>
+        <span id="counterHint">已选数量会一直显示在这里</span>
+        <div id="selectedTray" class="selected-tray" aria-live="polite"></div>
+      </div>
+      <button id="submitBtn" class="submit-btn" type="button" disabled>确认提交</button>
+    </div>
+  </footer>
+
+  <script>
+    const API = {
+      contests: '../api/twelve_contests.php',
+      works: '../api/twelve_works.php',
+      rounds: '../api/twelve_rounds.php',
+      votes: '../api/twelve_votes.php',
+      bangumi: '../api/bangumi_proxy.php',
+      vndb: '../api/vndb_proxy.php'
+    };
+    const params = new URLSearchParams(location.search);
+    const state = { contest: null, round: null, rounds: [], works: [], selected: new Set(), eligible: false, maxSelect: 0, nominationSource: 'bangumi', externalResults: [] };
+
+    function esc(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function statusLabel(status) {
+      return ({ open: '投票中', locked: '已关闭', settled: '已结算', pending: '未开始', draft: '草稿', published: '已发布', running: '进行中', ended: '已结束' })[status] || status || '-';
+    }
+    function isNominationRound(round) {
+      return !!round && (Number(round.sort_order || 0) === 1 || String(round.title || '').includes('提名'));
+    }
+    function normalizeWallpaperUrl(value) {
+      const url = String(value || '').trim();
+      if (!url) return '';
+      if (/^(https?:)?\/\//i.test(url) || /^(\.\.?\/|\/|data:image\/)/i.test(url)) return url;
+      return '';
+    }
+    function applyTwelveWallpaper(contest) {
+      const url = normalizeWallpaperUrl(contest && contest.cover_url);
+      if (window.ActivityTheme) {
+        if (url) window.ActivityTheme.setWallpaper(window.ActivityTheme.resolveMediaUrl(url), 0.32);
+        else window.ActivityTheme.applyFallbackWallpaper(0.26);
+        return;
+      }
+      document.documentElement.style.setProperty('--wallpaper-image', url ? 'url(' + JSON.stringify(url) + ')' : 'none');
+      document.documentElement.style.setProperty('--wallpaper-opacity', url ? '0.32' : '0.16');
+    }
+    async function apiGet(url) {
+      const res = await fetch(url, { credentials: 'include' });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (error) { throw new Error(text.slice(0, 120) || error.message); }
+      if (!data.success) throw new Error(data.message || '请求失败');
+      return data;
+    }
+    async function apiPost(url, payload) {
+      const res = await fetch(url, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (error) { throw new Error(text.slice(0, 120) || error.message); }
+      if (!data.success) throw new Error(data.message || '请求失败');
+      return data;
+    }
+
+    async function loadVotingContext() {
+      let contestId = Number(params.get('contest_id') || 0);
+      if (!contestId) {
+        const list = await apiGet(API.contests + '?action=list&country=all');
+        contestId = Number((list.data || [])[0]?.id || 0);
+      }
+      if (!contestId) throw new Error('暂无可投票的十二器活动');
+      const detail = await apiGet(API.contests + '?action=get&id=' + encodeURIComponent(contestId));
+      state.contest = detail.data;
+      applyTwelveWallpaper(state.contest);
+      state.rounds = detail.rounds || [];
+      const explicitRound = Number(params.get('round_id') || 0);
+      state.round = state.rounds.find(round => Number(round.id) === explicitRound) || state.rounds.find(round => round.status === 'open') || state.rounds[0];
+      if (!state.round) throw new Error('活动尚未创建轮次');
+      document.getElementById('contestTitle').textContent = state.contest.title || '十二器评选';
+      document.getElementById('contestDesc').textContent = state.contest.subtitle || state.contest.description || '选择你本轮想支持的作品。';
+      renderRoundSelector();
+      applyRoundState();
+      await loadWorks();
+      await reloadRoundVotingState();
+    }
+
+    function renderRoundSelector() {
+      const select = document.getElementById('roundSelect');
+      select.innerHTML = state.rounds.map(round => '<option value="' + Number(round.id) + '">' + esc(round.title) + ' · ' + esc(statusLabel(round.status)) + '</option>').join('');
+      select.value = String(state.round.id);
+    }
+
+    function applyRoundState() {
+      state.maxSelect = Number(state.round.max_select || 12);
+      document.getElementById('roundTitle').textContent = state.round.title || '-';
+      document.getElementById('maxSelectText').textContent = state.maxSelect + ' 部';
+      document.getElementById('maxSelectCount').textContent = state.maxSelect;
+      document.getElementById('advanceText').textContent = '晋级前 ' + Number(state.round.advance_count || 12) + ' 部';
+      document.getElementById('statusText').textContent = statusLabel(state.round.status);
+      document.getElementById('roundSelect').value = String(state.round.id);
+    }
+
+    async function loadWorks() {
+      const data = await apiGet(API.works + '?action=list&contest_id=' + encodeURIComponent(state.contest.id));
+      state.works = data.data || [];
+      renderWorkBallot();
+    }
+
+    async function switchTwelveRound(roundId) {
+      const next = state.rounds.find(round => Number(round.id) === Number(roundId));
+      if (!next) return;
+      state.round = next;
+      state.selected = new Set();
+      applyRoundState();
+      const url = new URL(location.href);
+      url.searchParams.set('contest_id', state.contest.id);
+      url.searchParams.set('round_id', state.round.id);
+      history.replaceState(null, '', url);
+      await reloadRoundVotingState();
+    }
+
+    async function reloadRoundVotingState() {
+      if (isNominationRound(state.round)) {
+        document.body.classList.add('is-nomination');
+        state.eligible = false;
+        updateCounter();
+        await loadMyNominations();
+        document.getElementById('nominationNotice').textContent = state.round.status === 'open'
+          ? '提名期已开放：搜索作品并提交后，会进入待审核提名池。'
+          : '当前提名期未开放，暂时不能提交新提名。';
+      } else {
+        document.body.classList.remove('is-nomination');
+        await Promise.all([loadEligibility(), loadMyTwelveVotes()]);
+      }
+    }
+
+    async function loadEligibility() {
+      try {
+        const data = await apiGet(API.votes + '?action=eligibility&round_id=' + encodeURIComponent(state.round.id));
+        state.eligible = !!data.eligible && state.round.status === 'open';
+        state.selected = new Set((data.selected_work_ids || []).map(Number));
+        document.getElementById('notice').textContent = state.eligible
+          ? '本轮每人最多选择 ' + state.maxSelect + ' 部作品。' + (data.allow_vote_change ? '提交后仍可改票。' : '提交后不可改票。')
+          : (data.reason === 'login_required' ? '请先登录后再投票。' : '当前账号不符合本活动投票资格。');
+      } catch (error) {
+        state.eligible = false;
+        document.getElementById('notice').textContent = error.message;
+      }
+      updateCounter();
+      renderWorkBallot();
+    }
+
+    function renderWorkBallot() {
+      const host = document.getElementById('workList');
+      const q = document.getElementById('workSearch').value.trim().toLowerCase();
+      const works = state.works.filter(work => {
+        const text = [work.title, work.title_alias, work.brand, work.release_year, work.summary].join(' ').toLowerCase();
+        return !q || text.includes(q);
+      });
+      if (!works.length) {
+        host.innerHTML = '<div class="notice">没有匹配的候选作品。</div>';
+        return;
+      }
+      host.innerHTML = works.map(work => {
+        const selected = state.selected.has(Number(work.id));
+        return '<article class="work-row ' + (selected ? 'selected' : '') + '" data-id="' + Number(work.id) + '">' +
+          '<span class="check">✓</span><div class="work-title"><strong>' + esc(work.title) + '</strong><span>' +
+          esc([work.title_alias, work.brand, work.release_year].filter(Boolean).join(' · ') || '候选作品') +
+          '</span></div><span class="pill">' + (selected ? '已选' : '候选') + '</span></article>';
+      }).join('');
+    }
+
+    function toggleWorkSelection(workId) {
+      if (!state.eligible) return;
+      if (state.selected.has(workId)) state.selected.delete(workId);
+      else {
+        if (state.selected.size >= state.maxSelect) {
+          document.getElementById('counterHint').textContent = '已达到本轮选择上限';
+          return;
+        }
+        state.selected.add(workId);
+      }
+      updateCounter();
+      renderWorkBallot();
+    }
+
+    function updateCounter() {
+      document.getElementById('selectedCount').textContent = state.selected.size;
+      document.getElementById('submitBtn').disabled = !state.eligible || state.selected.size === 0 || state.selected.size > state.maxSelect;
+      const remain = Math.max(0, state.maxSelect - state.selected.size);
+      document.getElementById('counterHint').textContent = state.eligible ? ('还可以选择 ' + remain + ' 部，提交前会显示确认弹窗') : '当前不可提交投票';
+      renderSelectedWorks();
+    }
+
+    function renderSelectedWorks() {
+      const host = document.getElementById('selectedTray');
+      const selectedWorks = Array.from(state.selected).map(id => state.works.find(work => Number(work.id) === id)).filter(Boolean);
+      host.innerHTML = selectedWorks.length
+        ? selectedWorks.map(work => '<span class="selected-chip">' + esc(work.title) + '</span>').join('')
+        : '<span class="selected-chip">尚未选择作品</span>';
+    }
+
+    async function submitTwelveVote() {
+      if (!state.eligible || state.selected.size === 0) return;
+      const names = Array.from(state.selected).map(id => state.works.find(work => Number(work.id) === id)?.title).filter(Boolean);
+      if (!confirm('确认提交以下 ' + names.length + ' 部作品？\n\n' + names.join('\n'))) return;
+      await apiPost(API.votes + '?action=cast', { round_id: Number(state.round.id), work_ids: Array.from(state.selected) });
+      document.getElementById('notice').textContent = '投票已提交。';
+      await loadMyTwelveVotes();
+    }
+
+    async function loadMyTwelveVotes() {
+      try {
+        const data = await apiGet(API.votes + '?action=my_votes&round_id=' + encodeURIComponent(state.round.id));
+        const rows = data.data || [];
+        document.getElementById('myVotes').innerHTML = rows.length
+          ? rows.map(row => esc(row.title)).join('、')
+          : '本轮还没有提交投票。';
+      } catch (error) {
+        document.getElementById('myVotes').textContent = '登录后可查看已投作品。';
+      }
+    }
+
+    function normalizeExternalWork(item) {
+      if (state.nominationSource === 'bangumi') {
+        return {
+          title: item.title_cn || item.title || '',
+          title_alias: item.title && item.title_cn ? item.title : '',
+          brand: '',
+          release_year: item.air_date ? String(item.air_date).slice(0, 4) : '',
+          cover_url: item.image_url || '',
+          summary: item.summary || '',
+          external_url: item.bangumi_id ? 'https://bgm.tv/subject/' + item.bangumi_id : ''
+        };
+      }
+      return {
+        title: item.title || '',
+        title_alias: item.title_alias || '',
+        brand: item.brand || '',
+        release_year: item.release_year || '',
+        cover_url: item.cover_url || '',
+        summary: item.summary || '',
+        external_url: item.external_url || ''
+      };
+    }
+
+    async function searchExternalWorks() {
+      const keyword = document.getElementById('externalSearchInput').value.trim();
+      if (!keyword) {
+        document.getElementById('externalResults').innerHTML = '<div class="notice">请输入作品关键词。</div>';
+        return;
+      }
+      const url = state.nominationSource === 'bangumi'
+        ? API.bangumi + '?action=search_subject&type=4&keyword=' + encodeURIComponent(keyword)
+        : API.vndb + '?action=search_vn&keyword=' + encodeURIComponent(keyword);
+      const data = await apiGet(url);
+      state.externalResults = (data.data || []).map(normalizeExternalWork).filter(item => item.title);
+      renderExternalResults();
+    }
+
+    function renderExternalResults() {
+      const host = document.getElementById('externalResults');
+      if (!state.externalResults.length) {
+        host.innerHTML = '<div class="notice">没有找到可提名的作品。</div>';
+        return;
+      }
+      host.innerHTML = state.externalResults.map((work, index) => (
+        '<article class="external-row"><img class="external-cover" src="' + esc(work.cover_url || '../images/logo.png') + '" alt=""><div class="work-title"><strong>' +
+        esc(work.title) + '</strong><span>' + esc([work.title_alias, work.brand, work.release_year].filter(Boolean).join(' · ') || '外部作品库条目') +
+        '</span></div><button class="submit-btn" type="button" data-nominate-index="' + index + '">一键提名</button></article>'
+      )).join('');
+    }
+
+    async function nominateExternalWork(index) {
+      if (!isNominationRound(state.round) || state.round.status !== 'open') {
+        document.getElementById('nominationNotice').textContent = '提名期未开放，不能提交提名。';
+        return;
+      }
+      const work = state.externalResults[index];
+      if (!work) return;
+      const data = await apiPost(API.works + '?action=nominate', Object.assign({ contest_id: Number(state.contest.id) }, work));
+      document.getElementById('nominationNotice').textContent = data.existing ? '该作品已在提名池中。' : '已提交提名，等待管理员审核。';
+      await loadMyNominations();
+    }
+
+    async function loadMyNominations() {
+      try {
+        const data = await apiGet(API.works + '?action=my_nominations&contest_id=' + encodeURIComponent(state.contest.id));
+        const rows = data.data || [];
+        document.getElementById('myNominations').innerHTML = rows.length
+          ? rows.map(row => esc(row.title) + '（' + esc(row.status) + '）').join('、')
+          : '当前活动还没有你的提名。';
+      } catch (error) {
+        document.getElementById('myNominations').textContent = '登录后可查看已提交的提名。';
+      }
+    }
+
+    document.getElementById('workSearch').addEventListener('input', renderWorkBallot);
+    document.querySelectorAll('.source-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        state.nominationSource = button.dataset.source;
+        document.querySelectorAll('.source-btn').forEach(item => item.classList.toggle('active', item === button));
+        state.externalResults = [];
+        document.getElementById('externalResults').innerHTML = '';
+      });
+    });
+    document.getElementById('externalSearchBtn').addEventListener('click', () => {
+      searchExternalWorks().catch(error => { document.getElementById('externalResults').innerHTML = '<div class="notice">' + esc(error.message) + '</div>'; });
+    });
+    document.getElementById('externalSearchInput').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        searchExternalWorks().catch(error => { document.getElementById('externalResults').innerHTML = '<div class="notice">' + esc(error.message) + '</div>'; });
+      }
+    });
+    document.getElementById('externalResults').addEventListener('click', event => {
+      const button = event.target.closest('[data-nominate-index]');
+      if (button) nominateExternalWork(Number(button.dataset.nominateIndex)).catch(error => { document.getElementById('nominationNotice').textContent = error.message; });
+    });
+    document.getElementById('roundSelect').addEventListener('change', event => {
+      switchTwelveRound(event.target.value).catch(error => { document.getElementById('notice').textContent = error.message; });
+    });
+    document.getElementById('workList').addEventListener('click', event => {
+      const row = event.target.closest('.work-row');
+      if (row) toggleWorkSelection(Number(row.dataset.id));
+    });
+    document.getElementById('submitBtn').addEventListener('click', () => {
+      submitTwelveVote().catch(error => { document.getElementById('notice').textContent = error.message; });
+    });
+    loadVotingContext().catch(error => {
+      document.getElementById('contestTitle').textContent = '无法进入投票';
+      document.getElementById('notice').textContent = error.message;
+    });
+  </script>
+  <script>
+  (function() {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    var html = document.documentElement;
+    function updateIcon() {
+      var isDark = html.getAttribute('data-theme') === 'dark';
+      btn.querySelector('.icon-sun').style.display = isDark ? 'none' : '';
+      btn.querySelector('.icon-moon').style.display = isDark ? '' : 'none';
+    }
+    updateIcon();
+    btn.addEventListener('click', function() {
+      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('themePreference', next);
+      updateIcon();
+    });
+  })();
+  </script>
+</body>
+</html>

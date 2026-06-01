@@ -1,6 +1,6 @@
 {
   "name": "galgame-map",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "Galgame 同好会地图 — 中日高校视觉小说社团导航平台",
   "author": "VNFest",
   "private": true,
@@ -9,7 +9,7 @@
     "dev": "electron .",
     "wiki:test": "node scripts/test-wiki-generator.mjs",
     "wiki:build": "node scripts/generate-wiki-pages.mjs",
-    "check": "node scripts/test-app-core.mjs && node scripts/test-wiki-generator.mjs && node scripts/test-wiki-upload-contract.mjs && node scripts/test-wiki-editor-tools.mjs && node scripts/test-club-edit-contract.mjs && node scripts/test-club-detail-actions.mjs && node scripts/test-events-merge.mjs && node scripts/test-backend-privacy-contract.mjs && node scripts/test-moe-contest-contract.mjs && node scripts/test-moe-manager-ui-contract.mjs && node scripts/test-moe-public-ui-contract.mjs && node scripts/health-check.mjs",
+    "check": "node scripts/test-app-core.mjs && node scripts/test-wiki-generator.mjs && node scripts/test-wiki-upload-contract.mjs && node scripts/test-wiki-editor-tools.mjs && node scripts/test-club-edit-contract.mjs && node scripts/test-club-detail-actions.mjs && node scripts/test-events-merge.mjs && node scripts/test-event-registrations-lock.mjs && node scripts/test-backend-privacy-contract.mjs && node scripts/test-growth-contract.mjs && node scripts/test-user-page-assets.mjs && node scripts/test-page-i18n-contract.mjs && node scripts/test-performance-optimizations.mjs && node scripts/test-astrbot-sync-contract.mjs && node scripts/test-vote-projects-contract.mjs && node scripts/health-check.mjs",
     "build:apk": "node scripts/build-apk.mjs",
     "build:exe": "node scripts/build-exe.mjs",
     "cap:copy": "npx cap copy",

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>投票活动 - Galgame 同好会地图</title>
+  <style>
+    :root {
+      --paper: #fbf7ed;
+      --panel: #fffdf8;
+      --ink: #171512;
+      --muted: #6d655a;
+      --line: #d8cdbb;
+      --red: #b43c30;
+      --blue: #213f7a;
+      --gold: #ad7b2f;
+      --green: #2d704f;
+      --shadow: 0 18px 52px rgba(48, 39, 27, .12);
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(180, 60, 48, .12), transparent 28vw),
+        radial-gradient(circle at 88% 8%, rgba(33, 63, 122, .14), transparent 30vw),
+        linear-gradient(135deg, #fffaf1 0%, var(--paper) 55%, #efe4d1 100%);
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+    a { color: inherit; text-decoration: none; }
+    .shell { max-width: 1160px; margin: 0 auto; padding: 22px clamp(16px, 4vw, 36px) 56px; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { color: var(--blue); font-weight: 900; }
+    .topbar nav { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+    .hero {
+      min-height: 360px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, .55fr);
+      gap: clamp(24px, 5vw, 56px);
+      align-items: end;
+      padding: clamp(44px, 7vw, 88px) 0 36px;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+    .hero::after {
+      content: "VOTE";
+      position: absolute;
+      right: 0;
+      top: 32px;
+      z-index: -1;
+      color: rgba(33, 63, 122, .06);
+      font: 900 clamp(86px, 18vw, 220px)/.8 "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .eyebrow::before { content: ""; width: 42px; height: 2px; background: var(--red); }
+    h1 {
+      margin: 16px 0 14px;
+      font: 900 clamp(42px, 8vw, 92px)/.98 "Noto Serif SC", "Source Han Serif SC", serif;
+      text-wrap: pretty;
+    }
+    .lead { margin: 0; max-width: 700px; color: #3f372d; line-height: 1.85; font-size: 17px; }
+    .summary-panel {
+      background: rgba(255,253,248,.9);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      backdrop-filter: blur(14px);
+    }
+    .summary-panel strong { display: block; font: 900 34px/1 "Noto Serif SC", "Source Han Serif SC", serif; color: var(--blue); }
+    .summary-panel span { display: block; margin-top: 8px; color: var(--muted); line-height: 1.6; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      padding: 34px 0;
+    }
+    .activity-card {
+      min-height: 340px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 22px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.86), rgba(255,255,255,.58)),
+        radial-gradient(circle at 12% 18%, rgba(180,60,48,.16), transparent 34%),
+        radial-gradient(circle at 90% 12%, rgba(33,63,122,.16), transparent 34%);
+    }
+    .card-head small { color: var(--red); font-weight: 900; }
+    .card-head h2 { margin: 12px 0 0; font: 900 clamp(28px, 4vw, 42px)/1.08 "Noto Serif SC", "Source Han Serif SC", serif; }
+    .card-body { padding: 22px; }
+    .card-body p { margin: 0 0 16px; color: var(--muted); line-height: 1.75; }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .fact { border-top: 2px solid var(--ink); padding-top: 8px; }
+    .fact strong { display: block; color: var(--blue); font-size: 22px; }
+    .fact span { color: var(--muted); font-size: 12px; }
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 0 22px 22px;
+    }
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--ink);
+      background: var(--ink);
+      color: #fff;
+      padding: 0 15px;
+      font-weight: 900;
+    }
+    .btn.secondary { background: transparent; color: var(--ink); }
+    .btn:hover { background: var(--red); border-color: var(--red); color: #fff; }
+    .feed {
+      padding: 34px 0 0;
+      border-top: 1px solid var(--line);
+    }
+    .section-title { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .section-title h2 { margin: 0; font: 900 32px/1.1 "Noto Serif SC", "Source Han Serif SC", serif; }
+    .activity-list { display: grid; gap: 10px; }
+    .activity-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: rgba(255,253,248,.86);
+      border: 1px solid var(--line);
+      padding: 14px;
+    }
+    .activity-item strong { display: block; line-height: 1.35; }
+    .activity-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .tag { color: var(--gold); font-weight: 900; white-space: nowrap; }
+    .empty { padding: 18px; border: 1px solid var(--line); background: #f7efe0; color: var(--muted); line-height: 1.7; }
+    @media (max-width: 820px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .facts { grid-template-columns: 1fr; }
+      .activity-item { grid-template-columns: 1fr; }
+    }
+  </style>
+  <link rel="stylesheet" href="./css/vote-activity.css">
+  <script src="./js/vote-activity.js"></script>
+</head>
+<body>
+  <!-- Voting Activity Hub -->
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html">GalgameMap</a>
+      <nav>
+        <a href="./index.html">地图</a>
+        <a href="./user.html">用户中心</a>
+        <a href="./feedback.html">反馈</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">同好会投票与评选入口</div>
+        <h1>投票活动</h1>
+        <p class="lead">这里集中展示站内公开投票活动。萌战适合角色提名、赛程和对阵投票；十二器评选适合每学期作品榜单投票和最终 Top 12 结果展示。</p>
+      </div>
+      <aside class="summary-panel">
+        <strong id="totalCount">-</strong>
+        <span>公开活动读取中。你可以从这里进入投票、查看赛程或追踪结果。</span>
+      </aside>
+    </section>
+
+    <section class="grid" aria-label="投票活动类型">
+      <article class="activity-card">
+        <div class="card-head">
+          <small>角色 / 赛事 / 对阵</small>
+          <h2>萌战活动</h2>
+        </div>
+        <div class="card-body">
+          <p>面向角色或候选项的提名、分组、对阵和投票活动，适合做更有赛事感的活动流程。</p>
+          <div class="facts">
+            <div class="fact"><strong id="moeCount">-</strong><span>公开活动</span></div>
+            <div class="fact"><strong>提名</strong><span>支持候选池</span></div>
+            <div class="fact"><strong>对阵</strong><span>支持赛程板</span></div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a class="btn" href="./moe/index.html">进入萌战</a>
+          <a class="btn secondary" href="./moe/bracket.html">查看对阵板</a>
+        </div>
+      </article>
+
+      <article class="activity-card">
+        <div class="card-head">
+          <small>作品 / 榜单 / Top 12</small>
+          <h2>十二器评选</h2>
+        </div>
+        <div class="card-body">
+          <p>面向 galgame / 视觉小说作品的多轮选择投票，最终固定生成成员们最喜欢的十二部作品。</p>
+          <div class="facts">
+            <div class="fact"><strong id="twelveCount">-</strong><span>公开活动</span></div>
+            <div class="fact"><strong>多选</strong><span>问卷式投票</span></div>
+            <div class="fact"><strong>12</strong><span>最终结果</span></div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <a class="btn" href="./twelve/index.html">进入十二器</a>
+          <a class="btn secondary" href="./twelve/vote.html">直接投票</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="feed">
+      <div class="section-title">
+        <h2>近期公开活动</h2>
+        <span class="tag">自动读取公开列表</span>
+      </div>
+      <div id="activityList" class="activity-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const state = { moe: [], twelve: [] };
+    function esc(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function statusLabel(status) {
+      return ({ draft: '草稿', published: '已发布', running: '进行中', ended: '已结束', archived: '已归档', suspended: '已暂停' })[status] || status || '-';
+    }
+    async function apiGet(url) {
+      const res = await fetch(url, { credentials: 'include' });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (error) { throw new Error('活动列表暂时无法读取。'); }
+      if (!data.success) throw new Error('活动列表暂时无法读取。');
+      return data;
+    }
+    async function loadVotingHub() {
+      const [moe, twelve] = await Promise.allSettled([
+        apiGet('./api/moe_contests.php?action=list&country=all'),
+        apiGet('./api/twelve_contests.php?action=list&country=all')
+      ]);
+      state.moe = moe.status === 'fulfilled' ? (moe.value.data || []) : [];
+      state.twelve = twelve.status === 'fulfilled' ? (twelve.value.data || []) : [];
+      renderVotingHub();
+    }
+    function renderVotingHub() {
+      document.getElementById('moeCount').textContent = state.moe.length;
+      document.getElementById('twelveCount').textContent = state.twelve.length;
+      document.getElementById('totalCount').textContent = state.moe.length + state.twelve.length;
+      const items = [
+        ...state.moe.map(item => ({ type: '萌战', href: './moe/index.html?contest_id=' + encodeURIComponent(item.id), title: item.title, status: item.status, desc: item.description || item.candidate_mode || '' })),
+        ...state.twelve.map(item => ({ type: '十二器', href: './twelve/index.html?contest_id=' + encodeURIComponent(item.id), title: item.title, status: item.status, desc: item.subtitle || item.description || '' }))
+      ].slice(0, 10);
+      document.getElementById('activityList').innerHTML = items.length ? items.map(item => (
+        '<a class="activity-item" href="' + esc(item.href) + '"><span><strong>' + esc(item.title || item.type + '活动') +
+        '</strong><span>' + esc(item.type) + ' · ' + esc(statusLabel(item.status)) + (item.desc ? ' · ' + esc(item.desc) : '') +
+        '</span></span><b class="tag">进入</b></a>'
+      )).join('') : '<div class="empty">暂无公开投票活动。负责人发布活动后会显示在这里。</div>';
+    }
+    loadVotingHub().catch(error => {
+      document.getElementById('activityList').innerHTML = '<div class="empty">' + esc(error.message || '活动列表暂时无法读取。') + '</div>';
+    });
+  </script>
+</body>
+</html>

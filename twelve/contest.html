@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>十二器投票 - VNFest</title>
+  <link rel="stylesheet" href="../css/vote-common.css">
+  <link rel="stylesheet" href="../css/twelve-contest.css?v=20260601-flow8">
+</head>
+<body>
+  <div class="tw-contest-header">
+    <a class="tw-back" href="index.html">&larr;</a>
+    <div>
+      <div class="tw-contest-title" id="twContestTitle">加载中...</div>
+      <div class="tw-contest-sub" id="twContestSub"></div>
+    </div>
+    <button class="tw-btn tw-btn--submit" id="twHeaderSubmit" style="display:none;">提交</button>
+    <button id="themeToggle" title="切换明亮/暗色模式" aria-label="切换明亮/暗色模式" style="background:none;border:none;cursor:pointer;padding:0 8px;color:inherit;font-size:16px;">
+      <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+
+  <div id="twContestContent">
+    <div class="tw-loading">加载中...</div>
+  </div>
+
+  <div class="tw-bottom-bar" id="twBottomBar" style="display:none;">
+    <span class="tw-bottom-hint" id="twBottomHint"></span>
+    <button class="tw-btn tw-btn--submit" id="twBottomSubmit">提交投票</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../js/vote-common.js"></script>
+  <script src="../js/twelve-contest.js?v=20260601-flow8"></script>
+  <script>
+  (function() {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    var html = document.documentElement;
+    function updateIcon() {
+      var isDark = html.getAttribute('data-theme') === 'dark';
+      btn.querySelector('.icon-sun').style.display = isDark ? 'none' : '';
+      btn.querySelector('.icon-moon').style.display = isDark ? '' : 'none';
+    }
+    updateIcon();
+    btn.addEventListener('click', function() {
+      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('themePreference', next);
+      updateIcon();
+    });
+  })();
+  </script>
+</body>
+</html>

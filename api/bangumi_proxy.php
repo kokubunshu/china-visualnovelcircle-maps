@@ -1,8 +1,10 @@
 <?php
-// api/bangumi_proxy.php - Bangumi API 代理（避免跨域 + 缓存）
+// api/bangumi_proxy.php - Bangumi API 代理（参考版风格：简单透传 + 缓存）
+// 核心原则：不配置 SSL context（用 PHP 默认值），直接透传 API 返回的 image_url
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -19,95 +21,130 @@ if (!is_dir($cacheDir)) {
 }
 
 /**
- * 带缓存的 Bangumi API 请求
+ * 带缓存的 Bangumi API 请求（参考版风格）
+ * - 不设 SSL context，依赖 PHP 默认配置
+ * - 失败时返回空数组，降级到过期缓存
+ * - 支持 GET/POST
  */
-function bangumiFetch(string $url, string $cacheKey, int $ttl): array
+function bgmFetch(string $url, string $cacheKey, int $ttl, ?array $postBody = null): array
 {
-    return bangumiRequest('GET', $url, $cacheKey, $ttl);
-}
+    global $cacheDir;
 
-function bangumiRequest(string $method, string $url, string $cacheKey, int $ttl, ?array $body = null): array
-{
-    $cacheDir = __DIR__ . '/../data/cache/bangumi';
     $cacheFile = $cacheDir . '/' . $cacheKey . '.json';
 
     // 命中缓存
     if (file_exists($cacheFile) && time() - filemtime($cacheFile) < $ttl) {
-        return json_decode(file_get_contents($cacheFile), true) ?: [];
+        $cached = json_decode(file_get_contents($cacheFile), true);
+        if (is_array($cached)) {
+            return $cached;
+        }
     }
 
-    $headers = "User-Agent: VNFest/1.0\r\n";
-    $options = [
+    $method = $postBody ? 'POST' : 'GET';
+    $httpOpts = [
         'method' => $method,
         'timeout' => 10,
-        'header' => $headers,
+        'user_agent' => 'VNFest/1.0 (https://map.vnfest.top; contact@vnfest.top)',
+        'ignore_errors' => true,
     ];
-    if ($body !== null) {
-        $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
-        $options['header'] .= "Content-Type: application/json\r\n";
-        $options['content'] = $payload;
+
+    $headers = [];
+    if ($postBody) {
+        $headers[] = 'Content-Type: application/json';
+        $httpOpts['content'] = json_encode($postBody, JSON_UNESCAPED_UNICODE);
+    }
+    if (!empty($headers)) {
+        $httpOpts['header'] = implode("\r\n", $headers) . "\r\n";
     }
 
-    $context = stream_context_create(['http' => $options]);
+    // 不设 ssl context — 依赖 PHP 默认配置（与参考版一致）
+    $context = stream_context_create(['http' => $httpOpts]);
+    $raw = @file_get_contents($url, false, $context);
 
-    $response = @file_get_contents($url, false, $context);
-    if ($response === false) {
-        // 有缓存时返回过期缓存兜底
+    if ($raw === false) {
+        // 降级到过期缓存
         if (file_exists($cacheFile)) {
-            return json_decode(file_get_contents($cacheFile), true) ?: [];
+            $cached = json_decode(file_get_contents($cacheFile), true);
+            if (is_array($cached)) return $cached;
         }
         return [];
     }
 
-    $data = json_decode($response, true) ?: [];
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        // JSON 解析失败，降级到过期缓存
+        if (file_exists($cacheFile)) {
+            $cached = json_decode(file_get_contents($cacheFile), true);
+            if (is_array($cached)) return $cached;
+        }
+        return [];
+    }
+
     file_put_contents($cacheFile, json_encode($data, JSON_UNESCAPED_UNICODE));
     return $data;
 }
 
-function bangumiImage(array $item): string {
-    $images = $item['images'] ?? [];
-    return $images['medium'] ?? $images['grid'] ?? $images['large'] ?? $images['small'] ?? '';
+/** 安全截断字符串 */
+function cutText(string $text, int $len): string {
+    return function_exists('mb_substr') ? mb_substr($text, 0, $len) : substr($text, 0, $len);
 }
 
-function normalizeBangumiCharacter(array $item): array {
+/** 从 item 中提取图片 URL，通过服务端代理输出（绕过 CDN HTTPS 限制） */
+function bgmImage(array $item): string {
+    $imgs = $item['images'] ?? [];
+    $url = $imgs['medium'] ?? $imgs['large'] ?? $imgs['small'] ?? $imgs['grid'] ?? $imgs['common'] ?? '';
+    if ($url === '') return '';
+    return '/api/image_proxy.php?url=' . urlencode($url);
+}
+
+/** 标准化角色数据 */
+function normalizeCharacter(array $item): array {
+    $imgs = $item['images'] ?? [];
+    $rawUrl = $imgs['medium'] ?? $imgs['large'] ?? $imgs['small'] ?? $imgs['grid'] ?? $imgs['common'] ?? '';
     return [
-        'character_id' => (int)($item['id'] ?? 0),
-        'name' => $item['name'] ?? '',
-        'name_cn' => $item['name_cn'] ?? '',
-        'image_url' => bangumiImage($item),
-        'summary' => (function_exists('mb_substr') ? mb_substr($item['summary'] ?? '', 0, 240) : substr($item['summary'] ?? '', 0, 240)),
-        'relation' => $item['relation'] ?? '',
-        'type' => $item['type'] ?? '',
+        'character_id'  => (int)($item['id'] ?? 0),
+        'name'          => $item['name'] ?? '',
+        'name_cn'       => $item['name_cn'] ?? '',
+        'image_url'     => bgmImage($item),
+        'image_url_raw' => $rawUrl,
+        'summary'       => cutText($item['summary'] ?? '', 240),
+        'relation'      => $item['relation'] ?? '',
+        'type'          => $item['type'] ?? '',
     ];
 }
 
-// ===== 搜索 =====
+// =========================================================
+//  Action 路由
+// =========================================================
+
+// ===== 搜索作品（旧版 GET API） =====
 if ($action === 'search' || $action === 'search_subject') {
     $keyword = trim($_GET['keyword'] ?? '');
-    $type = (int)($_GET['type'] ?? 4); // 默认 Game
+    $type = (int)($_GET['type'] ?? 4);
 
     if ($keyword === '') {
         echo json_encode(['success' => false, 'message' => '请输入关键词']);
         exit();
     }
 
-    $cacheKey = 'search_v2_' . md5(strtolower($keyword) . '_' . $type);
-    $data = bangumiFetch(
+    $data = bgmFetch(
         'https://api.bgm.tv/search/subject/' . urlencode($keyword) . '?type=' . $type . '&responseGroup=large',
-        $cacheKey,
-        3600 // 搜索缓存 1 小时
+        'search_v2_' . md5(strtolower($keyword) . '_' . $type),
+        3600
     );
 
+    $items = $data['list'] ?? [];
     $results = [];
-    foreach ($data['list'] ?? [] as $item) {
+    foreach ($items as $item) {
+        if (!is_array($item)) continue;
         $rating = $item['rating'] ?? [];
         $results[] = [
             'bangumi_id' => (int)$item['id'],
             'title'      => $item['name'] ?? '',
             'title_cn'   => $item['name_cn'] ?? '',
-            'image_url'  => $item['images']['medium'] ?? $item['images']['large'] ?? '',
+            'image_url'  => bgmImage($item),
             'rating'     => $rating['score'] ?? $item['score'] ?? 0,
-            'summary'    => (function_exists('mb_substr') ? mb_substr($item['summary'] ?? '', 0, 200) : substr($item['summary'] ?? '', 0, 200)),
+            'summary'    => cutText($item['summary'] ?? '', 200),
             'air_date'   => $item['air_date'] ?? '',
         ];
     }
@@ -116,7 +153,7 @@ if ($action === 'search' || $action === 'search_subject') {
     exit();
 }
 
-// ===== 角色搜索（萌战提名使用）=====
+// ===== 搜索角色（POST） =====
 if ($action === 'search_character') {
     $keyword = trim($_GET['keyword'] ?? '');
     $limit = max(1, min(50, (int)($_GET['limit'] ?? 20)));
@@ -127,32 +164,48 @@ if ($action === 'search_character') {
         exit();
     }
 
-    $cacheKey = 'character_search_v0_' . md5(strtolower($keyword) . '_' . $limit . '_' . $offset);
-    $data = bangumiRequest(
-        'POST',
+    $data = bgmFetch(
         'https://api.bgm.tv/v0/search/characters?limit=' . $limit . '&offset=' . $offset,
-        $cacheKey,
+        'character_search_v0_' . md5(strtolower($keyword) . '_' . $limit . '_' . $offset),
         3600,
-        ['keyword' => $keyword, 'filter' => ['nsfw' => false]]
+        ['keyword' => $keyword, 'filter' => ['nsfw' => true]]
     );
 
-    $rows = $data['data'] ?? $data['list'] ?? [];
+    $rows = $data['data'] ?? [];
     $results = [];
+    $detailCount = 0;
+
     foreach ($rows as $item) {
-        if (is_array($item)) {
-            $results[] = normalizeBangumiCharacter($item);
+        if (!is_array($item)) continue;
+        $normalized = normalizeCharacter($item);
+
+        // v0 角色搜索结果不含 images，从详情补全（最多 5 次）
+        if (empty($normalized['image_url']) && !empty($normalized['character_id']) && $detailCount < 5) {
+            $detail = bgmFetch(
+                'https://api.bgm.tv/v0/characters/' . $normalized['character_id'],
+                'char_' . $normalized['character_id'],
+                86400
+            );
+            $detailCount++;
+            if (!empty($detail['images'])) {
+                $normalized['image_url'] = bgmImage($detail);
+                $imgs = $detail['images'];
+                $normalized['image_url_raw'] = $imgs['medium'] ?? $imgs['large'] ?? $imgs['small'] ?? $imgs['grid'] ?? $imgs['common'] ?? '';
+            }
         }
+
+        $results[] = $normalized;
     }
 
     echo json_encode([
         'success' => true,
-        'total' => (int)($data['total'] ?? count($results)),
-        'data' => $results,
+        'total'   => (int)($data['total'] ?? count($results)),
+        'data'    => $results,
     ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 
-// ===== 获取作品角色列表（萌战提名主流程）=====
+// ===== 获取作品角色列表 =====
 if ($action === 'subject_characters') {
     $subjectId = (int)($_GET['subject_id'] ?? $_GET['id'] ?? 0);
     if ($subjectId <= 0) {
@@ -160,19 +213,18 @@ if ($action === 'subject_characters') {
         exit();
     }
 
-    $cacheKey = 'subject_characters_' . $subjectId;
-    $data = bangumiFetch(
+    $data = bgmFetch(
         'https://api.bgm.tv/v0/subjects/' . $subjectId . '/characters',
-        $cacheKey,
+        'subj_chars_' . $subjectId,
         86400
     );
 
     $results = [];
-    foreach ($data ?? [] as $item) {
+    foreach ($data as $item) {
         if (!is_array($item)) continue;
         $character = $item['character'] ?? $item;
         if (!is_array($character)) continue;
-        $normalized = normalizeBangumiCharacter($character);
+        $normalized = normalizeCharacter($character);
         $normalized['relation'] = $item['relation'] ?? ($normalized['relation'] ?? '');
         $results[] = $normalized;
     }
@@ -189,10 +241,9 @@ if ($action === 'get_character') {
         exit();
     }
 
-    $cacheKey = 'character_' . $id;
-    $data = bangumiFetch(
+    $data = bgmFetch(
         'https://api.bgm.tv/v0/characters/' . $id,
-        $cacheKey,
+        'char_' . $id,
         86400
     );
 
@@ -200,7 +251,7 @@ if ($action === 'get_character') {
     exit();
 }
 
-// ===== 获取单个条目详情 =====
+// ===== 获取条目详情 =====
 if ($action === 'get') {
     $id = (int)($_GET['id'] ?? 0);
     if ($id <= 0) {
@@ -208,23 +259,64 @@ if ($action === 'get') {
         exit();
     }
 
-    $cacheKey = 'subject_' . $id;
-    $data = bangumiFetch(
+    $data = bgmFetch(
         'https://api.bgm.tv/v0/subjects/' . $id,
-        $cacheKey,
-        86400 // 条目详情缓存 24 小时
+        'subject_' . $id,
+        86400
     );
 
+    // 回退旧版 API
     if (empty($data)) {
-        // 回退旧版 API
-        $data = bangumiFetch(
+        $data = bgmFetch(
             'https://api.bgm.tv/subject/' . $id . '?responseGroup=large',
-            $cacheKey . '_v0',
+            'subject_' . $id . '_v0',
             86400
         );
     }
 
     echo json_encode(['success' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+// ===== 诊断：Bangumi API 连通性 =====
+if ($action === 'ping') {
+    $start = microtime(true);
+    $data = bgmFetch(
+        'https://api.bgm.tv/v0/characters/1',
+        '_ping_char_1',
+        30
+    );
+    $elapsed = round((microtime(true) - $start) * 1000);
+
+    echo json_encode([
+        'success'          => !empty($data),
+        'bangumi_reachable' => !empty($data),
+        'elapsed_ms'       => $elapsed,
+        'php_allow_url_fopen' => (bool)ini_get('allow_url_fopen'),
+    ], JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+// ===== 诊断：缓存状态 =====
+if ($action === 'debug') {
+    $cacheFiles = glob($cacheDir . '/*.json');
+    $cacheInfo = [];
+    foreach (($cacheFiles ?: []) as $f) {
+        $cacheInfo[basename($f)] = [
+            'size'  => filesize($f),
+            'mtime' => date('Y-m-d H:i:s', filemtime($f)),
+            'age_s' => time() - filemtime($f),
+        ];
+    }
+    echo json_encode([
+        'success'            => true,
+        'cache_dir'          => $cacheDir,
+        'cache_dir_exists'   => is_dir($cacheDir),
+        'cache_dir_writable' => is_writable($cacheDir),
+        'cache_files_count'  => count($cacheInfo),
+        'cache_files'        => $cacheInfo,
+        'php_allow_url_fopen' => (bool)ini_get('allow_url_fopen'),
+    ], JSON_UNESCAPED_UNICODE);
     exit();
 }
 

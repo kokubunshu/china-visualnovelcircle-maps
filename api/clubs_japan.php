@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $dataFile = __DIR__ . '/../data/clubs_japan.json';
+require_once __DIR__ . '/../includes/japan_prefectures.php';
 
 // GET - 读取数据
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -28,12 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $memberLevel = ROLE_HIERARCHY['member'];
 
     $memberships = [];
+    $memberRoles = [];
     if ($user) {
         $db = getDB();
         $stmt = $db->prepare("SELECT club_id, status, role FROM club_memberships WHERE user_id = ?");
         $stmt->execute([$user['id']]);
         foreach ($stmt->fetchAll() as $m) {
             $memberships[$m['club_id']] = $m['status'];
+            $memberRoles[$m['club_id']] = $m['role'] ?? '';
             // 取俱乐部角色中的最高等级
             if ($m['status'] === 'active') {
                 $clubLevel = ROLE_HIERARCHY[$m['role']] ?? -1;
@@ -45,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     foreach ($rows as &$item) {
         $clubId = $item['id'] ?? 0;
-        $isMember = isset($memberships[$clubId]) && $memberships[$clubId] === 'active';
+        $isMember = isset($memberships[$clubId]) && $memberships[$clubId] === 'active' && ($memberRoles[$clubId] ?? '') !== 'external';
         $visibleByDefault = !empty($item['visible_by_default']);
         // 管理员及以上系统角色可查看所有学校的信息
 
@@ -90,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // 日本数据使用 prefecture，兼容旧的 province 字段
-    $prefecture = $input['prefecture'] ?? $input['province'] ?? '';
+    $prefecture = normalizeJapanPrefectureName($input['prefecture'] ?? $input['province'] ?? '');
     if (empty($prefecture)) {
         echo json_encode(['success' => false, 'message' => '请填写都道府县']);
         exit();
@@ -156,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
     foreach ($rows as $i => $item) {
         if ($item['id'] == $input['id']) {
             // 日本数据使用 prefecture
-            $prefecture = $input['prefecture'] ?? $input['province'] ?? $item['prefecture'];
+            $prefecture = normalizeJapanPrefectureName($input['prefecture'] ?? $input['province'] ?? $item['prefecture']);
             $rows[$i]['prefecture'] = $prefecture;
             $rows[$i]['province'] = $prefecture;  // 兼容旧字段
             $rows[$i]['school'] = $input['school'] ?? $item['school'];

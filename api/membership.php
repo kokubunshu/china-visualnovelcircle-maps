@@ -36,6 +36,19 @@ function getClubName($clubId, $country = 'china') {
     return '同好会#' . $clubId;
 }
 
+function ensureMembershipApplicationColumns(PDO $db): void {
+    ensureColumnExists($db, 'club_memberships', 'qq_account', "VARCHAR(255) DEFAULT ''");
+    ensureColumnExists($db, 'club_memberships', 'apply_role', "VARCHAR(50) DEFAULT 'member'");
+    ensureColumnExists($db, 'club_memberships', 'is_student', "INT DEFAULT 0");
+    ensureColumnExists($db, 'club_memberships', 'country', "VARCHAR(20) DEFAULT 'china'");
+    ensureColumnExists($db, 'club_memberships', 'left_at', "DATETIME NULL");
+    ensureColumnExists($db, 'club_memberships', 'join_method', "VARCHAR(50) DEFAULT 'school_no_code'");
+    ensureColumnExists($db, 'club_memberships', 'contact_account', "VARCHAR(255) DEFAULT ''");
+    ensureColumnExists($db, 'club_memberships', 'external_club_name', "VARCHAR(255) DEFAULT ''");
+    ensureColumnExists($db, 'club_memberships', 'external_club_role', "VARCHAR(255) DEFAULT ''");
+    ensureColumnExists($db, 'club_memberships', 'apply_reason', "TEXT");
+}
+
 switch ($action) {
     case 'my':
         // 获取当前用户的所有绑定
@@ -72,13 +85,28 @@ switch ($action) {
         }
         $clubId = (int)($input['club_id'] ?? 0);
         $country = $input['country'] ?? 'china';
-        $qqAccount = $input['qq_account'] ?? '';
+        $joinMethod = $input['join_method'] ?? 'school_no_code';
+        $qqAccount = trim((string)($input['qq_account'] ?? $input['contact_account'] ?? ''));
+        $contactAccount = trim((string)($input['contact_account'] ?? $qqAccount));
+        $externalClubName = trim((string)($input['external_club_name'] ?? ''));
+        $externalClubRole = trim((string)($input['external_club_role'] ?? ''));
+        $applyReason = trim((string)($input['apply_reason'] ?? ''));
         $applyRole = $input['apply_role'] ?? 'member';
-        $isStudent = !empty($input['is_student']) ? 1 : 0;
+        $isStudent = 1;
 
         // 验证申请身份
+        $validMethods = ['school_no_code', 'external_exchange'];
+        if (!in_array($joinMethod, $validMethods, true)) $joinMethod = 'school_no_code';
         $validRoles = ['member', 'manager', 'representative'];
+        if ($joinMethod === 'external_exchange') {
+            $applyRole = 'external';
+            if ($externalClubName === '' || $externalClubRole === '' || $applyReason === '') {
+                echo json_encode(['success' => false, 'message' => '请填写所属同好会、身份和申请理由']);
+                exit();
+            }
+        }
         if (!in_array($applyRole, $validRoles)) $applyRole = 'member';
+        if ($joinMethod === 'external_exchange') $applyRole = 'external';
 
         if (!$clubId) {
             echo json_encode(['success' => false, 'message' => '无效的同好会 ID']);
@@ -87,12 +115,7 @@ switch ($action) {
 
         $db = getDB();
 
-        // 确保扩展列存在（兼容 MySQL 和 SQLite）
-        ensureColumnExists($db, 'club_memberships', 'qq_account', "VARCHAR(255) DEFAULT ''");
-        ensureColumnExists($db, 'club_memberships', 'apply_role', "VARCHAR(50) DEFAULT 'member'");
-        ensureColumnExists($db, 'club_memberships', 'is_student', "INT DEFAULT 0");
-        ensureColumnExists($db, 'club_memberships', 'country', "VARCHAR(20) DEFAULT 'china'");
-        ensureColumnExists($db, 'club_memberships', 'left_at', "DATETIME NULL");
+        ensureMembershipApplicationColumns($db);
 
         // 升级唯一约束为包含 country
         ensureUniqueConstraintIncludesCountry($db);
@@ -116,17 +139,22 @@ switch ($action) {
                 try {
                     $stmt = $db->prepare(
                         "UPDATE club_memberships
-                         SET role = ?, status = 'pending', qq_account = ?, apply_role = ?, is_student = ?,
-                             country = ?, joined_at = CURRENT_TIMESTAMP, left_at = NULL
+                         SET role = ?, status = 'pending', qq_account = ?, contact_account = ?, apply_role = ?, is_student = ?,
+                             country = ?, join_method = ?, external_club_name = ?, external_club_role = ?,
+                             apply_reason = ?, joined_at = CURRENT_TIMESTAMP, left_at = NULL
                          WHERE id = ?"
                     );
-                    $stmt->execute([$applyRole, $qqAccount, $applyRole, $isStudent, $country, $existing['id']]);
+                    $stmt->execute([
+                        $applyRole, $qqAccount, $contactAccount, $applyRole, $isStudent, $country,
+                        $joinMethod, $externalClubName, $externalClubRole, $applyReason, $existing['id']
+                    ]);
 
                     logAction('membership.reapply', 'club_membership', $existing['id'], [
                         'club_id' => $clubId,
                         'country' => $country,
                         'previous_status' => $existing['status'],
                         'apply_role' => $applyRole,
+                        'join_method' => $joinMethod,
                     ]);
 
                     $db->commit();
@@ -152,14 +180,18 @@ switch ($action) {
         $db->beginTransaction();
         try {
             $stmt = $db->prepare(
-                "INSERT INTO club_memberships (user_id, club_id, role, status, qq_account, apply_role, is_student, country)
-                 VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)"
+                "INSERT INTO club_memberships
+                    (user_id, club_id, role, status, qq_account, contact_account, apply_role, is_student, country, join_method, external_club_name, external_club_role, apply_reason)
+                 VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt->execute([$user['id'], $clubId, $applyRole, $qqAccount, $applyRole, $isStudent, $country]);
+            $stmt->execute([
+                $user['id'], $clubId, $applyRole, $qqAccount, $contactAccount, $applyRole,
+                $isStudent, $country, $joinMethod, $externalClubName, $externalClubRole, $applyReason
+            ]);
             $membershipId = $db->lastInsertId();
 
             logAction('membership.apply', 'club_membership', $membershipId, [
-                'club_id' => $clubId, 'country' => $country, 'apply_role' => $applyRole
+                'club_id' => $clubId, 'country' => $country, 'apply_role' => $applyRole, 'join_method' => $joinMethod
             ]);
 
             $db->commit();
@@ -197,16 +229,14 @@ switch ($action) {
         }
 
         $db = getDB();
-        ensureColumnExists($db, 'club_memberships', 'qq_account', "VARCHAR(255) DEFAULT ''");
-        ensureColumnExists($db, 'club_memberships', 'apply_role', "VARCHAR(50) DEFAULT 'member'");
-        ensureColumnExists($db, 'club_memberships', 'is_student', "INT DEFAULT 0");
-        ensureColumnExists($db, 'club_memberships', 'country', "VARCHAR(20) DEFAULT 'china'");
+        ensureMembershipApplicationColumns($db);
 
         // 兼容 country 列尚未创建的情况
         try {
             $stmt = $db->prepare(
                 "SELECT cm.id, cm.user_id, cm.role, cm.status, cm.joined_at,
-                        cm.qq_account, cm.apply_role, cm.is_student,
+                        cm.qq_account, cm.contact_account, cm.apply_role, cm.is_student,
+                        cm.join_method, cm.external_club_name, cm.external_club_role, cm.apply_reason,
                         u.username, u.nickname, u.email, u.avatar_url
                  FROM club_memberships cm
                  JOIN users u ON u.id = cm.user_id
@@ -246,7 +276,7 @@ switch ($action) {
             $m['user_id'] = (int)$m['user_id'];
             $m['is_student'] = isset($m['is_student']) ? (int)$m['is_student'] : 0;
             if ($currentUser['role'] !== 'super_admin') {
-                unset($m['qq_account'], $m['apply_role'], $m['is_student'], $m['email']);
+                unset($m['qq_account'], $m['contact_account'], $m['apply_role'], $m['is_student'], $m['email'], $m['apply_reason']);
             }
         }
 
@@ -259,10 +289,7 @@ switch ($action) {
         $db = getDB();
 
         // 确保扩展列存在（兼容旧表结构）
-        ensureColumnExists($db, 'club_memberships', 'qq_account', "VARCHAR(255) DEFAULT ''");
-        ensureColumnExists($db, 'club_memberships', 'apply_role', "VARCHAR(50) DEFAULT 'member'");
-        ensureColumnExists($db, 'club_memberships', 'is_student', "INT DEFAULT 0");
-        ensureColumnExists($db, 'club_memberships', 'country', "VARCHAR(20) DEFAULT 'china'");
+        ensureMembershipApplicationColumns($db);
 
         // 支持按状态筛选（默认 pending，传 all 返回全部）
         $statusFilter = $_GET['status'] ?? 'pending';
@@ -272,7 +299,8 @@ switch ($action) {
             // 超级管理员：查看所有
             $stmt = $db->query(
                 "SELECT cm.id, cm.user_id, cm.club_id, cm.country, cm.status, cm.joined_at,
-                        cm.apply_role, cm.qq_account, cm.is_student, u.username
+                        cm.apply_role, cm.qq_account, cm.contact_account, cm.is_student,
+                        cm.join_method, cm.external_club_name, cm.external_club_role, cm.apply_reason, u.username
                  FROM club_memberships cm
                  JOIN users u ON u.id = cm.user_id
                  WHERE 1=1 $statusCondition
@@ -282,7 +310,8 @@ switch ($action) {
             // 负责人/管理员：只查看自己俱乐部的待审批（按 club_id + country 匹配）
             $stmt = $db->prepare(
                 "SELECT cm.id, cm.user_id, cm.club_id, cm.country, cm.status, cm.joined_at,
-                        cm.apply_role, cm.qq_account, cm.is_student, u.username
+                        cm.apply_role, cm.qq_account, cm.contact_account, cm.is_student,
+                        cm.join_method, cm.external_club_name, cm.external_club_role, cm.apply_reason, u.username
                  FROM club_memberships cm
                  JOIN users u ON u.id = cm.user_id
                  WHERE 1=1 $statusCondition
@@ -552,11 +581,11 @@ switch ($action) {
             $stmt->execute([$currentUser['id'], $membership['club_id'], $membership['country'] ?? 'china']);
             $myRole = $stmt->fetchColumn();
 
-            if ($myRole === 'manager' && $membership['role'] !== 'member') {
+            if ($myRole === 'manager' && !in_array($membership['role'], ['member', 'external'], true)) {
                 echo json_encode(['success' => false, 'message' => '管理员只能踢出普通成员']);
                 exit();
             }
-            if ($myRole === 'representative' && !in_array($membership['role'], ['member', 'manager'])) {
+            if ($myRole === 'representative' && !in_array($membership['role'], ['external', 'member', 'manager'], true)) {
                 echo json_encode(['success' => false, 'message' => '无法踢出该角色的成员']);
                 exit();
             }

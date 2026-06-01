@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/moe.php';
+require_once __DIR__ . '/../includes/twelve.php';
 
 echo "开始创建数据库表... (驱动: " . (defined('DB_DRIVER') ? DB_DRIVER : 'sqlite') . ")\n";
 
@@ -130,9 +131,18 @@ if ($isMysql) {
             club_id  INT NOT NULL,
             role     VARCHAR(50) NOT NULL DEFAULT 'member',
             status   VARCHAR(50) NOT NULL DEFAULT 'active',
+            qq_account VARCHAR(255) DEFAULT '',
+            contact_account VARCHAR(255) DEFAULT '',
+            apply_role VARCHAR(50) DEFAULT 'member',
+            is_student INT DEFAULT 0,
+            country  VARCHAR(20) DEFAULT 'china',
+            join_method VARCHAR(50) DEFAULT 'school_no_code',
+            external_club_name VARCHAR(255) DEFAULT '',
+            external_club_role VARCHAR(255) DEFAULT '',
+            apply_reason TEXT,
             joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             left_at  DATETIME,
-            UNIQUE(user_id, club_id),
+            UNIQUE(user_id, club_id, country),
             FOREIGN KEY (user_id) REFERENCES users(id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
@@ -175,6 +185,25 @@ if ($isMysql) {
     ");
     $tryIndex("CREATE INDEX idx_recommendations_club ON club_recommendations(club_id, sort_order)");
     echo "[OK] club_recommendations 表已创建\n";
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS club_moe_kings (
+            id            INT AUTO_INCREMENT PRIMARY KEY,
+            club_id       INT NOT NULL,
+            country       VARCHAR(20) DEFAULT 'china',
+            character_id  INT NOT NULL,
+            name          VARCHAR(255) NOT NULL,
+            name_cn       VARCHAR(255) DEFAULT '',
+            image_url     VARCHAR(500) DEFAULT '',
+            summary       TEXT,
+            updated_by    INT NOT NULL,
+            updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_moe_king_club (club_id, country),
+            FOREIGN KEY (updated_by) REFERENCES users(id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ");
+    $tryIndex("CREATE INDEX idx_moe_kings_club ON club_moe_kings(club_id, country)");
+    echo "[OK] club_moe_kings 表已创建\n";
 
     $db->exec("
         CREATE TABLE IF NOT EXISTS club_comments (
@@ -335,6 +364,8 @@ if ($isMysql) {
     echo "[OK] galonly_applications.booth_name 列已添加\n";
     $tryAlter("ALTER TABLE galonly_applications ADD COLUMN resubmitted TINYINT(1) NOT NULL DEFAULT 0");
     echo "[OK] galonly_applications.resubmitted 列已添加\n";
+    $tryAlter("ALTER TABLE galonly_applications ADD COLUMN has_update TINYINT(1) NOT NULL DEFAULT 0");
+    echo "[OK] galonly_applications.has_update 列已添加\n";
 
 } else {
     // ==================== SQLite 建表 ====================
@@ -470,12 +501,21 @@ if ($isMysql) {
             user_id     INTEGER NOT NULL REFERENCES users(id),
             club_id     INTEGER NOT NULL,
             role        TEXT NOT NULL DEFAULT 'member'
-                        CHECK(role IN ('member','manager','representative')),
+                        CHECK(role IN ('external','member','manager','representative')),
             status      TEXT NOT NULL DEFAULT 'active'
                         CHECK(status IN ('active','pending','rejected','left','kicked')),
+            qq_account  TEXT DEFAULT '',
+            contact_account TEXT DEFAULT '',
+            apply_role  TEXT DEFAULT 'member',
+            is_student  INTEGER DEFAULT 0,
+            country     TEXT DEFAULT 'china',
+            join_method TEXT DEFAULT 'school_no_code',
+            external_club_name TEXT DEFAULT '',
+            external_club_role TEXT DEFAULT '',
+            apply_reason TEXT,
             joined_at   TEXT NOT NULL DEFAULT (datetime('now')),
             left_at     TEXT,
-            UNIQUE(user_id, club_id)
+            UNIQUE(user_id, club_id, country)
         )
     ");
     $db->exec("CREATE INDEX IF NOT EXISTS idx_memberships_user ON club_memberships(user_id)");
@@ -515,6 +555,24 @@ if ($isMysql) {
     ");
     $db->exec("CREATE INDEX IF NOT EXISTS idx_recommendations_club ON club_recommendations(club_id, sort_order)");
     echo "[OK] club_recommendations 表已创建\n";
+
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS club_moe_kings (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id       INTEGER NOT NULL,
+            country       TEXT DEFAULT 'china',
+            character_id  INTEGER NOT NULL,
+            name          TEXT NOT NULL,
+            name_cn       TEXT DEFAULT '',
+            image_url     TEXT DEFAULT '',
+            summary       TEXT DEFAULT '',
+            updated_by    INTEGER NOT NULL REFERENCES users(id),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(club_id, country)
+        )
+    ");
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_moe_kings_club ON club_moe_kings(club_id, country)");
+    echo "[OK] club_moe_kings 表已创建\n";
 
     $db->exec("
         CREATE TABLE IF NOT EXISTS club_comments (
@@ -652,9 +710,14 @@ if ($isMysql) {
     echo "[OK] galonly_applications.booth_name 列已添加\n";
     $tryAlter("ALTER TABLE galonly_applications ADD COLUMN resubmitted INTEGER NOT NULL DEFAULT 0");
     echo "[OK] galonly_applications.resubmitted 列已添加\n";
+    $tryAlter("ALTER TABLE galonly_applications ADD COLUMN has_update INTEGER NOT NULL DEFAULT 0");
+    echo "[OK] galonly_applications.has_update 列已添加\n";
 }
 
 moeEnsureSchema($db);
 echo "[OK] moe contest tables ready\n";
+
+twelveEnsureSchema($db);
+echo "[OK] twelve contest tables ready\n";
 
 echo "\n所有数据库表创建完成！\n";

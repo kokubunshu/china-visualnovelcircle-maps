@@ -19,9 +19,6 @@
   root.style.colorScheme = root.getAttribute('data-theme');
 })();
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── Theme Variables ── */
 :root {
@@ -1131,6 +1128,10 @@ body {
     <div class="star-search-results" id="starSearchResults" role="listbox"></div>
   </div>
   <div class="topbar-spacer"></div>
+  <div class="page-lang-switch" aria-label="语言">
+    <button type="button" data-i18n-lang="zh">中文</button>
+    <button type="button" data-i18n-lang="ja">日本語</button>
+  </div>
   <button class="topbar-create-btn" id="createUnionBtn" style="display:none;" title="创建联合">+ 创建联合</button>
   <button class="topbar-theme-btn" id="themeBtn" title="切换主题">夜</button>
 </div>
@@ -1229,6 +1230,7 @@ body {
   </div>
 </div>
 
+<script src="js/page-i18n.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -1302,28 +1304,123 @@ body {
     _lineFlowBudget: 0,
     _parallaxX: 0,
     _parallaxY: 0,
-    _didAutoFocusUnion: false
+    _didAutoFocusUnion: false,
+    _viewportW: 0,
+    _viewportH: 0,
+    _initialPaintAt: 0,
+    _deferHeavyPaint: true,
+    _mobileLowPower: true,
+    _mobileInteractionActive: false,
+    _mobileInteractionTimer: 0,
+    _mobileRenderFrameId: 0
   };
 
-  var canvas, ctx, particles = [], animId, canvasW, canvasH, lastParticleFrame = 0;
+  var canvas, ctx, particles = [], animId, particleTimer, canvasW, canvasH, lastParticleFrame = 0;
   var starCanvas, starCtx;
   var STAR_MAP_ENABLE_PULSE = false;
 
+  function isMobileStarMap() {
+    return window.innerWidth <= 768;
+  }
+
+  function shouldUseLightweightStarRender() {
+    if (!isMobileStarMap()) return false;
+    if (StarState.submode === 'union') return false;
+    if (StarState._mobileInteractionActive || StarState.isDragging || StarState._touchMode) return true;
+    return StarState._deferHeavyPaint || (StarState._initialPaintAt && performance.now() - StarState._initialPaintAt < 760);
+  }
+
+  function shouldUseMobileEnhancedUnionRender() {
+    return isMobileStarMap() && StarState.submode === 'union' && !shouldUseLightweightStarRender();
+  }
+
+  function completeInitialStarPaintSoon() {
+    scheduleStarIdleTask(function () {
+      if (isMobileStarMap()) {
+        StarState._mobileLowPower = false;
+        StarState._deferHeavyPaint = false;
+        StarState._lastRenderKey = '';
+        requestMobileStarFrame();
+        return;
+      }
+      StarState._deferHeavyPaint = false;
+      StarState._lastRenderKey = '';
+      renderFrame();
+    }, isMobileStarMap() ? 900 : 450);
+  }
+
+  function requestMobileStarFrame() {
+    if (!isMobileStarMap()) {
+      renderFrame();
+      return;
+    }
+    StarState._lastRenderKey = '';
+    if (StarState._mobileRenderFrameId) return;
+    StarState._mobileRenderFrameId = requestAnimationFrame(function () {
+      StarState._mobileRenderFrameId = 0;
+      StarState.animationTime = performance.now();
+      renderFrame();
+    });
+  }
+
+  function markMobileStarInteraction() {
+    if (!isMobileStarMap()) return;
+    StarState._mobileInteractionActive = true;
+    StarState._mobileLowPower = true;
+    StarState._deferHeavyPaint = true;
+    if (StarState._mobileInteractionTimer) clearTimeout(StarState._mobileInteractionTimer);
+    StarState._mobileInteractionTimer = setTimeout(function () {
+      StarState._mobileInteractionTimer = 0;
+      StarState._mobileInteractionActive = false;
+      StarState._mobileLowPower = false;
+      StarState._deferHeavyPaint = false;
+      StarState._lastRenderKey = '';
+      requestMobileStarFrame();
+    }, 220);
+  }
+
+  function resetStarTransientState() {
+    StarState.selectedUnion = null;
+    StarState.hoveredStar = null;
+    StarState.hoveredUnion = null;
+    StarState.selectedStar = null;
+    StarState.searchHighlightKey = '';
+    StarState.searchTarget = null;
+    StarState._touchMode = null;
+    StarState.isDragging = false;
+    StarState.hasDragged = false;
+    StarState._draggingUnionId = null;
+    StarState._dragVelX = 0;
+    StarState._dragVelY = 0;
+    StarState._activeBurst = null;
+    if (StarState._mobileInteractionTimer) clearTimeout(StarState._mobileInteractionTimer);
+    StarState._mobileInteractionTimer = 0;
+    StarState._mobileInteractionActive = false;
+    StarState._mobileLowPower = isMobileStarMap();
+    StarState._deferHeavyPaint = isMobileStarMap();
+    if (StarState._mobileRenderFrameId) {
+      cancelAnimationFrame(StarState._mobileRenderFrameId);
+      StarState._mobileRenderFrameId = 0;
+    }
+    StarState._lastRenderKey = '';
+  }
+
   function canvasDpr() {
-    var cap = window.innerWidth <= 768 ? 1.75 : 2;
+    var cap = isMobileStarMap() ? 1.1 : 1.65;
     return Math.max(1, Math.min(window.devicePixelRatio || 1, cap));
   }
 
   function starViewportWidth() {
-    return starCanvas ? (starCanvas.clientWidth || window.innerWidth) : window.innerWidth;
+    return StarState._viewportW || (starCanvas ? (starCanvas.clientWidth || window.innerWidth) : window.innerWidth);
   }
 
   function starViewportHeight() {
-    return starCanvas ? (starCanvas.clientHeight || window.innerHeight) : window.innerHeight;
+    return StarState._viewportH || (starCanvas ? (starCanvas.clientHeight || window.innerHeight) : window.innerHeight);
   }
 
   function safeSetText(id, value) {
     var el = $(id);
+    if (window.PageI18n && typeof window.PageI18n.t === 'function') value = window.PageI18n.t(value);
     if (el && el.textContent !== value) el.textContent = value;
   }
 
@@ -1364,6 +1461,7 @@ body {
     StarState.targetPanX = mx - worldX * nextZoom;
     StarState.targetPanY = my - worldY * nextZoom;
     updateObservatoryHud();
+    startStarRenderLoop();
   }
 
   function focusWorldPoint(x, y, zoom) {
@@ -1375,6 +1473,7 @@ body {
     StarState.targetPanX = (W / 2 - panelOffset) - x * nextZoom;
     StarState.targetPanY = H / 2 - y * nextZoom;
     updateObservatoryHud();
+    startStarRenderLoop();
   }
 
   function focusSelectedTarget() {
@@ -1475,6 +1574,11 @@ body {
   function switchSubmode(mode) {
     if (mode !== 'personal' && mode !== 'union') return;
     if (mode === StarState.submode && !StarState._submodeTransition) return;
+    if (isMobileStarMap()) {
+      StarState._submodeTransition = null;
+      applySubmode(mode);
+      return;
+    }
     beginSubmodeTransition(mode);
   }
 
@@ -1484,15 +1588,14 @@ body {
       x.classList.toggle('active', active);
       x.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+    resetStarTransientState();
     StarState.submode = mode;
-    StarState.selectedUnion = null;
-    StarState.hoveredStar = null;
-    StarState.hoveredUnion = null;
     hideTooltip();
     resetView();
     $('detailPanel').classList.remove('open');
     $('createUnionBtn').style.display = StarState.submode === 'union' ? '' : 'none';
     renderFrame();
+    if (isMobileStarMap()) completeInitialStarPaintSoon();
     if (mode === 'union') setTimeout(focusPreferredUnionIfNeeded, 60);
     updateEmptyState();
     updateObservatoryHud();
@@ -1605,6 +1708,10 @@ body {
   function initParticles() {
     var c = $('particleCanvas');
     canvas = c; ctx = c.getContext('2d');
+    if (prefersReducedMotion() || isMobileStarMap()) {
+      c.style.display = 'none';
+      return;
+    }
     resizeParticles();
     var colors = [
       '#f0c060','#e8e0f0','#88bbee','#c8a0e0','#f8d8a0',
@@ -1612,7 +1719,7 @@ body {
       '#d0b8f0','#f8c8a0','#80d0d0','#f0d0e0','#b0d8f0',
       '#e8c0a0','#c0d0f0','#f0e0c0','#a0d0e0','#e0b8d0'
     ];
-    var particleCount = STAR_MAP_ENABLE_PULSE ? 200 : (window.innerWidth <= 768 ? 42 : 56);
+    var particleCount = STAR_MAP_ENABLE_PULSE ? 200 : (window.innerWidth <= 768 ? 30 : 48);
     for (var i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * canvasW, y: Math.random() * canvasH,
@@ -1627,7 +1734,17 @@ body {
         _savedVx: 0, _savedVy: 0, _savedR: 0, _savedColor: ''
       });
     }
-    drawParticles();
+    queueParticleFrame(0);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        if (animId) cancelAnimationFrame(animId);
+        if (particleTimer) clearTimeout(particleTimer);
+        animId = 0;
+        particleTimer = 0;
+      } else if (!animId && !particleTimer && !prefersReducedMotion()) {
+        queueParticleFrame(0);
+      }
+    });
   }
 
   function resizeParticles() {
@@ -1640,12 +1757,21 @@ body {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function drawParticles() {
-    if (document.hidden) { animId = requestAnimationFrame(drawParticles); return; }
-    var frameNow = performance.now();
-    var minParticleInterval = STAR_MAP_ENABLE_PULSE ? 16 : 42;
-    if (frameNow - lastParticleFrame < minParticleInterval) {
+  function queueParticleFrame(delay) {
+    if (document.hidden || animId || particleTimer) return;
+    particleTimer = setTimeout(function () {
+      particleTimer = 0;
       animId = requestAnimationFrame(drawParticles);
+    }, delay || 0);
+  }
+
+  function drawParticles() {
+    animId = 0;
+    if (document.hidden) { animId = 0; return; }
+    var frameNow = performance.now();
+    var minParticleInterval = STAR_MAP_ENABLE_PULSE ? 16 : (window.innerWidth <= 768 ? 72 : 56);
+    if (frameNow - lastParticleFrame < minParticleInterval) {
+      queueParticleFrame(minParticleInterval - (frameNow - lastParticleFrame));
       return;
     }
     lastParticleFrame = frameNow;
@@ -1717,7 +1843,11 @@ body {
         }
       }
     }
-    animId = requestAnimationFrame(drawParticles);
+    if (!reduced) {
+      queueParticleFrame(minParticleInterval);
+    } else {
+      animId = 0;
+    }
   }
 
   // ── Star Canvas Setup ──
@@ -1731,6 +1861,8 @@ body {
     var w = window.innerWidth;
     var h = window.innerHeight;
     var dpr = canvasDpr();
+    StarState._viewportW = w;
+    StarState._viewportH = h;
     starCanvas.style.width = w + 'px';
     starCanvas.style.height = h + 'px';
     starCanvas.width = Math.round(w * dpr);
@@ -1748,14 +1880,22 @@ body {
     StarState._sharedUnionMembers = {};
   }
 
+  function scheduleStarIdleTask(callback, timeout) {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(callback, { timeout: timeout || 1000 });
+    } else {
+      setTimeout(callback, Math.min(timeout || 1000, 500));
+    }
+  }
+
   // ── Club Data Loading ──
   function loadClubData() {
     var cached = null;
     try { cached = sessionStorage.getItem('star_club_data'); } catch (e) {}
     if (cached) return Promise.resolve(JSON.parse(cached));
     return Promise.all([
-      fetch('./data/clubs.json').then(function (r) { return r.json(); }),
-      fetch('./data/clubs_japan.json').then(function (r) { return r.json(); })
+      fetch('./api/clubs.php').then(function (r) { return r.json(); }),
+      fetch('./api/clubs_japan.php').then(function (r) { return r.json(); })
     ]).then(function (results) {
       var all = [];
       var china = results[0]; var japan = results[1];
@@ -1796,6 +1936,11 @@ body {
 
   function drawObservatoryBackdrop(W, H, intensity) {
     var light = currentTheme() === 'light';
+    if (shouldUseLightweightStarRender()) {
+      starCtx.fillStyle = light ? 'rgba(250,245,236,0.96)' : 'rgba(4,9,22,0.98)';
+      starCtx.fillRect(0, 0, W, H);
+      return;
+    }
     var glow = starCtx.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.78);
     glow.addColorStop(0, light ? 'rgba(40,124,154,' + (0.10 * intensity) + ')' : 'rgba(95,183,215,' + (0.11 * intensity) + ')');
     glow.addColorStop(0.46, light ? 'rgba(183,121,37,' + (0.040 * intensity) + ')' : 'rgba(240,192,96,' + (0.035 * intensity) + ')');
@@ -1805,6 +1950,13 @@ body {
   }
 
   function drawStarGlow(x, y, color, radius, strength) {
+    if (shouldUseLightweightStarRender()) {
+      starCtx.beginPath();
+      starCtx.arc(x, y, Math.max(2, radius * 0.34), 0, Math.PI * 2);
+      starCtx.fillStyle = hexToRgba(color, Math.min(0.16, (strength || 0.12) * 0.65));
+      starCtx.fill();
+      return;
+    }
     var glow = starCtx.createRadialGradient(x, y, 0, x, y, radius);
     glow.addColorStop(0, hexToRgba(color, strength));
     glow.addColorStop(0.45, hexToRgba(color, strength * 0.32));
@@ -1849,6 +2001,7 @@ body {
       radius: target.radius || 28
     };
     StarState._lastRenderKey = '';
+    startStarRenderLoop();
   }
 
   function drawStarBurst(x, y, color, startedAt, radius) {
@@ -1902,6 +2055,17 @@ body {
     var time = (!STAR_MAP_ENABLE_PULSE || prefersReducedMotion()) ? 0 : (StarState.animationTime || 0);
     var alpha = Math.max(0.07, Math.min(options.strength || 0.18, 0.72));
     var index = options.index || 0;
+    if (shouldUseLightweightStarRender()) {
+      starCtx.save();
+      starCtx.beginPath();
+      starCtx.moveTo(x1, y1);
+      starCtx.lineTo(x2, y2);
+      starCtx.strokeStyle = light ? 'rgba(92,76,56,0.10)' : 'rgba(180,205,230,0.10)';
+      starCtx.lineWidth = options.width || 0.7;
+      starCtx.stroke();
+      starCtx.restore();
+      return;
+    }
     var grad = starCtx.createLinearGradient(x1, y1, x2, y2);
     grad.addColorStop(0, light ? 'rgba(183,121,37,' + alpha + ')' : 'rgba(240,192,96,' + alpha + ')');
     grad.addColorStop(0.52, light ? 'rgba(40,124,154,' + (alpha * 0.86) + ')' : 'rgba(95,183,215,' + (alpha * 0.90) + ')');
@@ -1957,13 +2121,15 @@ body {
     var cx = (W / 2 - StarState.panX) / StarState.zoom;
     var cy = ((isMobileView ? H * 0.56 : H / 2) - StarState.panY) / StarState.zoom;
 
-    // Draw subtle nebula gradient behind center
-    var grad = starCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.45);
-    grad.addColorStop(0, 'rgba(200,160,80,0.04)');
-    grad.addColorStop(0.5, 'rgba(100,80,180,0.02)');
-    grad.addColorStop(1, 'transparent');
-    starCtx.fillStyle = grad;
-    starCtx.fillRect(0, 0, W, H);
+    if (!shouldUseLightweightStarRender()) {
+      // Draw subtle nebula gradient behind center
+      var grad = starCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W, H) * 0.45);
+      grad.addColorStop(0, 'rgba(200,160,80,0.04)');
+      grad.addColorStop(0.5, 'rgba(100,80,180,0.02)');
+      grad.addColorStop(1, 'transparent');
+      starCtx.fillStyle = grad;
+      starCtx.fillRect(0, 0, W, H);
+    }
 
     // Draw user avatar / center
     drawUserCenter(cx, cy);
@@ -2565,9 +2731,11 @@ body {
   }
 
   function drawUnionGalaxyFieldV2(cx, cy, width, height) {
+    if (shouldUseLightweightStarRender()) return;
     var time = STAR_MAP_ENABLE_PULSE ? (StarState.animationTime || 0) : 0;
     var palette = unionThemePalette();
-    for (var r = 0; r < 4; r++) {
+    var ringCount = shouldUseMobileEnhancedUnionRender() ? 2 : 4;
+    for (var r = 0; r < ringCount; r++) {
       starCtx.save();
       starCtx.translate(cx, cy);
       starCtx.rotate(r * 0.55 + (STAR_MAP_ENABLE_PULSE ? time * 0.000026 : 0));
@@ -2607,7 +2775,9 @@ body {
   }
 
   function buildUnionConstellationLayout(unions) {
-    var cacheKey = getUnionLayoutCacheKey(unions);
+    var lightLayout = shouldUseLightweightStarRender();
+    var mobileEnhancedLayout = shouldUseMobileEnhancedUnionRender();
+    var cacheKey = getUnionLayoutCacheKey(unions) + (lightLayout ? '|mobile-lite' : (mobileEnhancedLayout ? '|mobile-enhanced' : '|full'));
     if (StarState._unionLayoutCache && StarState._unionLayoutCacheKey === cacheKey) {
       return StarState._unionLayoutCache;
     }
@@ -2664,17 +2834,25 @@ body {
         memberCount: memberCount
       });
     }
-    relaxUnionClusterSpacing(positions, world, centerX, centerY);
+    relaxUnionClusterSpacing(positions, world, centerX, centerY, lightLayout ? 1 : (mobileEnhancedLayout ? 2 : 5));
     for (var p = 0; p < positions.length; p++) {
       var pos = positions[p];
-      pos.memberPositions = buildUnionMemberPositions(pos.x, pos.y, pos.union._members || [], pos.clusterRadius, p);
+      var membersForLayout = pos.union._members || [];
+      if (lightLayout) {
+        var lightMemberLimit = p < 8 ? 10 : (p < 24 ? 4 : 0);
+        membersForLayout = membersForLayout.slice(0, lightMemberLimit);
+      } else if (mobileEnhancedLayout) {
+        var enhancedMemberLimit = p < 10 ? 18 : (p < 28 ? 8 : 0);
+        membersForLayout = membersForLayout.slice(0, enhancedMemberLimit);
+      }
+      pos.memberPositions = buildUnionMemberPositions(pos.x, pos.y, membersForLayout, pos.clusterRadius, p);
       for (var mp = 0; mp < pos.memberPositions.length; mp++) {
         pos.memberPositions[mp].club._unionId = pos.union.id;
         pos.memberPositions[mp].club._unionName = pos.union.name || '';
       }
     }
     var layout = { positions: positions, world: world, centerX: centerX, centerY: centerY };
-    layout.sharedMembers = buildSharedUnionMembershipIndex(positions);
+    layout.sharedMembers = (lightLayout || mobileEnhancedLayout) ? {} : buildSharedUnionMembershipIndex(positions);
     StarState._sharedUnionMembers = layout.sharedMembers;
     StarState._unionLayoutCacheKey = cacheKey;
     StarState._unionLayoutCache = layout;
@@ -2711,9 +2889,10 @@ body {
     return map;
   }
 
-  function relaxUnionClusterSpacing(positions, world, centerX, centerY) {
+  function relaxUnionClusterSpacing(positions, world, centerX, centerY, passCount) {
     if (!positions || positions.length < 2) return;
-    for (var pass = 0; pass < 5; pass++) {
+    passCount = passCount == null ? 5 : passCount;
+    for (var pass = 0; pass < passCount; pass++) {
       for (var i = 0; i < positions.length; i++) {
         for (var j = i + 1; j < positions.length; j++) {
           var a = positions[i], b = positions[j];
@@ -3162,6 +3341,7 @@ body {
   }
 
   function drawUnionNebula(cx, cy, radius, index) {
+    if (shouldUseLightweightStarRender()) return;
     var light = currentTheme() === 'light';
     var time = (STAR_MAP_ENABLE_PULSE && !prefersReducedMotion()) ? (StarState.animationTime || 0) : 0;
     var pulse = STAR_MAP_ENABLE_PULSE ? 1 + Math.sin(time * 0.0012 + index * 1.7) * 0.045 : 1;
@@ -3190,11 +3370,29 @@ body {
     var palette = unionThemePalette();
     var starColor = union.star_color || '#f0c060';
     var light = currentTheme() === 'light';
+    var lightweight = shouldUseLightweightStarRender();
     var coreSize = isSelected ? 20 : (isHovered ? 18 : 17);
+    if (lightweight && !isSelected && !isHovered) {
+      starCtx.beginPath();
+      starCtx.arc(cx, cy, 13, 0, Math.PI * 2);
+      starCtx.fillStyle = starColor;
+      starCtx.fill();
+      starCtx.strokeStyle = light ? 'rgba(84,54,28,0.22)' : 'rgba(255,255,255,0.26)';
+      starCtx.lineWidth = 1;
+      starCtx.stroke();
+      var compactName = union.name || '鑱斿悎';
+      if (compactName.length > 10) compactName = compactName.substring(0, 9) + '...';
+      starCtx.fillStyle = palette.coreText;
+      starCtx.font = '700 10px "Noto Sans SC", sans-serif';
+      starCtx.textAlign = 'center';
+      starCtx.textBaseline = 'alphabetic';
+      starCtx.fillText(compactName, cx, cy + 30);
+      return;
+    }
     drawStarGlow(cx, cy, starColor, isSelected || isHovered ? 84 : 64, light ? 0.18 : 0.26);
     if (isSelected || isHovered) drawFocusRing(cx, cy, isSelected ? 48 : 42, starColor, true);
 
-    for (var r = 3; r >= 1; r--) {
+    for (var r = lightweight ? 0 : 3; r >= 1; r--) {
       var glow = starCtx.createRadialGradient(cx, cy, 0, cx, cy, 30 + r * 10);
       glow.addColorStop(0, hexToRgba(starColor, (light ? 0.16 : 0.25) - r * 0.035));
       glow.addColorStop(0.55, light ? 'rgba(183,121,37,0.035)' : 'rgba(200,160,80,0.055)');
@@ -3250,6 +3448,7 @@ body {
   function drawUnionMemberStar(x, y, club, isHovered, ring, time, sharedCount) {
     var palette = unionThemePalette();
     var light = currentTheme() === 'light';
+    var lightweight = shouldUseLightweightStarRender();
     var memberPalette = light
       ? ['#b77925', '#287c9a', '#8060a8', '#3d8a66', '#b85f5b', '#2d8ca3']
       : ['#f0c060', '#88bbee', '#c8a0e0', '#7ec8a0', '#e8a0a0', '#a0d8e8'];
@@ -3258,16 +3457,25 @@ body {
     var baseSize = 6.8;
     var hoverPulse = 1;
     var size = isHovered ? 10.2 * hoverPulse : baseSize + Math.min(1.4, (ring || 0) * 0.28);
+    if (lightweight && !isHovered) {
+      starCtx.beginPath();
+      starCtx.arc(x, y, 4.6, 0, Math.PI * 2);
+      starCtx.fillStyle = roleColor;
+      starCtx.fill();
+      return;
+    }
     drawStarGlow(x, y, roleColor, size * (isHovered ? 4.1 : 2.8), isHovered ? 0.22 : 0.12);
     if (isHovered || sharedCount > 1) drawFocusRing(x, y, size + (isHovered ? 8 : 5), sharedCount > 1 ? '#5fb7d7' : roleColor, !!isHovered);
 
-    var glow = starCtx.createRadialGradient(x, y, 0, x, y, size * (isHovered ? 3.5 : 2.4));
-    glow.addColorStop(0, hexToRgba(roleColor, isHovered ? 0.28 : 0.18));
-    glow.addColorStop(1, 'transparent');
-    starCtx.beginPath();
-    starCtx.arc(x, y, size * (isHovered ? 3.5 : 2.4), 0, Math.PI * 2);
-    starCtx.fillStyle = glow;
-    starCtx.fill();
+    if (!lightweight) {
+      var glow = starCtx.createRadialGradient(x, y, 0, x, y, size * (isHovered ? 3.5 : 2.4));
+      glow.addColorStop(0, hexToRgba(roleColor, isHovered ? 0.28 : 0.18));
+      glow.addColorStop(1, 'transparent');
+      starCtx.beginPath();
+      starCtx.arc(x, y, size * (isHovered ? 3.5 : 2.4), 0, Math.PI * 2);
+      starCtx.fillStyle = glow;
+      starCtx.fill();
+    }
 
     starCtx.beginPath();
     starCtx.arc(x, y, size, 0, Math.PI * 2);
@@ -3285,7 +3493,7 @@ body {
       starCtx.stroke();
     }
 
-    if (sharedCount > 1) {
+    if (!lightweight && sharedCount > 1) {
       starCtx.save();
       starCtx.beginPath();
       starCtx.arc(x + size * 0.82, y - size * 0.82, Math.max(4.2, size * 0.42), 0, Math.PI * 2);
@@ -3302,15 +3510,17 @@ body {
       starCtx.restore();
     }
 
-    var label = club.name || '';
-    if (label.length > 10) label = label.substring(0, 9) + '...';
-    starCtx.fillStyle = light
-      ? 'rgba(44,31,24,' + (isHovered ? '0.88' : '0.62') + ')'
-      : 'rgba(255,255,255,' + (isHovered ? '0.86' : '0.50') + ')';
-    starCtx.font = (isHovered ? '11' : '9') + 'px "Noto Sans SC", sans-serif';
-    starCtx.textAlign = 'center';
-    starCtx.textBaseline = 'alphabetic';
-    starCtx.fillText(label, x, y + size + 12);
+    if (!lightweight || isHovered) {
+      var label = club.name || '';
+      if (label.length > 10) label = label.substring(0, 9) + '...';
+      starCtx.fillStyle = light
+        ? 'rgba(44,31,24,' + (isHovered ? '0.88' : '0.62') + ')'
+        : 'rgba(255,255,255,' + (isHovered ? '0.86' : '0.50') + ')';
+      starCtx.font = (isHovered ? '11' : '9') + 'px "Noto Sans SC", sans-serif';
+      starCtx.textAlign = 'center';
+      starCtx.textBaseline = 'alphabetic';
+      starCtx.fillText(label, x, y + size + 12);
+    }
   }
 
   function getWorldViewportBounds(pad) {
@@ -3364,6 +3574,8 @@ body {
     starCtx.clearRect(0, 0, W, H);
     StarState._allUnionMemberPositions = [];
     StarState._unionPositions = [];
+    var lightweight = shouldUseLightweightStarRender();
+    var mobileEnhanced = shouldUseMobileEnhancedUnionRender();
 
     drawObservatoryBackdrop(W, H, 0.86);
 
@@ -3379,19 +3591,26 @@ body {
     var positions = layout.positions;
     var bounds = getWorldViewportBounds(260);
     StarState._unionPositions = positions;
-    var regionConnections = buildUnionConnections(positions);
-    for (var rc = 0; rc < regionConnections.length; rc++) {
-      var conn = regionConnections[rc];
-      var minX = Math.min(conn.from.x, conn.to.x), maxX = Math.max(conn.from.x, conn.to.x);
-      var minY = Math.min(conn.from.y, conn.to.y), maxY = Math.max(conn.from.y, conn.to.y);
-      if (maxX < bounds.left || minX > bounds.right || maxY < bounds.top || minY > bounds.bottom) continue;
-      var regionActive = (StarState.selectedUnion && (StarState.selectedUnion.id === conn.from.union.id || StarState.selectedUnion.id === conn.to.union.id)) ||
-        (StarState.hoveredUnion && (StarState.hoveredUnion.id === conn.from.union.id || StarState.hoveredUnion.id === conn.to.union.id)) ||
-        (StarState.searchHighlightKey && (StarState.searchHighlightKey === targetKeyForUnion(conn.from.union) || StarState.searchHighlightKey === targetKeyForUnion(conn.to.union)));
-      drawUnionConstellationLine(conn.from.x, conn.from.y, conn.to.x, conn.to.y, regionActive ? 0.22 : 0.10, rc, true, regionActive || rc % 2 === 0);
+    if (!lightweight) {
+      var regionConnections = buildUnionConnections(positions);
+      var mobileConnectionCount = 0;
+      for (var rc = 0; rc < regionConnections.length; rc++) {
+        var conn = regionConnections[rc];
+        var minX = Math.min(conn.from.x, conn.to.x), maxX = Math.max(conn.from.x, conn.to.x);
+        var minY = Math.min(conn.from.y, conn.to.y), maxY = Math.max(conn.from.y, conn.to.y);
+        if (maxX < bounds.left || minX > bounds.right || maxY < bounds.top || minY > bounds.bottom) continue;
+        var regionActive = (StarState.selectedUnion && (StarState.selectedUnion.id === conn.from.union.id || StarState.selectedUnion.id === conn.to.union.id)) ||
+          (StarState.hoveredUnion && (StarState.hoveredUnion.id === conn.from.union.id || StarState.hoveredUnion.id === conn.to.union.id)) ||
+          (StarState.searchHighlightKey && (StarState.searchHighlightKey === targetKeyForUnion(conn.from.union) || StarState.searchHighlightKey === targetKeyForUnion(conn.to.union)));
+        if (mobileEnhanced && !regionActive && mobileConnectionCount >= 16) continue;
+        drawUnionConstellationLine(conn.from.x, conn.from.y, conn.to.x, conn.to.y, regionActive ? 0.22 : 0.10, rc, true, regionActive);
+        mobileConnectionCount++;
+      }
+      if (!mobileEnhanced) drawSharedUnionMembershipLinks(layout.sharedMembers, bounds);
     }
-    drawSharedUnionMembershipLinks(layout.sharedMembers, bounds);
 
+    var maxLightweightClusters = isMobileStarMap() ? (mobileEnhanced ? 34 : 24) : positions.length;
+    var lightweightClustersDrawn = 0;
     for (var i = 0; i < positions.length; i++) {
       var p = positions[i];
       if (!isPointNearWorldBounds(p.x, p.y, (p.clusterRadius || 120) + 130, bounds)) continue;
@@ -3399,31 +3618,38 @@ body {
       var memberPositions = p.memberPositions || [];
       var clusterActive = (StarState.selectedUnion && StarState.selectedUnion.id === union.id) ||
         (StarState.hoveredUnion && StarState.hoveredUnion.id === union.id);
+      var clusterSearchActive = StarState.searchHighlightKey === targetKeyForUnion(union);
+      if ((lightweight || mobileEnhanced) && lightweightClustersDrawn >= maxLightweightClusters && !clusterActive && !clusterSearchActive) continue;
+      lightweightClustersDrawn++;
 
       drawUnionNebula(p.x, p.y, p.clusterRadius + 86, i);
 
-      var orbitRadius = p.clusterRadius + 42;
-      starCtx.save();
-      starCtx.translate(p.x, p.y);
-      starCtx.rotate((STAR_MAP_ENABLE_PULSE ? ((StarState.animationTime || 0) * 0.00009) : 0) + i * 0.12);
-      starCtx.beginPath();
-      starCtx.ellipse(0, 0, orbitRadius * 0.92, orbitRadius * 0.76, 0, 0, Math.PI * 2);
-      starCtx.strokeStyle = clusterActive
-        ? (currentTheme() === 'light' ? 'rgba(183,121,37,0.28)' : 'rgba(240,192,96,0.24)')
-        : (currentTheme() === 'light' ? 'rgba(40,124,154,0.12)' : 'rgba(136,187,238,0.10)');
-      starCtx.lineWidth = clusterActive ? 1.2 : 0.8;
-      starCtx.stroke();
-      starCtx.restore();
+      if (!lightweight || clusterActive || clusterSearchActive) {
+        var orbitRadius = p.clusterRadius + 42;
+        starCtx.save();
+        starCtx.translate(p.x, p.y);
+        starCtx.rotate((STAR_MAP_ENABLE_PULSE ? ((StarState.animationTime || 0) * 0.00009) : 0) + i * 0.12);
+        starCtx.beginPath();
+        starCtx.ellipse(0, 0, orbitRadius * 0.92, orbitRadius * 0.76, 0, 0, Math.PI * 2);
+        starCtx.strokeStyle = clusterActive
+          ? (currentTheme() === 'light' ? 'rgba(183,121,37,0.28)' : 'rgba(240,192,96,0.24)')
+          : (currentTheme() === 'light' ? 'rgba(40,124,154,0.12)' : 'rgba(136,187,238,0.10)');
+        starCtx.lineWidth = clusterActive ? 1.2 : 0.8;
+        starCtx.stroke();
+        starCtx.restore();
+      }
 
-      for (var a = 0; a < memberPositions.length; a++) {
+      var memberLineBudget = lightweight ? 0 : (mobileEnhanced ? Math.min(8, memberPositions.length) : memberPositions.length);
+      for (var a = 0; a < memberPositions.length && a < memberLineBudget; a++) {
         if (!isPointNearWorldBounds(memberPositions[a].x, memberPositions[a].y, 44, bounds)) continue;
         var memberActive = StarState.hoveredStar &&
           StarState.hoveredStar.club_id === memberPositions[a].club.club_id &&
           StarState.hoveredStar.country === memberPositions[a].club.country;
         var memberSearchActive = StarState.searchHighlightKey === targetKeyForClub(memberPositions[a].club);
-        drawUnionConstellationLine(p.x, p.y, memberPositions[a].x, memberPositions[a].y, clusterActive || memberActive || memberSearchActive ? 0.28 : 0.15, i * 31 + a, false, clusterActive || memberActive || memberSearchActive || a % 4 === 0);
+        drawUnionConstellationLine(p.x, p.y, memberPositions[a].x, memberPositions[a].y, clusterActive || memberActive || memberSearchActive ? 0.28 : 0.15, i * 31 + a, false, clusterActive || memberActive || memberSearchActive);
       }
 
+      if (lightweight || mobileEnhanced) continue;
       var byProvince = {};
       for (var b = 0; b < memberPositions.length; b++) {
         if (!isPointNearWorldBounds(memberPositions[b].x, memberPositions[b].y, 36, bounds)) continue;
@@ -3443,11 +3669,14 @@ body {
       }
     }
 
+    var drawnMembers = 0;
+    var maxLightweightMembers = isMobileStarMap() ? (mobileEnhanced ? 96 : 36) : Infinity;
     for (var j = 0; j < positions.length; j++) {
       var cluster = positions[j];
       if (!isPointNearWorldBounds(cluster.x, cluster.y, (cluster.clusterRadius || 120) + 130, bounds)) continue;
       var mp = cluster.memberPositions || [];
       for (var k = 0; k < mp.length; k++) {
+        if ((lightweight || mobileEnhanced) && drawnMembers >= maxLightweightMembers) break;
         if (!isPointNearWorldBounds(mp[k].x, mp[k].y, 40, bounds)) continue;
         var isMemberHovered = StarState.hoveredStar &&
           StarState.hoveredStar.club_id === mp[k].club.club_id &&
@@ -3457,15 +3686,20 @@ body {
         drawUnionMemberStar(mp[k].x, mp[k].y, mp[k].club, isMemberHovered || memberIsSearchHit, mp[k].ring, StarState.animationTime, sharedCount);
         if (memberIsSearchHit) drawFocusRing(mp[k].x, mp[k].y, 22, '#5fb7d7', true);
         StarState._allUnionMemberPositions.push({ x: mp[k].x, y: mp[k].y, club: mp[k].club, unionId: cluster.union.id });
+        drawnMembers++;
       }
     }
+    var lightweightHubsDrawn = 0;
     for (var h = 0; h < positions.length; h++) {
       var hubCluster = positions[h];
       if (!isPointNearWorldBounds(hubCluster.x, hubCluster.y, (hubCluster.clusterRadius || 120) + 150, bounds)) continue;
       var isSelected = StarState.selectedUnion && StarState.selectedUnion.id === hubCluster.union.id;
       var isHovered = StarState.hoveredUnion && StarState.hoveredUnion.id === hubCluster.union.id;
+      var isSearchHit = StarState.searchHighlightKey === targetKeyForUnion(hubCluster.union);
+      if ((lightweight || mobileEnhanced) && lightweightHubsDrawn >= maxLightweightClusters && !isSelected && !isHovered && !isSearchHit) continue;
+      lightweightHubsDrawn++;
       drawUnionHubCenter(hubCluster.x, hubCluster.y, hubCluster.union, isSelected, isHovered);
-      if (StarState.searchHighlightKey === targetKeyForUnion(hubCluster.union)) drawFocusRing(hubCluster.x, hubCluster.y, 56, '#5fb7d7', true);
+      if (isSearchHit) drawFocusRing(hubCluster.x, hubCluster.y, 56, '#5fb7d7', true);
     }
 
     if (StarState._activeBurst) {
@@ -3527,6 +3761,7 @@ body {
       hoverUnion,
       selectedUnion,
       StarState.searchHighlightKey || '',
+      shouldUseLightweightStarRender() ? 'mobile-lite' : 'full',
       StarState._draggingUnionId || '',
       JSON.stringify(StarState._draggedUnionOffsets || {}),
       dataKey
@@ -3551,6 +3786,28 @@ body {
     starCtx.restore();
   }
 
+  function hasActiveStarEffects() {
+    return !!(
+      StarState.selectedUnion ||
+      StarState.hoveredUnion ||
+      StarState.hoveredStar ||
+      StarState.searchHighlightKey ||
+      StarState.selectedStar ||
+      StarState._focusPulse
+    );
+  }
+
+  function needsStarRenderLoop() {
+    return !!(
+      StarState.isDragging ||
+      StarState._submodeTransition ||
+      StarState._activeBurst ||
+      Math.abs(StarState.targetZoom - StarState.zoom) > 0.001 ||
+      Math.abs(StarState.targetPanX - StarState.panX) > 0.6 ||
+      Math.abs(StarState.targetPanY - StarState.panY) > 0.6
+    );
+  }
+
   function renderFrame() {
     // Frame skip guard
     var now = performance.now();
@@ -3562,7 +3819,9 @@ body {
       Math.abs(StarState.targetPanX - StarState.panX) > 0.6 ||
       Math.abs(StarState.targetPanY - StarState.panY) > 0.6;
     updateSubmodeTransition();
-    var hasTransientMotion = !!StarState._submodeTransition || !!StarState._activeBurst || (!prefersReducedMotion() && now - (StarState._lastEffectFrame || 0) >= 48);
+    var hasTransientMotion = !!StarState._submodeTransition ||
+      !!StarState._activeBurst ||
+      (!prefersReducedMotion() && hasActiveStarEffects() && now - (StarState._lastEffectFrame || 0) >= 48);
     var nextRenderKey = getStarRenderKey();
     if (!STAR_MAP_ENABLE_PULSE && !hasViewportMotion && !hasTransientMotion && StarState._lastRenderKey === nextRenderKey) return;
     if (!hasViewportMotion && !StarState._submodeTransition && !StarState._activeBurst) StarState._lastEffectFrame = now;
@@ -3586,16 +3845,22 @@ body {
       renderUnionStarMap();
     }
     drawSceneTransitionOverlay(starViewportWidth(), starViewportHeight());
-    updateObservatoryHud();
+    if (!(isMobileStarMap() && StarState._mobileInteractionActive)) updateObservatoryHud();
     StarState._lastRenderKey = getStarRenderKey();
   }
 
   function startStarRenderLoop() {
     if (StarState._renderLoopId) return;
+    var idleFrames = 0;
     function loop() {
-      StarState._renderLoopId = requestAnimationFrame(loop);
+      StarState._renderLoopId = 0;
       StarState.animationTime = performance.now();
       renderFrame();
+      var keepRunning = !document.hidden && needsStarRenderLoop();
+      if (!keepRunning) idleFrames += 1;
+      if (keepRunning || idleFrames < 3) {
+        StarState._renderLoopId = requestAnimationFrame(loop);
+      }
     }
     StarState._renderLoopId = requestAnimationFrame(loop);
   }
@@ -4359,23 +4624,17 @@ body {
 
   // ── Data Loading ──
   function loadUnions() {
-    apiGet('./api/star_unions.php?action=list').then(function (res) {
+    apiGet('./api/star_unions.php?action=list&include_members=1').then(function (res) {
       if (!res.success) { renderFrame(); updateEmptyState(); return; }
       var unions = res.unions || [];
-      // Fetch member details for each union in parallel
-      var fetches = unions.map(function (u) {
-        return apiGet('./api/star_unions.php?action=get&id=' + u.id).then(function (data) {
-          u._members = (data.success && data.members) ? data.members : [];
-          return u;
-        }).catch(function () { u._members = []; return u; });
+      unions.forEach(function (u) {
+        u._members = Array.isArray(u._members) ? u._members : [];
       });
-      Promise.all(fetches).then(function () {
-        StarState.unions = unions;
-        invalidateUnionLayoutCache();
-        renderFrame();
-        if (StarState.submode === 'union') setTimeout(focusPreferredUnionIfNeeded, 80);
-        updateEmptyState();
-      });
+      StarState.unions = unions;
+      invalidateUnionLayoutCache();
+      renderFrame();
+      if (StarState.submode === 'union') setTimeout(focusPreferredUnionIfNeeded, 80);
+      updateEmptyState();
     }).catch(function () { renderFrame(); updateEmptyState(); });
   }
 
@@ -4628,10 +4887,11 @@ body {
     });
 
     starCanvas.addEventListener('touchstart', function (e) {
+      markMobileStarInteraction();
       if (e.touches.length === 1) {
         var t = e.touches[0];
         var touchRect = starCanvas.getBoundingClientRect();
-        if (StarState.submode === 'union') {
+        if (StarState.submode === 'union' && !isMobileStarMap()) {
           var touchUnion = hitTestUnion(t.clientX - touchRect.left, t.clientY - touchRect.top);
           if (touchUnion) {
             var touchWorld = screenToWorld(t.clientX - touchRect.left, t.clientY - touchRect.top);
@@ -4675,6 +4935,7 @@ body {
     starCanvas.addEventListener('touchmove', function (e) {
       if (!StarState._touchMode) return;
       e.preventDefault();
+      markMobileStarInteraction();
       if (StarState._touchMode === 'pan' && e.touches.length === 1) {
         var t = e.touches[0];
         var dx = t.clientX - StarState.dragStartX;
@@ -4718,10 +4979,12 @@ body {
         StarState.panY = StarState.targetPanY;
       }
       hideTooltip();
-      updateObservatoryHud();
+      if (isMobileStarMap()) requestMobileStarFrame();
+      else updateObservatoryHud();
     }, { passive: false });
 
     starCanvas.addEventListener('touchend', function (e) {
+      markMobileStarInteraction();
       if (!e.touches || e.touches.length === 0) {
         StarState._touchMode = null;
         StarState.isDragging = false;
@@ -4832,6 +5095,7 @@ body {
     // Zoom with mouse wheel
     starCanvas.addEventListener('wheel', function (e) {
       e.preventDefault();
+      markMobileStarInteraction();
       // Throttle lightly: keep high-resolution trackpads smooth without flooding frames.
       var wheelNow = performance.now();
       if (wheelNow - (StarState._lastWheelTime || 0) < 8) return;
@@ -4847,14 +5111,19 @@ body {
       StarState.targetZoom = newZoom;
       StarState.targetPanX = mx - worldX * newZoom;
       StarState.targetPanY = my - worldY * newZoom;
-      updateObservatoryHud();
+      if (!(isMobileStarMap() && StarState._mobileInteractionActive)) updateObservatoryHud();
+      startStarRenderLoop();
     }, { passive: false });
 
     // Resize
+    var resizeTimer = 0;
     window.addEventListener('resize', function () {
-      resizeParticles();
-      resizeStarCanvas();
-      renderFrame();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        resizeParticles();
+        resizeStarCanvas();
+        renderFrame();
+      }, 80);
     });
   }
 
@@ -4882,9 +5151,6 @@ body {
     // Resolve personal clubs
     resolvePersonalClubs();
 
-    // Load unions
-    loadUnions();
-
     // Bind events
     bindEvents();
     setupStarSearch();
@@ -4892,12 +5158,16 @@ body {
     setupBoundSearch();
     bindSystemThemePreference();
 
-    // Initial render + start continuous rAF loop
-    startStarRenderLoop();
+    // Initial render first; union data can be hydrated after the page is usable.
+    StarState._initialPaintAt = performance.now();
+    StarState._deferHeavyPaint = true;
+    renderFrame();
     updateEmptyState();
 
     // Hide canvas loading flash
     document.body.style.opacity = '1';
+    completeInitialStarPaintSoon();
+    scheduleStarIdleTask(loadUnions, 650);
   }
 
   // Start

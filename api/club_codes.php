@@ -71,6 +71,8 @@ function ensureMembershipRedeemColumns(PDO $db): void {
     $columns = [
         'country' => "VARCHAR(20) DEFAULT 'china'",
         'left_at' => 'DATETIME NULL',
+        'join_method' => "VARCHAR(50) DEFAULT 'school_no_code'",
+        'contact_account' => "VARCHAR(255) DEFAULT ''",
     ];
 
     foreach ($columns as $column => $definition) {
@@ -317,14 +319,14 @@ switch ($action) {
             }
             // 之前申请过但被拒绝/离开/踢出 — 重新激活
             $stmt = $db->prepare(
-                "UPDATE club_memberships SET status = 'active', role = 'member', joined_at = ?, left_at = NULL WHERE id = ?"
+                "UPDATE club_memberships SET status = 'active', role = 'member', join_method = 'school_code', joined_at = ?, left_at = NULL WHERE id = ?"
             );
             $stmt->execute([date('Y-m-d H:i:s'), $existing['id']]);
         } else {
             // 新增绑定
             $stmt = $db->prepare(
-                "INSERT INTO club_memberships (user_id, club_id, country, role, status, joined_at)
-                 VALUES (?, ?, ?, 'member', 'active', ?)"
+                "INSERT INTO club_memberships (user_id, club_id, country, role, status, join_method, joined_at)
+                 VALUES (?, ?, ?, 'member', 'active', 'school_code', ?)"
             );
             $stmt->execute([$user['id'], $clubId, $country, date('Y-m-d H:i:s')]);
         }

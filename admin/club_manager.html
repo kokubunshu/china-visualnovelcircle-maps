@@ -317,6 +317,27 @@ body::after {
 }
 .btn-reject:hover { box-shadow: 0 6px 20px rgba(239,83,80,0.35); }
 
+.file-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--accent-blue);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.file-download-link:hover {
+  border-color: var(--accent-blue);
+  background: rgba(100,181,246,0.12);
+  transform: translateY(-1px);
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
@@ -2282,6 +2303,430 @@ body::after {
   border-radius: 8px;
 }
 
+.project-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.project-hub-head,
+.project-hub-panel,
+.project-hub-card,
+.project-form-card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+}
+
+.project-hub-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  flex-wrap: wrap;
+}
+
+.project-hub-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.project-hub-sub {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.project-hub-tools,
+.project-hub-filter-row,
+.project-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.project-hub-select,
+.project-hub-input,
+.project-hub-textarea {
+  min-height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font: inherit;
+  outline: none;
+}
+
+.project-hub-select:focus,
+.project-hub-input:focus,
+.project-hub-textarea:focus {
+  border-color: rgba(45, 212, 191, 0.55);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.12);
+}
+
+.project-hub-textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.project-hub-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.project-hub-kpi {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.project-hub-kpi strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.1;
+  color: #2dd4bf;
+}
+
+.project-hub-kpi span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.project-hub-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.86fr) minmax(0, 1.4fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.project-hub-panel {
+  padding: 12px;
+}
+
+.project-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-hub-card {
+  width: 100%;
+  padding: 12px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.project-hub-card:hover,
+.project-hub-card.active {
+  border-color: rgba(45, 212, 191, 0.42);
+  background: rgba(45, 212, 191, 0.075);
+}
+
+.project-hub-card.active {
+  box-shadow: inset 3px 0 0 #2dd4bf;
+}
+
+.project-card-top,
+.project-detail-head,
+.project-section-head,
+.project-review-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.project-card-title,
+.project-section-title {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.project-card-meta,
+.project-muted,
+.project-form-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.project-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.project-chip.primary {
+  color: #2dd4bf;
+  border-color: rgba(45, 212, 191, 0.25);
+  background: rgba(45, 212, 191, 0.10);
+}
+
+.project-chip.warn {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.10);
+}
+
+.project-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.project-info-cell {
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.project-info-cell span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.project-info-cell strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.project-poster-frame,
+.project-poster-preview {
+  display: grid;
+  place-items: center;
+  margin-top: 12px;
+  min-height: 180px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+
+.project-poster-frame img,
+.project-poster-preview img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: #0f131c;
+}
+
+.project-poster-uploader {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.project-poster-preview {
+  margin-top: 0;
+  min-height: 160px;
+  margin-bottom: 10px;
+}
+
+.project-org-frame {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.project-org-line {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.project-org-line + .project-org-line {
+  padding-top: 10px;
+  border-top: 1px dashed var(--card-border);
+}
+
+.project-org-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 24px;
+}
+
+.project-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-border);
+}
+
+.project-item-list,
+.project-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-item-row,
+.project-review-row {
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.project-form-card {
+  padding: 14px;
+}
+
+.project-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.project-form-field.full {
+  grid-column: 1 / -1;
+}
+
+.project-form-field select[multiple] {
+  min-height: 142px;
+}
+
+.project-joint-mode {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.project-radio-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.project-radio-card input {
+  accent-color: #2dd4bf;
+}
+
+.project-club-selector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.project-club-selector-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-club-selector-row.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.project-club-add,
+.project-club-remove {
+  min-height: 36px;
+  border-radius: 9px;
+  border: 1px solid rgba(45, 212, 191, 0.26);
+  background: rgba(45, 212, 191, 0.10);
+  color: #2dd4bf;
+  font: inherit;
+  cursor: pointer;
+}
+
+.project-club-add {
+  width: max-content;
+  padding: 8px 12px;
+}
+
+.project-club-remove {
+  width: 36px;
+  padding: 0;
+}
+
+.project-form-error {
+  display: none;
+  color: #f87171;
+  font-size: 12px;
+}
+
+:root[data-theme='dark'] .project-hub-head,
+:root[data-theme='dark'] .project-hub-panel,
+:root[data-theme='dark'] .project-form-card {
+  background: #171c27;
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='dark'] .project-hub-card,
+:root[data-theme='dark'] .project-hub-kpi,
+:root[data-theme='dark'] .project-info-cell,
+:root[data-theme='dark'] .project-item-row,
+:root[data-theme='dark'] .project-review-row,
+:root[data-theme='dark'] .project-radio-card {
+  background: #12161f;
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+:root[data-theme='dark'] .project-hub-select,
+:root[data-theme='dark'] .project-hub-input,
+:root[data-theme='dark'] .project-hub-textarea {
+  background: #0f131c;
+  border-color: rgba(148, 163, 184, 0.22);
+  color: #f4f7fb;
+}
+
+:root[data-theme='dark'] .project-hub-select option {
+  background: #12161f;
+  color: #f4f7fb;
+}
+
 @media (max-width: 959px) {
   .container {
     width: min(100vw - 24px, 820px);
@@ -2360,6 +2805,13 @@ body::after {
   .toolbar .btn {
     width: auto;
   }
+
+  .project-hub-kpis,
+  .project-hub-layout,
+  .project-detail-grid,
+  .project-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Light mode pass: crisp neutral admin surface */
@@ -2380,7 +2832,10 @@ body::after {
 :root[data-theme='light'] .section-card,
 :root[data-theme='light'] .user-card,
 :root[data-theme='light'] .modal,
-:root[data-theme='light'] .toast {
+:root[data-theme='light'] .toast,
+:root[data-theme='light'] .project-hub-head,
+:root[data-theme='light'] .project-hub-panel,
+:root[data-theme='light'] .project-form-card {
   background: #ffffff;
   border-color: rgba(15, 23, 42, 0.11);
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
@@ -2398,7 +2853,15 @@ body::after {
 :root[data-theme='light'] .act-btn,
 :root[data-theme='light'] .form-input,
 :root[data-theme='light'] .user-search-bar .search-input,
-:root[data-theme='light'] .membership-card .mc-actions select {
+:root[data-theme='light'] .membership-card .mc-actions select,
+:root[data-theme='light'] .project-hub-select,
+:root[data-theme='light'] .project-hub-input,
+:root[data-theme='light'] .project-hub-textarea,
+:root[data-theme='light'] .project-hub-card,
+:root[data-theme='light'] .project-hub-kpi,
+:root[data-theme='light'] .project-info-cell,
+:root[data-theme='light'] .project-item-row,
+:root[data-theme='light'] .project-review-row {
   background: #f8fafc;
   border-color: rgba(15, 23, 42, 0.12);
   color: #1f2937;
@@ -2502,9 +2965,13 @@ body::after {
   <div class="header">
     <h1>🎮 同好会管理</h1>
     <div class="header-actions">
-      <a href="../admin/moe_manager.html" class="header-link">萌战管理</a>
+      <a href="#projects" class="header-link" onclick="event.preventDefault(); switchTab('projects');">企划枢纽</a>
       <a href="../admin/reviews.html" class="header-link">📋 审核中心 <small style="font-size:10px;opacity:0.6;font-weight:400;">(仅超级管理员可用)</small></a>
       <a href="../index.html" class="header-link">← 返回地图</a>
+      <button id="themeToggle" title="切换明亮/暗色模式" aria-label="切换明亮/暗色模式" style="background:none;border:none;cursor:pointer;padding:0 8px;color:inherit;font-size:16px;">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -2525,12 +2992,13 @@ body::after {
 
     <div class="tabs" id="tabBar">
       <button class="tab-btn active" data-tab="pending">⏳ 待审核</button>
+      <button class="tab-btn" data-tab="diplomatic">🌐 外交申请</button>
       <button class="tab-btn" data-tab="approved">✅ 已通过</button>
       <button class="tab-btn" data-tab="members">👥 成员</button>
       <button class="tab-btn" data-tab="settings">⚙️ 设置</button>
       <button class="tab-btn" data-tab="codes">🔑 绑定码</button>
       <button class="tab-btn" data-tab="recommendations">⭐ 神器榜</button>
-      <button class="tab-btn" data-tab="manuscripts">📄 刊物稿件</button>
+      <button class="tab-btn" data-tab="projects">企划枢纽</button>
       <button class="tab-btn" data-tab="users" id="usersTabBtn" style="display:none;">👥 用户管理</button>
     </div>
   </div>
@@ -2600,9 +3068,9 @@ body::after {
 
 <script>
 // ====== State ======
-const ROLE_LEVEL = { visitor: 0, member: 1, manager: 2, representative: 3, super_admin: 4 };
-const ROLE_NAMES = { member: '成员', manager: '管理员', representative: '负责人' };
-const ROLE_LABELS = { visitor: '访客', member: '成员', manager: '管理员', representative: '负责人', super_admin: '超管' };
+const ROLE_LEVEL = { visitor: 0, external: 0.5, member: 1, manager: 2, representative: 3, super_admin: 4 };
+const ROLE_NAMES = { external: '外交成员（IEM）', member: '成员', manager: '管理员', representative: '负责人' };
+const ROLE_LABELS = { visitor: '访客', external: '外交成员（IEM）', member: '成员', manager: '管理员', representative: '负责人', super_admin: '超管' };
 
 let currentUser = null;
 let currentTab = 'pending';
@@ -2657,8 +3125,8 @@ const clubNameMap = {}; // 保留兼容
 async function loadClubNames() {
   try {
     const [cn, jp] = await Promise.all([
-      fetch('../data/clubs.json?t=' + Date.now()).then(r => r.json()),
-      fetch('../data/clubs_japan.json?t=' + Date.now()).then(r => r.json())
+      fetch('../api/clubs.php?t=' + Date.now()).then(r => r.json()),
+      fetch('../api/clubs_japan.php?t=' + Date.now()).then(r => r.json())
     ]);
     clubNameMapCn = {};
     clubNameMapJp = {};
@@ -2683,7 +3151,7 @@ async function init() {
 
   // Theme sync
   try {
-    const saved = localStorage.getItem('theme');
+    const saved = localStorage.getItem('themePreference');
     if (saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
     else if (window.matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.setAttribute('data-theme', 'light');
   } catch {}
@@ -2710,6 +3178,7 @@ async function init() {
   await loadClubNames();
   await loadManagedClubs();
   await loadData();
+  setTimeout(() => loadProjectHubForManager(false, true).catch(() => {}), 800);
 }
 
 function getEffectiveLevel(user) {
@@ -2839,8 +3308,8 @@ function renderList(tab) {
     return;
   }
 
-  if (tab === 'manuscripts') {
-    renderManuscripts();
+  if (tab === 'projects') {
+    renderProjects();
     return;
   }
 
@@ -2862,8 +3331,9 @@ function renderList(tab) {
     );
   }
   // Status filter
-  if (tab === 'pending') filtered = filtered.filter(s => (s.status || 'pending') === 'pending');
-  else if (tab === 'approved') filtered = filtered.filter(s => s.status === 'approved');
+  if (tab === 'pending') filtered = filtered.filter(s => (s.status || 'pending') === 'pending' && (s.join_method || 'school_no_code') !== 'external_exchange');
+  else if (tab === 'diplomatic') filtered = filtered.filter(s => (s.status || 'pending') === 'pending' && (s.join_method || '') === 'external_exchange');
+  else if (tab === 'approved') filtered = filtered.filter(s => s.status === 'active');
 
   const container = document.getElementById('listContainer');
 
@@ -2875,6 +3345,8 @@ function renderList(tab) {
   container.innerHTML = filtered.map(item => {
     const clubName = getClubName(item.club_id, item.country);
     const isPending = (item.status || 'pending') === 'pending';
+    const isExternal = (item.join_method || '') === 'external_exchange';
+    const contact = item.contact_account || item.qq_account || '';
     return `
       <div class="card">
         <div class="card-header">
@@ -2882,9 +3354,12 @@ function renderList(tab) {
           <span class="badge badge-${item.status || 'pending'}">${statusText(item.status)}</span>
         </div>
         <div class="card-body">
-          <div class="row"><span class="label">👤 申请身份</span>${applyRoleText(item.apply_role)}</div>
-          <div class="row"><span class="label">💬 QQ</span>${escapeHtml(item.qq_account || '未填写')}</div>
-          <div class="row"><span class="label">🎓 学生</span>${item.is_student == 1 ? '是' : '否'}</div>
+          <div class="row"><span class="label">申请方式</span>${joinMethodText(item.join_method)}</div>
+          <div class="row"><span class="label">申请身份</span>${applyRoleText(item.apply_role)}</div>
+          <div class="row"><span class="label">QQ/Discord</span>${escapeHtml(contact || '未填写')}</div>
+          ${isExternal ? `<div class="row"><span class="label">所属同好会</span>${escapeHtml(item.external_club_name || '未填写')}</div>
+          <div class="row"><span class="label">外校身份</span>${escapeHtml(item.external_club_role || '未填写')}</div>
+          <div class="row"><span class="label">申请理由</span>${escapeHtml(item.apply_reason || '未填写')}</div>` : ''}
           <div class="row"><span class="label">⏰ 申请时间</span>${formatDate(item.joined_at)}</div>
         </div>
         ${isPending ? `
@@ -2929,14 +3404,14 @@ function renderMembers() {
         if (!isSelf && (isSuperAdmin || myClubRole === 'representative' || myClubRole === 'manager')) {
           if (isSuperAdmin) showKick = true;
           else if (myClubRole === 'representative') showKick = m.role !== 'representative';
-          else if (myClubRole === 'manager') showKick = m.role === 'member';
+          else if (myClubRole === 'manager') showKick = m.role === 'member' || m.role === 'external';
         }
         // 角色变更按钮：不显示自己，仅 super_admin 或 representative
         const canChangeRole = !isSelf && (isSuperAdmin || myClubRole === 'representative');
         const showRoleUp = canChangeRole && m.role === 'member';
         const showRoleDown = canChangeRole && m.role === 'manager';
         // 转让负责人按钮：仅当前为负责人/super_admin，目标非自己、非负责人
-        const showTransfer = !isSelf && (isSuperAdmin || myClubRole === 'representative') && m.role !== 'representative';
+        const showTransfer = !isSelf && (isSuperAdmin || myClubRole === 'representative') && m.role !== 'representative' && m.role !== 'external';
         const memberDetails = [
           m.nickname ? '昵称：' + escapeHtml(m.nickname) : '',
           isSuperAdmin && m.email ? '邮箱：' + escapeHtml(m.email) : '',
@@ -3333,7 +3808,7 @@ function updateStats() {
     );
   }
   const pending = filtered.filter(s => (s.status || 'pending') === 'pending').length;
-  const approved = filtered.filter(s => s.status === 'approved').length;
+  const approved = filtered.filter(s => s.status === 'active').length;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('statApproved').textContent = approved;
   document.getElementById('statMembers').textContent = selectedClubId > 0 ? '?' : '—';
@@ -3344,7 +3819,7 @@ function updateStats() {
     fetch('../api/membership.php?action=members&club_id=' + selectedClubId + '&country=' + selectedCountry, { credentials: 'same-origin' })
       .then(r => r.json())
       .then(data => {
-        if (data.success) document.getElementById('statMembers').textContent = (data.members || []).length;
+        if (data.success) document.getElementById('statMembers').textContent = (data.members || []).filter(m => m.role !== 'external').length;
       })
       .catch(() => {});
   }
@@ -3425,119 +3900,716 @@ async function transferRepresentative(membershipId, clubId, targetName) {
   } catch { showToast('网络错误', 'error'); }
 }
 
-// ====== 刊物稿件模块 ======
-let pubDataForManager = [];
+// ====== 企划枢纽 ======
+const projectTypeLabels = { publication: '刊物企划', activity: '活动企划', content: '内容征集', recruit: '协力招募', other: '其他企划' };
+const projectStatusLabels = { draft: '草稿', collecting: '征集中', ongoing: '进行中', completed: '已完成', archived: '已归档' };
+const projectItemTypeLabels = { submission: '投稿', registration: '报名', collaboration: '协力', survey: '问卷', voting: '投票', other: '其他' };
+const projectParticipationStatusLabels = { submitted: '待审核', reviewing: '审核中', accepted: '已通过', rejected: '已拒绝', withdrawn: '已撤回' };
+const projectHubState = {
+  projects: [],
+  items: [],
+  participations: [],
+  selectedId: null,
+  typeFilter: 'all',
+  statusFilter: 'all',
+  loadedAt: 0,
+  request: null
+};
 
-async function loadPublicationsForManager() {
-  try {
-    const r = await fetch('../data/publications.json', { cache: 'no-store' });
-    const json = await r.json();
-    pubDataForManager = json.publications || [];
-  } catch { pubDataForManager = []; }
+function projectClubKey(club) {
+  if (!club) return '';
+  const id = Number(club.id ?? club.club_id ?? 0);
+  const country = club.country || club.club_country || 'china';
+  return id > 0 ? country + ':' + id : '';
 }
 
-async function renderManuscripts() {
+function currentProjectClub() {
+  if (!selectedClubId || selectedClubId <= 0) return null;
+  return { id: selectedClubId, country: selectedCountry, name: getClubName(selectedClubId, selectedCountry) };
+}
+
+function optionClubFromKey(key) {
+  const raw = String(key || '');
+  const parts = raw.includes('|') ? raw.split('|') : raw.split(':');
+  const id = raw.includes('|') ? Number(parts[0] || 0) : Number(parts[1] || 0);
+  const country = raw.includes('|') ? (parts[1] || 'china') : (parts[0] || 'china');
+  if (!id) return null;
+  return { id, country, name: getClubName(id, country) };
+}
+
+function projectIsOrganizer(project) {
+  const organizer = project.organizer_club || {};
+  return Number(organizer.id) === Number(selectedClubId) && (organizer.country || 'china') === selectedCountry;
+}
+
+function projectHasParticipantClub(project) {
+  return (project.participant_clubs || []).some(club => Number(club.id) === Number(selectedClubId) && (club.country || 'china') === selectedCountry);
+}
+
+function projectRelatedToSelectedClub(project) {
+  return !project.deleted_at && (projectIsOrganizer(project) || projectHasParticipantClub(project));
+}
+
+function projectItems(projectId) {
+  return projectHubState.items.filter(item => Number(item.project_id) === Number(projectId) && !item.deleted_at);
+}
+
+function projectParticipations(projectId, includeWithdrawn) {
+  return projectHubState.participations.filter(row => Number(row.project_id) === Number(projectId) && (includeWithdrawn || row.status !== 'withdrawn'));
+}
+
+function projectPendingParticipations(projectId) {
+  return projectParticipations(projectId, false).filter(row => ['submitted', 'reviewing'].includes(row.status || 'submitted'));
+}
+
+function projectSyncLabel(project) {
+  if ((project.project_type || '') !== 'activity') return '非活动企划';
+  if (!project.event_date && !project.deadline) return '未同步：缺少日期';
+  return project.calendar_event_id ? ('日历 #' + Number(project.calendar_event_id)) : '等待同步';
+}
+
+async function loadProjectHubForManager(force = false, silent = false) {
+  const now = Date.now();
+  if (!force && projectHubState.projects.length && now - projectHubState.loadedAt < 45000) {
+    return;
+  }
+  if (!force && projectHubState.request) {
+    await projectHubState.request;
+    return;
+  }
+  projectHubState.request = (async function() {
+  try {
+    const [projectsResp, itemsResp, partsResp] = await Promise.all([
+      fetch('../api/projects.php?include_deleted=1', { credentials: 'same-origin', cache: 'no-store' }),
+      fetch('../api/project_items.php?include_deleted=1', { credentials: 'same-origin', cache: 'no-store' }),
+      fetch('../api/project_participations.php?include_withdrawn=1', { credentials: 'same-origin', cache: 'no-store' })
+    ]);
+    const projectsData = await projectsResp.json();
+    const itemsData = await itemsResp.json();
+    const partsData = await partsResp.json();
+    projectHubState.projects = projectsData.projects || [];
+    projectHubState.items = itemsData.items || [];
+    projectHubState.participations = partsData.participations || [];
+    projectHubState.loadedAt = Date.now();
+  } catch {
+    projectHubState.projects = [];
+    projectHubState.items = [];
+    projectHubState.participations = [];
+    if (!silent) showToast('企划枢纽加载失败', 'error');
+  } finally {
+    projectHubState.request = null;
+  }
+  })();
+  await projectHubState.request;
+}
+
+function filteredProjectHubRows() {
+  return projectHubState.projects.filter(project => {
+    if (!projectRelatedToSelectedClub(project)) return false;
+    if (projectHubState.typeFilter !== 'all' && project.project_type !== projectHubState.typeFilter) return false;
+    if (projectHubState.statusFilter !== 'all' && project.status !== projectHubState.statusFilter) return false;
+    return true;
+  });
+}
+
+async function renderProjects(refresh = true) {
   const container = document.getElementById('listContainer');
   if (!selectedClubId || selectedClubId <= 0) {
-    container.innerHTML = '<div class="empty">👆 请先在上方选择一个同好会</div>';
+    container.innerHTML = '<div class="empty">请先在上方选择一个同好会，再进入企划枢纽。</div>';
     return;
   }
-
-  await loadPublicationsForManager();
-
-  // Filter publications that are associated with the selected club
-  const relatedPubs = pubDataForManager.filter(pub => {
-    const ids = pub.club_ids || [];
-    return ids.some(c => c.id === selectedClubId && c.country === selectedCountry);
-  });
-
-  if (relatedPubs.length === 0) {
-    container.innerHTML = '<div class="empty">📭 该同好会暂未关联任何刊物</div>';
-    return;
+  if (refresh) {
+    container.innerHTML = '<div class="empty"><span class="loading-spinner"></span>企划枢纽加载中...</div>';
+    await loadProjectHubForManager(false);
   }
 
-  let html = '';
-  for (const pub of relatedPubs) {
-    let manuscriptCount = 0;
-    try {
-      const r = await fetch('../api/manuscripts.php?action=list_by_publication&publication_id=' + pub.id);
-      const data = await r.json();
-      manuscriptCount = (data.manuscripts || []).length;
-    } catch {}
-
-    html += `<div class="card" style="cursor:pointer;" onclick="viewManuscriptsForPub(${pub.id}, '${escapeHtml(pub.publicationName)}')">
-      <div class="card-header">
-        <span class="card-title">${escapeHtml(pub.publicationName)}</span>
-        <span class="badge" style="background:rgba(100,181,246,0.12);color:var(--accent-blue);border:1px solid rgba(100,181,246,0.15);">📄 ${manuscriptCount} 份稿件</span>
-      </div>
-      <div class="card-body">
-        <div class="row"><span class="label">状态</span>${pub.status || '未知'}</div>
-        ${pub.deadline ? `<div class="row"><span class="label">截稿</span>${escapeHtml(pub.deadline)}</div>` : ''}
-      </div>
-    </div>`;
+  const rows = filteredProjectHubRows();
+  if (rows.length && !rows.some(project => Number(project.id) === Number(projectHubState.selectedId))) {
+    projectHubState.selectedId = Number(rows[0].id);
   }
-  container.innerHTML = html;
+  if (!rows.length) projectHubState.selectedId = null;
+
+  const selected = projectHubState.projects.find(project => Number(project.id) === Number(projectHubState.selectedId)) || null;
+  const pendingTotal = rows.reduce((sum, project) => sum + projectPendingParticipations(project.id).length, 0);
+  const jointTotal = rows.filter(project => (project.participant_clubs || []).length > 0).length;
+  const syncWarnTotal = rows.filter(project => project.project_type === 'activity' && !project.calendar_event_id).length;
+  const clubName = getClubName(selectedClubId, selectedCountry);
+
+  container.innerHTML = `
+    <div class="project-hub">
+      <div class="project-hub-head">
+        <div>
+          <div class="project-hub-title">企划枢纽</div>
+          <div class="project-hub-sub">${escapeHtml(clubName)} · 普通企划、活动调控、联合同好会协作</div>
+        </div>
+        <div class="project-hub-tools">
+          <button class="btn btn-primary btn-sm" onclick="openProjectForm()">新建企划</button>
+          <button class="btn btn-glass btn-sm" onclick="renderProjects(true)">刷新</button>
+        </div>
+      </div>
+      <div class="project-hub-kpis">
+        <div class="project-hub-kpi"><strong>${rows.length}</strong><span>关联企划</span></div>
+        <div class="project-hub-kpi"><strong>${rows.filter(project => project.project_type === 'activity').length}</strong><span>活动企划</span></div>
+        <div class="project-hub-kpi"><strong>${pendingTotal}</strong><span>待审核</span></div>
+        <div class="project-hub-kpi"><strong>${jointTotal}</strong><span>联合企划 · ${syncWarnTotal} 个同步提示</span></div>
+      </div>
+      <div class="project-hub-layout">
+        <div class="project-hub-panel">
+          <div class="project-hub-filter-row">
+            <select id="projectTypeFilter" class="project-hub-select" onchange="setProjectFilter('type', this.value)">
+              ${projectSelectOptions(projectTypeLabels, projectHubState.typeFilter, '全部类型')}
+            </select>
+            <select id="projectStatusFilter" class="project-hub-select" onchange="setProjectFilter('status', this.value)">
+              ${projectSelectOptions(projectStatusLabels, projectHubState.statusFilter, '全部状态')}
+            </select>
+          </div>
+          <div class="project-list-stack">
+            ${rows.length ? rows.map(renderProjectCard).join('') : '<div class="empty" style="padding:24px;">该同好会暂未关联企划。</div>'}
+          </div>
+        </div>
+        <div class="project-hub-panel">
+          ${selected ? renderProjectDetail(selected) : '<div class="empty" style="padding:42px;">选择或新建一个企划开始调控。</div>'}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-async function viewManuscriptsForPub(pubId, pubName) {
-  const container = document.getElementById('listContainer');
-  try {
-    const r = await fetch(`../api/manuscripts.php?action=list_by_publication&publication_id=${pubId}`);
-    const data = await r.json();
-    const list = data.manuscripts || [];
-    let html = `<div style="margin-bottom:16px;">
-      <button class="btn btn-glass" onclick="renderManuscripts()">← 返回列表</button>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">📄 ${escapeHtml(pubName)} — 稿件 (${list.length})</span>
-      </div>
-    </div>`;
+function projectSelectOptions(labels, selected, allLabel) {
+  const rows = ['<option value="all">' + allLabel + '</option>'];
+  Object.keys(labels).forEach(key => rows.push('<option value="' + key + '"' + (selected === key ? ' selected' : '') + '>' + labels[key] + '</option>'));
+  return rows.join('');
+}
 
-    if (list.length === 0) {
-      html += '<div class="empty">暂无稿件</div>';
-    } else {
-      html += '<div class="list">';
-      list.forEach(m => {
-        html += `<div class="card">
-          <div class="card-header">
-            <span class="card-title">📎 ${escapeHtml(m.file_name)}</span>
-            <div style="display:flex;gap:6px;">
-              <a class="btn btn-glass btn-sm" href="../api/manuscripts.php?action=download&id=${m.id}" target="_blank">⬇ 下载</a>
-              <button class="btn btn-reject btn-sm" onclick="deleteClubManuscript(${m.id})">🗑 删除</button>
+function renderProjectCard(project) {
+  const items = projectItems(project.id);
+  const pending = projectPendingParticipations(project.id);
+  const organizer = project.organizer_club || {};
+  const roleLabel = projectIsOrganizer(project) ? '发起组织' : '联合参加';
+  return `<button class="project-hub-card ${Number(project.id) === Number(projectHubState.selectedId) ? 'active' : ''}" onclick="selectProjectHub(${Number(project.id)})">
+    <div class="project-card-top">
+      <div>
+        <div class="project-card-title">${escapeHtml(project.title || '未命名企划')}</div>
+        <div class="project-card-meta">${escapeHtml(projectTypeLabels[project.project_type] || project.project_type || '企划')} · ${escapeHtml(projectStatusLabels[project.status] || project.status || '未知')}</div>
+      </div>
+      <span class="project-chip primary">${roleLabel}</span>
+    </div>
+    <div class="project-chip-row">
+      <span class="project-chip">${escapeHtml(organizer.name || '未绑定发起组织')}</span>
+      <span class="project-chip">联合 ${(project.participant_clubs || []).length}</span>
+      <span class="project-chip">参与项 ${items.length}</span>
+      ${pending.length ? `<span class="project-chip warn">待审 ${pending.length}</span>` : ''}
+    </div>
+    <div class="project-muted" style="margin-top:8px;">${escapeHtml(projectSyncLabel(project))}</div>
+  </button>`;
+}
+
+function renderProjectDetail(project) {
+  const canManage = projectIsOrganizer(project);
+  const items = projectItems(project.id);
+  const reviews = projectParticipations(project.id, true);
+  const pending = projectPendingParticipations(project.id);
+  const organizer = project.organizer_club || {};
+  return `
+    <div class="project-detail-head">
+      <div>
+        <div class="project-hub-title">${escapeHtml(project.title || '未命名企划')}</div>
+        <div class="project-hub-sub">${escapeHtml(projectTypeLabels[project.project_type] || project.project_type || '企划')} · ${escapeHtml(projectStatusLabels[project.status] || project.status || '未知')}</div>
+      </div>
+      <div class="project-hub-tools">
+        ${canManage ? `<button class="btn btn-glass btn-sm" onclick="openProjectForm(${Number(project.id)})">编辑企划</button>
+        <button class="btn btn-reject btn-sm" onclick="deleteProjectHub(${Number(project.id)})">删除</button>` : '<span class="project-chip">联合参加视图</span>'}
+      </div>
+    </div>
+    ${project.cover_image ? `<div class="project-poster-frame"><img src="${escapeHtml(projectMediaUrl(project.cover_image))}" alt="企划宣传图" onerror="this.style.display='none'"></div>` : '<div class="project-poster-frame empty">暂无宣传图</div>'}
+    <div class="project-detail-grid">
+      <div class="project-info-cell"><span>发起组织</span><strong>${escapeHtml(organizer.name || '未绑定同好会')}</strong></div>
+      <div class="project-info-cell"><span>日历同步</span><strong>${escapeHtml(projectSyncLabel(project))}</strong></div>
+      <div class="project-info-cell"><span>活动日期</span><strong>${escapeHtml(project.event_date || project.deadline || '未设置')}${project.event_date_end ? ' 至 ' + escapeHtml(project.event_date_end) : ''}</strong></div>
+      <div class="project-info-cell"><span>截止日期</span><strong>${escapeHtml(project.deadline || '未设置')}</strong></div>
+    </div>
+    <div class="project-section">
+      <div class="project-section-title">联合参加同好会</div>
+      <div class="project-org-frame">
+        <div class="project-org-line">
+          <span class="project-org-label">发起组织</span>
+          <div class="project-chip-row"><span class="project-chip primary">${escapeHtml(organizer.name || '未绑定')}</span></div>
+        </div>
+        <div class="project-org-line">
+          <span class="project-org-label">参与组织</span>
+          <div class="project-chip-row">${(project.participant_clubs || []).length ? (project.participant_clubs || []).map(club => `<span class="project-chip">${escapeHtml(club.name || getClubName(club.id, club.country || 'china'))}</span>`).join('') : '<span class="project-muted">暂无联合参加同好会</span>'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="project-section">
+      <div class="project-section-title">企划说明</div>
+      <div class="project-muted" style="margin-top:8px;white-space:pre-wrap;">${escapeHtml(project.description || project.summary || '暂无说明')}</div>
+      ${project.results_description || project.results_link ? `<div class="project-muted" style="margin-top:8px;">成果：${escapeHtml(project.results_description || '')} ${project.results_link ? `<a href="${escapeHtml(project.results_link)}" target="_blank" rel="noopener noreferrer">打开链接</a>` : ''}</div>` : ''}
+    </div>
+    <div class="project-section">
+      <div class="project-section-head">
+        <div class="project-section-title">参与项</div>
+        ${canManage ? `<button class="btn btn-glass btn-sm" onclick="openProjectItemForm(${Number(project.id)})">新增参与项</button>` : ''}
+      </div>
+      <div class="project-item-list">
+        ${items.length ? items.map(item => renderProjectItemRow(project, item, canManage)).join('') : '<div class="project-muted">暂无参与项。</div>'}
+      </div>
+    </div>
+    <div class="project-section">
+      <div class="project-section-head">
+        <div class="project-section-title">审核队列</div>
+        <span class="project-chip ${pending.length ? 'warn' : ''}">${pending.length} 待处理</span>
+      </div>
+      <div class="project-review-list">
+        ${reviews.length ? reviews.map(row => renderProjectReviewRow(row, canManage)).join('') : '<div class="project-muted">暂无参与记录。</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderProjectItemRow(project, item, canManage) {
+  return `<div class="project-item-row">
+    <div class="project-section-head">
+      <div>
+        <div class="project-card-title">${escapeHtml(item.label || '未命名参与项')}</div>
+        <div class="project-muted">${escapeHtml(projectItemTypeLabels[item.type] || item.type || '参与项')} · ${item.status === 'closed' ? '已关闭' : '开放中'}${item.deadline ? ' · 截止 ' + escapeHtml(item.deadline) : ''}</div>
+        ${item.description ? `<div class="project-muted" style="margin-top:6px;white-space:pre-wrap;">${escapeHtml(item.description)}</div>` : ''}
+      </div>
+      ${canManage ? `<div class="project-hub-tools">
+        <button class="btn btn-glass btn-sm" onclick="openProjectItemForm(${Number(project.id)}, '${escapeHtml(item.id)}')">编辑</button>
+        <button class="btn btn-reject btn-sm" onclick="deleteProjectItem('${escapeHtml(item.id)}')">删除</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderProjectReviewRow(row, canManage) {
+  const status = row.status || 'submitted';
+  const attachments = row.attachments && Array.isArray(row.attachments) ? row.attachments : [];
+  const attachHtml = attachments.length ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">${attachments.map(f =>
+    `<a href="${escapeHtml(projectMediaUrl(f.download_url || f.url || ''))}" target="_blank" class="file-download-link">📎 ${escapeHtml(f.name || '下载文件')}</a>`
+  ).join('')}</div>` : '';
+  return `<div class="project-review-row">
+    <div>
+      <div class="project-card-title">${escapeHtml(row.display_name || '匿名参与者')}</div>
+      <div class="project-muted">${escapeHtml(projectParticipationStatusLabels[status] || status)} · ${escapeHtml(row.participant_type === 'club' ? '同好会参与' : '个人参与')} · ${escapeHtml(row.created_at || '')}</div>
+      <div class="project-muted" style="margin-top:6px;white-space:pre-wrap;">${escapeHtml(row.content || '')}</div>
+      ${attachHtml}
+      ${row.review_note ? `<div class="project-muted" style="margin-top:6px;">审核备注：${escapeHtml(row.review_note)}</div>` : ''}
+    </div>
+    ${canManage && ['submitted', 'reviewing'].includes(status) ? `<div class="project-hub-tools">
+      <button class="btn btn-approve btn-sm" onclick="reviewProjectParticipation(${Number(row.id)}, 'accepted')">通过</button>
+      <button class="btn btn-reject btn-sm" onclick="reviewProjectParticipation(${Number(row.id)}, 'rejected')">拒绝</button>
+    </div>` : ''}
+  </div>`;
+}
+
+function projectMediaUrl(url) {
+  url = String(url || '').trim();
+  if (!url) return '';
+  if (/^(https?:)?\/\//i.test(url) || /^data:/i.test(url) || url.startsWith('../') || url.startsWith('/')) return url;
+  return '../' + url;
+}
+
+function setProjectFilter(kind, value) {
+  if (kind === 'type') projectHubState.typeFilter = value;
+  if (kind === 'status') projectHubState.statusFilter = value;
+  renderProjects(false);
+}
+
+function selectProjectHub(id) {
+  projectHubState.selectedId = Number(id);
+  renderProjects(false);
+}
+
+function projectSelectorValue(club) {
+  return Number(club.id || club.club_id || 0) + '|' + (club.country || club.club_country || 'china');
+}
+
+function projectClubOptionsHtml(selectedValue, organizerKey) {
+  return '<option value="">请选择联合参加同好会</option>' + allClubOptions
+    .map(club => ({ id: Number(club.club_id || club.id), country: club.country || 'china' }))
+    .filter(club => club.id > 0 && projectClubKey(club) !== organizerKey)
+    .map(club => {
+      const value = projectSelectorValue(club);
+      return `<option value="${value}" ${value === selectedValue ? 'selected' : ''}>${escapeHtml(getClubName(club.id, club.country))} · ${club.country === 'japan' ? '日本' : '中国'}</option>`;
+    }).join('');
+}
+
+function getProjectJointSelectedClubs() {
+  return Array.from(document.querySelectorAll('.project-club-select'))
+    .map(select => optionClubFromKey(select.value))
+    .filter(Boolean);
+}
+
+function showProjectClubError(message) {
+  const el = document.getElementById('phClubError');
+  if (!el) return;
+  el.textContent = message || '';
+  el.style.display = message ? 'block' : 'none';
+}
+
+function createProjectClubSelectorRow(selectedValue) {
+  const container = document.getElementById('phClubSelectors');
+  if (!container) return;
+  const organizer = currentProjectClub();
+  const organizerKey = projectClubKey(organizer);
+  const row = document.createElement('div');
+  row.className = 'project-club-selector-row';
+  const select = document.createElement('select');
+  select.className = 'project-hub-select project-club-select';
+  select.innerHTML = projectClubOptionsHtml(selectedValue || '', organizerKey);
+  row.appendChild(select);
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'project-club-remove';
+  remove.textContent = '×';
+  remove.addEventListener('click', function() {
+    row.remove();
+    updateProjectClubRemoveButtons();
+  });
+  row.appendChild(remove);
+  container.appendChild(row);
+  updateProjectClubRemoveButtons();
+}
+
+function updateProjectClubRemoveButtons() {
+  const rows = Array.from(document.querySelectorAll('#phClubSelectors .project-club-selector-row'));
+  rows.forEach(row => {
+    row.classList.toggle('single', rows.length <= 1);
+    const btn = row.querySelector('.project-club-remove');
+    if (btn) btn.style.display = rows.length <= 1 ? 'none' : '';
+  });
+}
+
+function rebuildProjectClubSelectors(existingClubs) {
+  const container = document.getElementById('phClubSelectors');
+  if (!container) return;
+  container.innerHTML = '';
+  const selected = (existingClubs || []).map(projectSelectorValue);
+  if (selected.length) {
+    selected.forEach(value => createProjectClubSelectorRow(value));
+  } else {
+    createProjectClubSelectorRow('');
+  }
+}
+
+function toggleProjectJointMode() {
+  const isJoint = document.querySelector('input[name="phIsJoint"]:checked')?.value === '1';
+  const jointField = document.getElementById('phJointField');
+  if (jointField) jointField.style.display = isJoint ? '' : 'none';
+  showProjectClubError('');
+  if (isJoint && !document.querySelector('#phClubSelectors .project-club-selector-row')) {
+    rebuildProjectClubSelectors([]);
+  }
+}
+
+function openProjectForm(projectId) {
+  if (!selectedClubId || selectedClubId <= 0) {
+    showToast('请先选择发起同好会', 'error');
+    return;
+  }
+  const project = projectId ? projectHubState.projects.find(row => Number(row.id) === Number(projectId)) : null;
+  const organizer = project?.organizer_club || currentProjectClub();
+  const existingParticipants = project?.participant_clubs || [];
+  const isJoint = existingParticipants.length > 0;
+
+  document.getElementById('listContainer').innerHTML = `
+    <div class="project-form-card">
+      <div class="project-detail-head">
+        <div>
+          <div class="project-hub-title">${project ? '编辑企划' : '新建企划'}</div>
+          <div class="project-hub-sub">发起组织：${escapeHtml(organizer.name || getClubName(organizer.id, organizer.country || 'china'))}</div>
+        </div>
+        <button class="btn btn-glass btn-sm" onclick="renderProjects(false)">返回企划枢纽</button>
+      </div>
+      <div class="project-form-grid" style="margin-top:14px;">
+        <label class="project-form-field">企划名称<input id="phTitle" class="project-hub-input" value="${escapeHtml(project?.title || '')}" maxlength="120"></label>
+        <label class="project-form-field">企划类型<select id="phType" class="project-hub-select">${projectFormOptions(projectTypeLabels, project?.project_type || 'activity')}</select></label>
+        <label class="project-form-field">状态<select id="phStatus" class="project-hub-select">${projectFormOptions(projectStatusLabels, project?.status || 'collecting')}</select></label>
+        <label class="project-form-field">截止日期<input id="phDeadline" class="project-hub-input" type="date" value="${escapeHtml(project?.deadline || '')}"></label>
+        <label class="project-form-field">活动开始日期<input id="phEventDate" class="project-hub-input" type="date" value="${escapeHtml(project?.event_date || '')}"><span class="project-form-hint">活动企划同步到日历时使用。</span></label>
+        <label class="project-form-field">活动结束日期<input id="phEventEnd" class="project-hub-input" type="date" value="${escapeHtml(project?.event_date_end || '')}"></label>
+        <div class="project-form-field full">
+          <span>宣传图 / 海报</span>
+          <input id="phCoverImage" type="hidden" value="${escapeHtml(project?.cover_image || '')}">
+          <input id="phCoverFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="uploadProjectPoster(${project ? Number(project.id) : 0})">
+          <div class="project-poster-uploader">
+            <div id="phCoverPreview" class="project-poster-preview">${project?.cover_image ? `<img src="${escapeHtml(projectMediaUrl(project.cover_image))}" alt="企划宣传图">` : '<span>暂无宣传图</span>'}</div>
+            <div class="project-hub-tools">
+              <button type="button" class="btn btn-glass btn-sm" onclick="document.getElementById('phCoverFile').click()">上传/更换宣传图</button>
+              <button type="button" class="btn btn-glass btn-sm" onclick="clearProjectPoster()">移除</button>
+              <span id="phCoverStatus" class="project-form-hint">保存后同步到企划枢纽和活动日历。</span>
             </div>
           </div>
-          <div class="card-body">
-            <div class="row"><span class="label">投稿人</span>${escapeHtml(m.submitter_name)}</div>
-            <div class="row"><span class="label">联系方式</span>${escapeHtml(m.contact || '未填写')}</div>
-            <div class="row"><span class="label">时间</span>${m.submitted_at || '未知'}</div>
+        </div>
+        <div class="project-form-field full">
+          <span>是否联合企划</span>
+          <div class="project-joint-mode">
+            <label class="project-radio-card"><input type="radio" name="phIsJoint" value="0" ${isJoint ? '' : 'checked'} onchange="toggleProjectJointMode()">否</label>
+            <label class="project-radio-card"><input type="radio" name="phIsJoint" value="1" ${isJoint ? 'checked' : ''} onchange="toggleProjectJointMode()">是</label>
           </div>
-        </div>`;
-      });
-      html += '</div>';
-    }
-    container.innerHTML = html;
-  } catch {
-    container.innerHTML = '<div class="empty">❌ 加载失败</div>';
+          <span class="project-form-hint">发起组织已固定为当前同好会；联合企划可继续添加参加同好会。</span>
+        </div>
+        <div class="project-form-field full" id="phJointField" style="${isJoint ? '' : 'display:none;'}">
+          <span>联合参加同好会</span>
+          <div id="phClubSelectors" class="project-club-selector-stack"></div>
+          <button type="button" class="project-club-add" onclick="createProjectClubSelectorRow('')">+ 添加同好会</button>
+          <div id="phClubError" class="project-form-error"></div>
+        </div>
+        <label class="project-form-field full">摘要<input id="phSummary" class="project-hub-input" value="${escapeHtml(project?.summary || '')}" maxlength="160"></label>
+        <label class="project-form-field full">说明<textarea id="phDescription" class="project-hub-textarea">${escapeHtml(project?.description || '')}</textarea></label>
+        <label class="project-form-field full">成果说明<textarea id="phResultsDescription" class="project-hub-textarea">${escapeHtml(project?.results_description || '')}</textarea></label>
+        <label class="project-form-field full">成果链接<input id="phResultsLink" class="project-hub-input" value="${escapeHtml(project?.results_link || '')}" maxlength="500"></label>
+      </div>
+      <div class="project-form-actions" style="margin-top:14px;">
+        <button class="btn btn-primary" onclick="saveProjectHub(${project ? Number(project.id) : 0})">保存企划</button>
+        <button class="btn btn-glass" onclick="renderProjects(false)">取消</button>
+      </div>
+    </div>
+  `;
+  rebuildProjectClubSelectors(existingParticipants);
+  toggleProjectJointMode();
+}
+
+function projectFormOptions(labels, selected) {
+  return Object.keys(labels).map(key => '<option value="' + key + '"' + (selected === key ? ' selected' : '') + '>' + labels[key] + '</option>').join('');
+}
+
+function setProjectPosterPreview(url) {
+  const input = document.getElementById('phCoverImage');
+  const preview = document.getElementById('phCoverPreview');
+  if (input) input.value = url || '';
+  if (preview) {
+    preview.innerHTML = url ? `<img src="${escapeHtml(projectMediaUrl(url))}" alt="企划宣传图">` : '<span>暂无宣传图</span>';
   }
 }
 
-async function deleteClubManuscript(id) {
-  if (!confirm('确定删除此稿件吗？')) return;
+function clearProjectPoster() {
+  setProjectPosterPreview('');
+  const status = document.getElementById('phCoverStatus');
+  if (status) status.textContent = '已移除宣传图，保存后生效。';
+}
+
+async function uploadProjectPoster(projectId) {
+  const input = document.getElementById('phCoverFile');
+  const status = document.getElementById('phCoverStatus');
+  const file = input?.files?.[0];
+  if (!file) return;
+  const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    if (status) status.textContent = '仅支持 JPEG / PNG / GIF / WebP。';
+    input.value = '';
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    if (status) status.textContent = '图片不能超过 2MB。';
+    input.value = '';
+    return;
+  }
+  const form = new FormData();
+  form.append('id', 'project_' + (projectId || Date.now()));
+  form.append('country', selectedCountry || 'china');
+  form.append('image', file);
+  if (status) status.textContent = '上传中...';
   try {
-    const r = await fetch('../api/manuscripts.php?action=delete', {
-      method: 'POST',
+    const r = await fetch('../api/club_avatar.php?scope=event', { method: 'POST', credentials: 'same-origin', body: form });
+    const data = await r.json();
+    if (!data.success || !data.image_url) {
+      throw new Error(data.message || '上传失败');
+    }
+    setProjectPosterPreview(data.image_url);
+    if (status) status.textContent = '宣传图已上传，保存后同步。';
+  } catch (error) {
+    if (status) status.textContent = error.message || '上传失败';
+  } finally {
+    input.value = '';
+  }
+}
+
+async function saveProjectHub(projectId) {
+  const title = document.getElementById('phTitle').value.trim();
+  if (!title) {
+    showToast('请填写企划名称', 'error');
+    return;
+  }
+  const organizer = currentProjectClub();
+  const organizerKey = projectClubKey(organizer);
+  const isJoint = document.querySelector('input[name="phIsJoint"]:checked')?.value === '1';
+  const selectedParticipants = isJoint ? getProjectJointSelectedClubs().filter(club => projectClubKey(club) !== organizerKey) : [];
+  const participantMap = {};
+  selectedParticipants.forEach(club => { participantMap[projectClubKey(club)] = club; });
+  if (isJoint && Object.keys(participantMap).length < 1) {
+    showProjectClubError('联合企划至少需要选择一个联合参加同好会');
+    return;
+  }
+  const payload = {
+    title,
+    project_type: document.getElementById('phType').value,
+    status: document.getElementById('phStatus').value,
+    organizer_club: organizer,
+    participant_clubs: Object.values(participantMap),
+    is_joint: isJoint && Object.keys(participantMap).length > 0,
+    deadline: document.getElementById('phDeadline').value,
+    event_date: document.getElementById('phEventDate').value,
+    event_date_end: document.getElementById('phEventEnd').value,
+    cover_image: document.getElementById('phCoverImage')?.value.trim() || '',
+    summary: document.getElementById('phSummary').value.trim(),
+    description: document.getElementById('phDescription').value.trim(),
+    results_description: document.getElementById('phResultsDescription').value.trim(),
+    results_link: document.getElementById('phResultsLink').value.trim()
+  };
+  if (projectId) payload.id = Number(projectId);
+
+  try {
+    const r = await fetch('../api/projects.php', {
+      method: projectId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
+      credentials: 'same-origin',
+      body: JSON.stringify(payload)
     });
     const data = await r.json();
-    if (data.success) {
-      showToast('✅ 已删除', 'success');
-      renderManuscripts();
-    } else {
-      showToast(data.message || '删除失败', 'error');
+    if (!data.success) {
+      showToast(data.message || '保存失败', 'error');
+      return;
     }
-  } catch { showToast('网络错误', 'error'); }
+    projectHubState.selectedId = Number(data.project?.id || projectId);
+    showToast(data.message || '已保存', 'success');
+    projectHubState.loadedAt = 0;
+    await renderProjects(true);
+  } catch {
+    showToast('网络错误', 'error');
+  }
+}
+
+async function deleteProjectHub(projectId) {
+  if (!confirm('确定删除此企划吗？活动企划会同步移除对应日历活动。')) return;
+  try {
+    const r = await fetch('../api/projects.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ id: Number(projectId) })
+    });
+    const data = await r.json();
+    if (!data.success) {
+      showToast(data.message || '删除失败', 'error');
+      return;
+    }
+    projectHubState.selectedId = null;
+    showToast('企划已删除', 'success');
+    projectHubState.loadedAt = 0;
+    await renderProjects(true);
+  } catch {
+    showToast('网络错误', 'error');
+  }
+}
+
+function openProjectItemForm(projectId, itemId) {
+  const item = itemId ? projectHubState.items.find(row => row.id === itemId) : null;
+  document.getElementById('listContainer').innerHTML = `
+    <div class="project-form-card">
+      <div class="project-detail-head">
+        <div>
+          <div class="project-hub-title">${item ? '编辑参与项' : '新增参与项'}</div>
+          <div class="project-hub-sub">用于投稿、报名、协力招募等记录收集。</div>
+        </div>
+        <button class="btn btn-glass btn-sm" onclick="renderProjects(false)">返回企划详情</button>
+      </div>
+      <div class="project-form-grid" style="margin-top:14px;">
+        <label class="project-form-field">参与项名称<input id="piLabel" class="project-hub-input" value="${escapeHtml(item?.label || '')}" maxlength="80"></label>
+        <label class="project-form-field">类型<select id="piType" class="project-hub-select">${projectFormOptions(projectItemTypeLabels, item?.type || 'submission')}</select></label>
+        <label class="project-form-field">状态<select id="piStatus" class="project-hub-select">${projectFormOptions({ open: '开放中', closed: '已关闭' }, item?.status || 'open')}</select></label>
+        <label class="project-form-field">截止日期<input id="piDeadline" class="project-hub-input" type="date" value="${escapeHtml(item?.deadline || '')}"></label>
+        <label class="project-form-field">名额上限<input id="piMaxSlots" class="project-hub-input" type="number" min="1" value="${escapeHtml(item?.max_slots || '')}"></label>
+        <label class="project-form-field full">说明<textarea id="piDescription" class="project-hub-textarea">${escapeHtml(item?.description || '')}</textarea></label>
+      </div>
+      <div class="project-form-actions" style="margin-top:14px;">
+        <button class="btn btn-primary" onclick="saveProjectItem(${Number(projectId)}, '${escapeHtml(item?.id || '')}')">保存参与项</button>
+        <button class="btn btn-glass" onclick="renderProjects(false)">取消</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveProjectItem(projectId, itemId) {
+  const label = document.getElementById('piLabel').value.trim();
+  if (!label) {
+    showToast('请填写参与项名称', 'error');
+    return;
+  }
+  const payload = {
+    project_id: Number(projectId),
+    label,
+    type: document.getElementById('piType').value,
+    status: document.getElementById('piStatus').value,
+    deadline: document.getElementById('piDeadline').value,
+    max_slots: document.getElementById('piMaxSlots').value,
+    description: document.getElementById('piDescription').value.trim()
+  };
+  if (itemId) payload.id = itemId;
+  try {
+    const r = await fetch('../api/project_items.php', {
+      method: itemId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (!data.success) {
+      showToast(data.message || '保存失败', 'error');
+      return;
+    }
+    showToast(data.message || '已保存', 'success');
+    projectHubState.loadedAt = 0;
+    await renderProjects(true);
+  } catch {
+    showToast('网络错误', 'error');
+  }
+}
+
+async function deleteProjectItem(itemId) {
+  if (!confirm('确定删除此参与项吗？')) return;
+  try {
+    const r = await fetch('../api/project_items.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ id: itemId })
+    });
+    const data = await r.json();
+    if (!data.success) {
+      showToast(data.message || '删除失败', 'error');
+      return;
+    }
+    showToast('参与项已删除', 'success');
+    projectHubState.loadedAt = 0;
+    await renderProjects(true);
+  } catch {
+    showToast('网络错误', 'error');
+  }
+}
+
+async function reviewProjectParticipation(id, status) {
+  const note = prompt(status === 'accepted' ? '通过备注（可留空）' : '拒绝原因（建议填写）') || '';
+  try {
+    const r = await fetch('../api/project_participations.php', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ id: Number(id), status, review_note: note })
+    });
+    const data = await r.json();
+    if (!data.success) {
+      showToast(data.message || '审核失败', 'error');
+      return;
+    }
+    showToast('审核状态已更新', 'success');
+    projectHubState.loadedAt = 0;
+    await renderProjects(true);
+  } catch {
+    showToast('网络错误', 'error');
+  }
 }
 
 // ====== Binding Codes ======
@@ -3685,6 +4757,9 @@ function copyCode(code) {
 let recSearchResults = [];
 let recHasSearched = false;
 let recData = [];
+let moeKingData = null;
+let moeKingSearchResults = [];
+let moeKingHasSearched = false;
 
 async function renderRecommendations() {
   const container = document.getElementById('listContainer');
@@ -3701,6 +4776,11 @@ async function renderRecommendations() {
     const data = await r.json();
     recData = data.success ? (data.data || []) : [];
   } catch { recData = []; }
+  try {
+    const r = await fetch(`../api/club_moe_king.php?action=get&club_id=${selectedClubId}&country=${selectedCountry}`, { credentials: 'same-origin' });
+    const data = await r.json();
+    moeKingData = data.success ? data.data : null;
+  } catch { moeKingData = null; }
 
   let html = '<div class="rec-layout">';
 
@@ -3773,11 +4853,117 @@ async function renderRecommendations() {
 
   html += `</div></div></div>`; // close rec-list, card, rec-layout
 
+  html += `<div class="section-card moe-king-admin">
+    <div class="section-title">萌王 <span style="font-size:12px;color:var(--text-muted);font-weight:400;">每个同好会 1 位 Bangumi 角色</span></div>
+    <div class="search-area">
+      <div class="search-input-wrap">
+        <input type="text" id="moeKingSearchInput" class="form-input" placeholder="搜索 Bangumi 角色" style="min-width:0;flex:1;max-width:260px;" onkeydown="if(event.key==='Enter') searchMoeKing()">
+        <button class="btn btn-primary" onclick="searchMoeKing()">搜索角色</button>
+      </div>
+      <div class="current-moe-king">`;
+  if (moeKingData) {
+    const title = moeKingData.name_cn || moeKingData.name;
+    html += `<div class="search-item">
+      <div class="thumb">${moeKingData.image_url ? `<img src="${escapeHtml(moeKingData.image_url)}" alt="">` : '王'}</div>
+      <div class="item-info">
+        <div class="item-title">${escapeHtml(title)}</div>
+        <div class="item-sub">当前萌王 · #${escapeHtml(String(moeKingData.character_id))}</div>
+      </div>
+      <button class="remove-btn" onclick="removeMoeKing()" title="移除">×</button>
+    </div>`;
+  } else {
+    html += '<div style="color:var(--text-muted);font-size:13px;padding:10px 0;">暂未设置萌王</div>';
+  }
+  html += `</div><div class="search-results" id="moeKingSearchResults">`;
+  if (!moeKingSearchResults.length) {
+    html += '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">' +
+      (moeKingHasSearched ? '未找到相关角色' : '输入角色名，从 Bangumi 角色库中选择一位萌王') +
+      '</div>';
+  } else {
+    moeKingSearchResults.forEach(item => {
+      const title = item.name_cn || item.name || ('角色 #' + item.character_id);
+      html += `<div class="search-item">
+        <div class="thumb">${item.image_url ? `<img src="${escapeHtml(item.image_url)}" alt="">` : '王'}</div>
+        <div class="item-info">
+          <div class="item-title">${escapeHtml(title)}</div>
+          <div class="item-sub">${escapeHtml((item.summary || '').slice(0, 60))}</div>
+        </div>
+        <button class="add-btn" onclick="setMoeKing(${item.character_id})">设为萌王</button>
+      </div>`;
+    });
+  }
+  html += `</div></div></div>`;
+
   container.innerHTML = html;
 
   // Restore search input value after re-render
   const restoredInput = document.getElementById('recSearchInput');
   if (restoredInput) restoredInput.value = savedSearch;
+}
+
+async function searchMoeKing() {
+  const input = document.getElementById('moeKingSearchInput');
+  const keyword = input ? input.value.trim() : '';
+  if (!keyword) return;
+  moeKingHasSearched = true;
+  const resultsDiv = document.getElementById('moeKingSearchResults');
+  if (resultsDiv) resultsDiv.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:13px;">搜索中...</div>';
+  try {
+    const r = await fetch(`../api/bangumi_proxy.php?action=search_character&keyword=${encodeURIComponent(keyword)}`);
+    const data = await r.json();
+    moeKingSearchResults = data.success ? (data.data || []) : [];
+  } catch { moeKingSearchResults = []; }
+  await renderRecommendations();
+  const restored = document.getElementById('moeKingSearchInput');
+  if (restored) restored.value = keyword;
+}
+
+async function setMoeKing(characterId) {
+  const item = moeKingSearchResults.find(r => Number(r.character_id) === Number(characterId));
+  if (!item) return showToast('找不到该角色信息，请重新搜索', 'error');
+  try {
+    const r = await fetch('../api/club_moe_king.php?action=set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        club_id: selectedClubId,
+        country: selectedCountry,
+        character_id: item.character_id,
+        name: item.name || '',
+        name_cn: item.name_cn || '',
+        image_url: item.image_url || '',
+        summary: item.summary || ''
+      })
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast('萌王已更新', 'success');
+      await renderRecommendations();
+    } else {
+      showToast(data.message || '设置失败', 'error');
+    }
+  } catch { showToast('网络错误', 'error'); }
+}
+
+async function removeMoeKing() {
+  if (!confirm('确定移除当前萌王？')) return;
+  try {
+    const r = await fetch('../api/club_moe_king.php?action=remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ club_id: selectedClubId, country: selectedCountry })
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast('萌王已移除', 'success');
+      moeKingData = null;
+      await renderRecommendations();
+    } else {
+      showToast(data.message || '移除失败', 'error');
+    }
+  } catch { showToast('网络错误', 'error'); }
 }
 
 async function searchBangumi() {
@@ -3878,11 +5064,15 @@ function switchTab(tab) {
 
 // ====== Utilities ======
 function statusText(status) {
-  return status === 'approved' ? '✅ 已通过' : status === 'rejected' ? '❌ 已拒绝' : '⏳ 待审核';
+  return status === 'active' || status === 'approved' ? '✅ 已通过' : status === 'rejected' ? '❌ 已拒绝' : '⏳ 待审核';
 }
 
 function applyRoleText(role) {
-  return role === 'representative' ? '负责人' : role === 'manager' ? '管理员' : '成员';
+  return role === 'external' ? '外交成员（IEM）' : role === 'representative' ? '负责人' : role === 'manager' ? '管理员' : '成员';
+}
+
+function joinMethodText(method) {
+  return method === 'external_exchange' ? '外校成员交流申请' : method === 'school_code' ? '本校成员申请（有绑定码）' : '本校成员申请加入（未有绑定码）';
 }
 
 // ====== Event Listeners ======
@@ -3899,5 +5089,24 @@ document.getElementById('tabBar').addEventListener('click', e => {
 init();
 </script>
 <script src="../js/page-background.js" data-picker="compact"></script>
+  <script>
+  (function() {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    var html = document.documentElement;
+    function updateIcon() {
+      var isDark = html.getAttribute('data-theme') === 'dark';
+      btn.querySelector('.icon-sun').style.display = isDark ? 'none' : '';
+      btn.querySelector('.icon-moon').style.display = isDark ? '' : 'none';
+    }
+    updateIcon();
+    btn.addEventListener('click', function() {
+      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('themePreference', next);
+      updateIcon();
+    });
+  })();
+  </script>
 </body>
 </html>

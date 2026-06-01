@@ -5,6 +5,7 @@
 if (!defined('ADMIN_TOKEN')) {
 
 define('ADMIN_TOKEN', 'your_secure_password_here');
+define('BOT_API_KEY', 'your_private_bot_api_key_here');
 define('DATA_PATH', __DIR__ . '/data/');
 define('SITE_URL', 'https://yourdomain.com');
 

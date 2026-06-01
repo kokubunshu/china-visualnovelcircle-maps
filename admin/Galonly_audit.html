@@ -797,7 +797,7 @@ function getClubName(clubId, country) {
 // ====== Club Name Loading ======
 async function loadClubNames() {
   try {
-    var cnResp = await fetch('../data/clubs.json?t=' + Date.now());
+    var cnResp = await fetch('../api/clubs.php?t=' + Date.now());
     var cnData = await cnResp.json();
     clubNameMapCn = {};
     (cnData.data || []).forEach(function(c) {
@@ -806,7 +806,7 @@ async function loadClubNames() {
   } catch (e) { clubNameMapCn = {}; }
 
   try {
-    var jpResp = await fetch('../data/clubs_japan.json?t=' + Date.now());
+    var jpResp = await fetch('../api/clubs_japan.php?t=' + Date.now());
     var jpData = await jpResp.json();
     clubNameMapJp = {};
     (jpData.data || []).forEach(function(c) {
@@ -983,6 +983,11 @@ function renderAppCard(app) {
     headerBadgeHtml += ' <span class="app-status-badge" style="background:rgba(156,39,176,0.15);color:#ce93d8;border:1px solid rgba(156,39,176,0.2);">重审</span>';
   }
 
+  // 已通过后被更新标记
+  if (app.has_update && app.status === 'approved') {
+    headerBadgeHtml += ' <span class="app-status-badge" style="background:rgba(255,152,0,0.15);color:#ff9800;border:1px solid rgba(255,152,0,0.2);">已更新</span>';
+  }
+
   // Border accent for resolved cards
   var cardBorderStyle = '';
   if (app.status === 'approved') {
@@ -1042,12 +1047,17 @@ function renderAppCard(app) {
   var rejectBarLabel = rejectThresholdMet ? '<span class="vote-bar-label threshold-met" style="color:#f44336;">已达门槛</span>' : ('<span class="vote-bar-label">/ ' + VOTE_THRESHOLD + '</span>');
 
   var voteActionsHtml = '';
-  if (isResolved) {
-    // Resolved — no actions needed
-    voteActionsHtml = '';
-  } else if (app.my_vote) {
+  if (app.my_vote) {
     var voteText = app.my_vote === 'approve' ? '通过' : '不通过';
-    voteActionsHtml = '<div><span class="voted-badge">你已投票 · ' + voteText + '</span></div>';
+    voteActionsHtml = '<div style="display:flex;gap:8px;align-items:center;">' +
+      '<span class="voted-badge">你已投票 · ' + voteText + '</span>' +
+      '<button class="btn-vote" onclick="withdrawVote(' + app.id + ')" ' +
+        'style="background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid var(--card-border);padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:var(--transition);" ' +
+        'onmouseover="this.style.borderColor=\'var(--accent-pink)\';this.style.color=\'var(--accent-pink)\'" ' +
+        'onmouseout="this.style.borderColor=\'\';this.style.color=\'\'">撤回投票</button>' +
+      '</div>';
+  } else if (isResolved) {
+    voteActionsHtml = '';
   } else {
     voteActionsHtml = '<div class="vote-actions">' +
       '<button class="btn-vote approve" onclick="castVote(' + app.id + ',\'approve\')">通过</button>' +
@@ -1134,6 +1144,31 @@ async function castVote(applicationId, vote) {
   } catch (e) {
     showToast('网络错误，投票失败', 'error');
     if (btn) btn.disabled = false;
+  }
+}
+
+// ====== Withdraw Vote ======
+async function withdrawVote(applicationId) {
+  if (!confirm('确定要撤回你的投票吗？')) return;
+
+  try {
+    var r = await fetch('../api/galonly.php?action=withdraw_vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ application_id: applicationId })
+    });
+    var data = await r.json();
+
+    if (!data.success) {
+      showToast(data.message || '撤回投票失败', 'error');
+      return;
+    }
+
+    showToast('已撤回投票', 'success');
+    await loadApplications();
+  } catch (e) {
+    showToast('网络错误，撤回投票失败', 'error');
   }
 }
 

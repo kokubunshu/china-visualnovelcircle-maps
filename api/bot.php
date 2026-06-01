@@ -25,6 +25,7 @@ require_once __DIR__ . '/../includes/growth.php';
 if (file_exists(__DIR__ . '/../includes/japan_prefectures.php')) {
     require_once __DIR__ . '/../includes/japan_prefectures.php';
 }
+require_once __DIR__ . '/../includes/image_proxy_helper.php';
 
 function botRespond(array $payload, int $status = 200): void {
     http_response_code($status);
@@ -411,6 +412,7 @@ function botMoeKing(int $clubId, string $country): ?array {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) return null;
         $row['character_id'] = (int)($row['character_id'] ?? 0);
+        $row['image_url'] = proxyImageUrl($row['image_url'] ?? '');
         return $row;
     } catch (Throwable $e) {
         return null;
@@ -790,30 +792,13 @@ switch ($action) {
         }
 
     case 'moe_contests':
-        $db = botDb();
-        if (!$db) botRespond(['success' => true, 'total' => 0, 'data' => []]);
-        try {
-            $where = ["visibility = 'public'", "status <> 'draft'"];
-            $params = [];
-            $country = botCountry();
-            if ($country !== 'all') {
-                $where[] = 'country = ?';
-                $params[] = $country;
-            }
-            if ($query !== '') {
-                $where[] = '(title LIKE ? OR description LIKE ?)';
-                $params[] = '%' . $query . '%';
-                $params[] = '%' . $query . '%';
-            }
-            $stmt = $db->prepare(
-                'SELECT id, club_id, country, title, description, cover_url, candidate_mode, status, visibility, eligibility_mode, result_visibility, published_at, ended_at, updated_at
-                 FROM moe_contests WHERE ' . implode(' AND ', $where) . ' ORDER BY updated_at DESC, id DESC LIMIT ' . $limit
-            );
-            $stmt->execute($params);
-            botRespond(['success' => true, 'total' => $stmt->rowCount(), 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
-        } catch (Throwable $e) {
-            botRespond(['success' => true, 'total' => 0, 'data' => []]);
-        }
+        botRespond([
+            'success' => true,
+            'total' => 0,
+            'data' => [],
+            'code' => 'MOE_REBUILDING',
+            'message' => '萌战模块正在重构，旧方案已下线，接口动作保留。',
+        ]);
 
     case 'announcements':
         $db = botDb();
@@ -909,7 +894,7 @@ switch ($action) {
                 'total_events' => count(botRows(__DIR__ . '/../data/events.json', 'events')),
                 'total_publications' => count(botRows(__DIR__ . '/../data/publications.json', 'publications')),
                 'total_wiki_pages' => count(botWikiIndex()),
-                'total_moe_contests' => botDbCount("SELECT COUNT(*) FROM moe_contests WHERE visibility = 'public' AND status <> 'draft'"),
+                'total_moe_contests' => 0,
                 'active_users' => botDbCount("SELECT COUNT(*) FROM users WHERE status = 'active'"),
                 'growth_analytics_30d' => growthAnalyticsSummary([], 30),
                 'by_country' => $byCountry,

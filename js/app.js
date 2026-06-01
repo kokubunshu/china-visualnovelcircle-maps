@@ -51,7 +51,7 @@ function getTopEls() {
   };
 }
 
-const ROLE_HIERARCHY = { visitor: 0, member: 1, manager: 2, representative: 3, super_admin: 4 };
+const ROLE_HIERARCHY = { visitor: 0, external: 0.5, member: 1, manager: 2, representative: 3, super_admin: 4 };
 
 async function checkAuth() {
     try {
@@ -61,6 +61,7 @@ async function checkAuth() {
     } catch {
         currentUser = { logged_in: false, user: null };
     }
+    window.currentUser = currentUser;
     updateUserUI();
     window.dispatchEvent(new CustomEvent('auth:updated'));
     return currentUser;
@@ -116,6 +117,7 @@ function updateUserUI() {
         if (top.badge) {
             const roleNames = {
                 visitor: __('settingsRoleVisitor'),
+                external: '外交成员（IEM）',
                 member: __('settingsRoleMember'),
                 manager: __('settingsRoleManager'),
                 representative: __('settingsRoleRep'),
@@ -123,6 +125,7 @@ function updateUserUI() {
             };
             const roleColors = {
                 visitor: { bg: 'rgba(128,128,128,0.12)', color: '#888' },
+                external: { bg: 'rgba(20,184,166,0.12)', color: '#0f766e' },
                 member: { bg: 'rgba(76,175,80,0.12)', color: '#4caf50' },
                 manager: { bg: 'rgba(33,150,243,0.12)', color: '#2196f3' },
                 representative: { bg: 'rgba(255,152,0,0.12)', color: '#ff9800' },
@@ -166,7 +169,12 @@ function updateUserUI() {
         if (top.badge) top.badge.style.display = 'none';
         // 通知铃铛（未登录时隐藏）
         var bellWrap = document.getElementById('notifBellWrap');
-        if (bellWrap) { bellWrap.style.display = 'none'; stopNotificationPolling(); }
+        if (bellWrap) {
+            bellWrap.style.display = 'none';
+            if (typeof window.stopNotificationPolling === 'function') {
+                window.stopNotificationPolling();
+            }
+        }
     }
 }
 
@@ -263,6 +271,12 @@ document.addEventListener('click', (e) => {
     if (e.target.id === 'membershipApplySubmitBtn') {
         submitMembershipApply();
     }
+});
+
+document.addEventListener('click', (e) => {
+    const tab = e.target.closest && e.target.closest('.membership-apply-tab');
+    if (!tab) return;
+    setMembershipApplyMethod(tab.dataset.joinMethod || 'school_no_code');
 });
 
 // 切换 → 注册视图
@@ -688,7 +702,7 @@ function renderCollection(type) {
         // 同时获取报名数据和活动数据
         Promise.all([
             fetch('./api/events.php?action=registrations').then(function(r) { return r.json(); }),
-            fetch('./data/events.json').then(function(r) { return r.json(); })
+            fetch('./api/events.php?action=list').then(function(r) { return r.json(); })
         ]).then(function(results) {
             var regData = results[0];
             var eventsData = results[1];
@@ -2128,6 +2142,8 @@ Object.assign(translations.zh, {
     alertKickSuccess: '已踢出成员',
     commentPlaceholder: '写下你对这个同好会的评价…',
     confirmDeleteClub: '⚠️ 确定要删除这个同好会吗？此操作不可撤销！',
+    selectPrefecturePlaceholder: '请选择都道府县',
+    listMoreClubs: '还有 {0} 个组织，点击地图查看全部',
 });
 
 Object.assign(translations.ja, {
@@ -2166,7 +2182,7 @@ Object.assign(translations.ja, {
     detailSectionExt: '外部リンク',
     detailSectionContact: '連絡先',
     detailSectionActions: 'アクション',
-    detailSectionWiki: 'サークルWiki',
+    detailSectionWiki: '同好会Wiki',
     detailContactLockedLogin: '連絡先は参加メンバーのみに公開されています。\nログイン後、同好会への参加申請を送ってください。',
     detailContactLocked: '連絡先は参加メンバーのみに公開されています。',
     detailContactPending: '⏳ 参加申請を送信済みです。管理者の承認をお待ちください。',
@@ -2262,6 +2278,8 @@ Object.assign(translations.ja, {
     alertKickSuccess: 'メンバーを退会させました',
     commentPlaceholder: 'この同好会へのコメントを書いてください…',
     confirmDeleteClub: '⚠️ この同好会を削除しますか？この操作は取り消せません。',
+    selectPrefecturePlaceholder: '都道府県を選択',
+    listMoreClubs: 'ほか {0} 件があります。地図をクリックするとすべて表示されます',
 });
 
 let currentLang = 'zh';
@@ -2278,6 +2296,46 @@ function __(key, ...args) {
         args.forEach((arg, i) => { val = val.replace(new RegExp('\\{' + i + '\\}', 'g'), arg); });
     }
     return val;
+}
+
+function normalizeJapanPrefectureName(value) {
+    return Utils.normalizeJapanPrefecture ? Utils.normalizeJapanPrefecture(value) : String(value || '').trim();
+}
+
+function formatJapanPrefectureName(value, lang = currentLang) {
+    return Utils.formatJapanPrefecture ? Utils.formatJapanPrefecture(value, lang) : String(value || '').trim();
+}
+
+function getJapanPrefectureNameById(id) {
+    const item = Utils.getJapanPrefectureById ? Utils.getJapanPrefectureById(id) : null;
+    return item ? item.jaName : '';
+}
+
+function getJapanPrefectureDisplayById(id) {
+    const item = Utils.getJapanPrefectureById ? Utils.getJapanPrefectureById(id) : null;
+    if (!item) return id || '';
+    return currentLang === 'ja' ? item.jaName : item.zhName;
+}
+
+function renderJapanPrefectureSelect(selectEl, selectedValue = '') {
+    if (!selectEl || !Array.isArray(window.JAPAN_PREFECTURES)) return;
+    const selectedKey = normalizeJapanPrefectureName(selectedValue);
+    const groups = new Map();
+    window.JAPAN_PREFECTURES.forEach((item) => {
+        const regionLabel = currentLang === 'ja' ? item.regionJa : item.regionZh;
+        if (!groups.has(regionLabel)) groups.set(regionLabel, []);
+        groups.get(regionLabel).push(item);
+    });
+    selectEl.innerHTML = '<option value="">' + __('selectPrefecturePlaceholder') + '</option>' +
+        Array.from(groups.entries()).map(([region, items]) =>
+            '<optgroup label="' + Utils.escapeHTML(region) + '">' +
+            items.map((item) => {
+                const selected = item.jaName === selectedKey ? ' selected' : '';
+                const label = currentLang === 'ja' ? item.jaName : item.zhName;
+                return '<option value="' + Utils.escapeHTML(item.jaName) + '"' + selected + '>' + Utils.escapeHTML(label) + '</option>';
+            }).join('') +
+            '</optgroup>'
+        ).join('');
 }
 
 // 平台图标映射
@@ -2373,13 +2431,17 @@ function updateUILanguage() {
             selectedProvince.textContent = match[0] + ' ' + t.clubCount;
         }
     }
+
+    const editPrefecture = document.getElementById('editPrefecture');
+    if (editPrefecture) renderJapanPrefectureSelect(editPrefecture, editPrefecture.value);
     
     const submitClubBtn = document.getElementById('submitClubBtn');
     const submitEventBtn = document.getElementById('submitEventBtn');
     if (submitClubBtn) submitClubBtn.innerHTML = `📝 ${t.submitClub}`;
-    if (submitEventBtn) submitEventBtn.innerHTML = `📅 ${t.submitEvent}`;
+    if (submitEventBtn) submitEventBtn.innerHTML = '企划枢纽';
     const submitPublicationBtn = document.getElementById('submitPublicationBtn');
-    if (submitPublicationBtn) submitPublicationBtn.innerHTML = `📖 ${t.submitPublication}`;
+    if (submitPublicationBtn) submitPublicationBtn.innerHTML = '企划枢纽';
+    if (submitPublicationBtn) submitPublicationBtn.style.display = 'none';
     setTextById('topLoginBtn', __('topLogin'));
     setTextById('topAccountBtn', __('topAccount'));
     setTextById('topAdminBtn', __('topAdmin'));
@@ -2425,10 +2487,10 @@ function updateUILanguage() {
     document.documentElement.lang = currentLang === 'ja' ? 'ja' : 'zh-CN';
 
     // 更新导航按钮
-    const navKeyMap = { china: 'chinaBtn', japan: 'japanBtn', overseas: 'otherBtn', calendar: 'calendarBtn', publication: 'publicationBtn' };
+    const navKeyMap = { china: 'chinaBtn', japan: 'japanBtn', overseas: 'otherBtn', calendar: 'calendarBtn', publication: 'publicationBtn', 'project-hub': 'projectHubBtn' };
     document.querySelectorAll('.user-nav-btn').forEach(btn => {
         const key = navKeyMap[btn.dataset.action];
-        if (key) btn.textContent = t[key];
+        if (key) btn.textContent = key === 'projectHubBtn' ? '企划枢纽' : t[key];
     });
 
     // 更新抽屉面板文本
@@ -2442,12 +2504,17 @@ function updateUILanguage() {
         const el = document.getElementById(id);
         if (el) el.textContent = '📝 ' + t[id.replace('BtnDrawer', '').replace('submit', 'submit')];
     });
+    setTextById('submitEventBtnDrawer', '企划枢纽');
+    setTextById('submitPublicationBtnDrawer', '企划枢纽');
+    const drawerPublication = document.getElementById('submitPublicationBtnDrawer');
+    if (drawerPublication) drawerPublication.style.display = 'none';
 
     updateListModeLanguage();
 
     // 更新排序按钮文字和详情面板
     updateSortButtonView();
     renderCurrentDetail();
+    if (document.querySelector('.province')) bindMapTooltip();
 }
 
 function setTextById(id, value) {
@@ -2483,8 +2550,10 @@ function updateListModeLanguage() {
     if (listSwitchLabels[0]) listSwitchLabels[0].textContent = __('listInvertCtrl');
     if (listSwitchLabels[1]) listSwitchLabels[1].textContent = __('listThemeSwitch');
     setTextById('listSubmitClubBtn', '📝 ' + __('listSubmitClub'));
-    setTextById('listSubmitEventBtn', '📅 ' + __('listSubmitEvent'));
-    setTextById('listSubmitPublicationBtn', '📖 ' + __('listSubmitPublication'));
+    setTextById('listSubmitEventBtn', '企划枢纽');
+    setTextById('listSubmitPublicationBtn', '企划枢纽');
+    const listPublication = document.getElementById('listSubmitPublicationBtn');
+    if (listPublication) listPublication.style.display = 'none';
     setTextById('listSubmitGalonlyBtn', __('listGalonly'));
     const listOpenSource = document.querySelector('.list-intro-links .submit-btn[href*="github"]');
     if (listOpenSource) listOpenSource.textContent = '📦 ' + __('listOpenSource');
@@ -2677,6 +2746,14 @@ function bindMobileSheetResize() {
 
 function setGlobalSearchEnabled(enabled, options = { resetToDefault: false }) {
     State.globalSearchEnabled = !!enabled;
+
+    // 搜索时自动展开面板
+    if (State.globalSearchEnabled) {
+        var panel = document.getElementById('selectedCard');
+        if (panel && panel.classList.contains('collapsed')) {
+            panel.classList.remove('collapsed');
+        }
+    }
     const btn = document.getElementById('globalSearchBtn');
     
     if (btn) {
@@ -2809,7 +2886,10 @@ function canManageClub(clubId, country) {
 function isClubMember(clubId, country) {
   if (!currentUser?.logged_in || !currentUser?.memberships) return false;
   return currentUser.memberships.some(m =>
-    parseInt(m.club_id) === parseInt(clubId) && (country ? (m.country || 'china') === country : true) && m.status === 'active'
+    parseInt(m.club_id) === parseInt(clubId) &&
+    (country ? (m.country || 'china') === country : true) &&
+    m.status === 'active' &&
+    m.role !== 'external'
   );
 }
 
@@ -2847,6 +2927,78 @@ function renderExternalLinks(externalLinksStr) {
 }
 
 // ===== 地图/列表模式切换 =====
+function isMobileListLayout() {
+  return window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+}
+
+function setDefaultListRegionNav() {
+  State.listRegionFilter = 'china';
+  document.querySelectorAll('.list-nav-row .user-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.list-nav-row .user-nav-btn[data-action="china"]')?.classList.add('active');
+}
+
+function clearListViewInlineMotion() {
+  [
+    document.querySelector('.list-left'),
+    document.querySelector('.list-center'),
+    document.getElementById('clubGrid'),
+    document.getElementById('listToolbar')
+  ].forEach(el => {
+    if (!el) return;
+    el.style.transition = '';
+    el.style.transform = '';
+    el.style.opacity = '';
+  });
+}
+
+function enterMobileListView() {
+  const mapSvg = document.getElementById('mapSvg');
+  const card = document.getElementById('selectedCard');
+  const listView = document.getElementById('listModeView');
+  const userInfo = document.getElementById('userInfoCard');
+  const intro = document.getElementById('introCard');
+  if (!listView) return;
+
+  document.documentElement.classList.add('list-mode-active', 'mobile-list-mode-active');
+  listView.style.display = 'block';
+  clearListViewInlineMotion();
+  setDefaultListRegionNav();
+  renderListView();
+  document.querySelectorAll('.club-card').forEach(cardEl => cardEl.classList.add('visible'));
+
+  if (mapSvg) { mapSvg.style.transition = 'none'; mapSvg.style.opacity = '0'; }
+  if (card) {
+    card.style.transition = 'none';
+    card.style.opacity = '0';
+    card.style.transform = 'none';
+    card.style.pointerEvents = 'none';
+  }
+  if (userInfo) { userInfo.style.setProperty('opacity', '0', 'important'); userInfo.classList.remove('view-list'); }
+  if (intro) { intro.style.setProperty('opacity', '0', 'important'); }
+}
+
+function exitMobileListView() {
+  const mapSvg = document.getElementById('mapSvg');
+  const card = document.getElementById('selectedCard');
+  const listView = document.getElementById('listModeView');
+  const userInfo = document.getElementById('userInfoCard');
+  const intro = document.getElementById('introCard');
+  if (!listView) return;
+
+  document.documentElement.classList.remove('list-mode-active', 'mobile-list-mode-active');
+  listView.style.display = 'none';
+  clearListViewInlineMotion();
+  if (mapSvg) { mapSvg.style.transition = ''; mapSvg.style.opacity = '1'; }
+  if (card) {
+    card.style.transition = '';
+    card.style.opacity = '1';
+    card.style.transform = '';
+    card.style.pointerEvents = '';
+  }
+  if (userInfo) { userInfo.style.removeProperty('opacity'); userInfo.classList.remove('view-list'); }
+  if (intro) { intro.style.removeProperty('opacity'); }
+}
+
 function switchViewMode(mode) {
   if (mode === 'starmap') {
     window.location.href = './star_map.html';
@@ -2869,6 +3021,11 @@ function switchViewMode(mode) {
 }
 
 function animateToListView() {
+  if (isMobileListLayout()) {
+    enterMobileListView();
+    return;
+  }
+
   const mapSvg = document.getElementById('mapSvg');
   const card = document.getElementById('selectedCard');
   const listView = document.getElementById('listModeView');
@@ -2913,7 +3070,7 @@ function animateToListView() {
     document.documentElement.classList.add('list-mode-active');
     listView.style.display = 'block';
     // 进入列表模式时默认显示中国同好会
-    State.listRegionFilter = 'china';
+    setDefaultListRegionNav();
     renderListView();
     // 激活「中国同好会」导航按钮
     document.querySelectorAll('.list-nav-row .user-nav-btn').forEach(b => b.classList.remove('active'));
@@ -2960,6 +3117,11 @@ function animateToListView() {
 }
 
 function animateToMapView() {
+  if (isMobileListLayout()) {
+    exitMobileListView();
+    return;
+  }
+
   const mapSvg = document.getElementById('mapSvg');
   const card = document.getElementById('selectedCard');
   const listView = document.getElementById('listModeView');
@@ -3162,7 +3324,7 @@ function bindListModeControls() {
   });
 
   // 列表模式导航按钮（区域筛选）
-  document.querySelectorAll('.list-nav-row .user-nav-btn').forEach(function(btn) {
+  document.querySelectorAll('.list-nav-row .user-nav-btn, .list-secondary-actions .user-nav-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       e.preventDefault();
@@ -3182,16 +3344,10 @@ function bindListModeControls() {
           document.getElementById('calendarModal')?.setAttribute('aria-hidden', 'false');
           return; // 不重新渲染
         case 'publication':
-          (function() {
-            var pubModal = document.getElementById('publicationModal');
-            if (pubModal) {
-              if (typeof renderPublicationList === 'function') renderPublicationList();
-              var addBtn = document.getElementById('addPublicationBtn');
-              if (addBtn) addBtn.style.display = hasRole('manager') ? 'flex' : 'none';
-              pubModal.classList.add('open');
-              pubModal.setAttribute('aria-hidden', 'false');
-            }
-          })();
+        case 'project-hub':
+          if (typeof window.openHubModal === 'function') {
+            window.openHubModal();
+          }
           return; // 不重新渲染
       }
       // 更新按钮激活样式
@@ -3260,6 +3416,7 @@ function addClubToProvinceMap(map, item) {
 }
 
 const LIST_ALL_REGION_KEY = '__all_regions__';
+let listRenderToken = 0;
 
 function renderListView() {
   const provinceIndexList = document.getElementById('provinceIndexList');
@@ -3294,7 +3451,9 @@ function renderListView() {
   // 构建省份/都道府县索引（统一去掉"省""市"后缀防重复）
   const provinces = new Map();
   allClubs.forEach(club => {
-    const names = japanSet.has(club) ? [normalizeProvince(club.prefecture || club.province || __('japanBtn'))] : getClubProvinceNames(club);
+    const names = japanSet.has(club)
+      ? [normalizeJapanPrefectureName(club.prefecture || club.province || __('japanBtn'))]
+      : getClubProvinceNames(club);
     (names.length ? names : [__('listUnknownProvince')]).forEach(function(p) {
       if (!provinces.has(p)) provinces.set(p, []);
       provinces.get(p).push(club);
@@ -3302,6 +3461,7 @@ function renderListView() {
   });
 
   provinces.set(LIST_ALL_REGION_KEY, allClubs);
+  State.listProvincesCache = provinces;
   const sortedProvinces = [
     [LIST_ALL_REGION_KEY, allClubs],
     ...Array.from(provinces.entries())
@@ -3309,7 +3469,9 @@ function renderListView() {
       .sort((a, b) => b[1].length - a[1].length)
   ];
 
-  const getProvinceLabel = (province) => province === LIST_ALL_REGION_KEY ? __('listAllRegions') : province;
+  const getProvinceLabel = (province) => province === LIST_ALL_REGION_KEY
+    ? __('listAllRegions')
+    : formatJapanPrefectureName(province);
 
   // 渲染省份索引
   provinceIndexList.innerHTML = sortedProvinces.map(([province, rows]) =>
@@ -3352,22 +3514,25 @@ function renderListView() {
   const typeFilter = document.getElementById('listTypeFilter');
   const sortSelect = document.getElementById('listSortSelect');
 
-  if (searchInput) {
+  if (searchInput && searchInput.dataset.listBound !== '1') {
+    searchInput.dataset.listBound = '1';
     searchInput.addEventListener('input', Utils.debounce(() => {
       State.listQuery = searchInput.value;
-      refilterCards(provinces);
+      refilterCards(State.listProvincesCache || provinces);
     }, 300));
   }
-  if (typeFilter) {
+  if (typeFilter && typeFilter.dataset.listBound !== '1') {
+    typeFilter.dataset.listBound = '1';
     typeFilter.addEventListener('change', () => {
       State.listType = typeFilter.value;
-      refilterCards(provinces);
+      refilterCards(State.listProvincesCache || provinces);
     });
   }
-  if (sortSelect) {
+  if (sortSelect && sortSelect.dataset.listBound !== '1') {
+    sortSelect.dataset.listBound = '1';
     sortSelect.addEventListener('change', () => {
       State.listSort = sortSelect.value;
-      refilterCards(provinces);
+      refilterCards(State.listProvincesCache || provinces);
     });
   }
 }
@@ -3377,16 +3542,17 @@ function renderClubCards(rows) {
   if (!grid) return;
 
   const filtered = getFilteredSortedRows(rows);
+  const token = ++listRenderToken;
 
   if (!filtered.length) {
     grid.innerHTML = '<div class="list-empty-state">' + __('listEmptyFilter') + '</div>';
     return;
   }
 
-  grid.innerHTML = filtered.map((item, index) => {
+  const renderCard = (item, index) => {
     const name = Utils.escapeHTML(item.name || __('listNoName'));
     const type = Utils.escapeHTML(Utils.groupTypeText(item.type));
-    const province = Utils.escapeHTML(isJapanClub(item) ? normalizeProvince(item.prefecture || item.province || '') : getClubProvinceLabel(item));
+    const province = Utils.escapeHTML(isJapanClub(item) ? formatJapanPrefectureName(item.prefecture || item.province || '') : getClubProvinceLabel(item));
     const contactInfo = Utils.escapeHTML(item.info || '');
     const schoolInfo = Utils.escapeHTML(item.school || item.remark || __('listNoRemark'));
     const verified = item.verified;
@@ -3401,7 +3567,7 @@ function renderClubCards(rows) {
       : initial;
 
     return `
-      <article class="club-card" style="transition-delay:${index * 30}ms" data-index="${index}">
+      <article class="club-card visible" data-index="${index}">
         <div class="club-card-top">
           <div class="club-card-avatar" style="background: hsl(${hue}, 48%, 46%);">
             ${avatarHtml}
@@ -3428,18 +3594,31 @@ function renderClubCards(rows) {
         </div>
       </article>
     `;
-  }).join('');
+  };
+
+  const batchSize = window.innerWidth <= 700 ? 36 : 72;
+  let rendered = Math.min(batchSize, filtered.length);
+  grid.innerHTML = filtered.slice(0, rendered).map(renderCard).join('');
+
+  function appendBatch() {
+    if (token !== listRenderToken || rendered >= filtered.length) return;
+    const next = Math.min(rendered + batchSize, filtered.length);
+    grid.insertAdjacentHTML('beforeend', filtered.slice(rendered, next).map((item, i) => renderCard(item, rendered + i)).join(''));
+    rendered = next;
+    if (rendered < filtered.length) scheduleIdleTask(appendBatch, 120);
+  }
+  if (rendered < filtered.length) scheduleIdleTask(appendBatch, 120);
 
   // 点击卡片 - 在列表模式下直接打开详情弹窗
-  grid.querySelectorAll('.club-card').forEach((el, i) => {
-    el.addEventListener('click', () => {
-      const clubData = filtered[i];
-      if (!clubData) return;
-      if (typeof showClubDetail === 'function') {
-        showClubDetail(clubData);
-      }
-    });
-  });
+  grid.onclick = function(event) {
+    const card = event.target.closest('.club-card');
+    if (!card || !grid.contains(card)) return;
+    const clubData = filtered[Number(card.dataset.index)];
+    if (!clubData) return;
+    if (typeof showClubDetail === 'function') {
+      showClubDetail(clubData);
+    }
+  };
 }
 
 function refilterCards(provinces) {
@@ -3672,7 +3851,7 @@ function showClubDetail(club) {
   const rawType = club.rawType || club.type;
   const typeLabel = rawType === 'region' ? __('detailTypeRegion') : rawType === 'vnfest' ? __('detailTypeVnfest') : __('detailTypeSchool');
   const provinceLabel = club.country === 'japan'
-    ? (club.prefecture || club.province || __('detailUnfilled'))
+    ? (formatJapanPrefectureName(club.prefecture || club.province || '') || __('detailUnfilled'))
     : (getClubProvinceLabel(club) || __('detailUnfilled'));
   const headerHtml = `
     <div class="club-detail-header">
@@ -3876,6 +4055,7 @@ function showClubDetail(club) {
 
   // ========== 右栏：神器推荐榜 + 留言板 ==========
   const recContainerId = 'recContainer_' + clubId;
+  const moeKingContainerId = 'moeKingContainer_' + clubId;
   const commentContainerId = 'commentContainer_' + clubId;
   const rightHtml = `
     <div class="club-detail-right">
@@ -3884,6 +4064,12 @@ function showClubDetail(club) {
         <div class="club-detail-section-title">⭐ 神器推荐榜</div>
         <div id="${recContainerId}">
           <div class="rec-empty" style="border:none;background:transparent;">⏳ 加载中...</div>
+        </div>
+      </div>
+      <div class="club-moe-king-section">
+        <div class="club-detail-section-title">萌王</div>
+        <div id="${moeKingContainerId}">
+          <div class="rec-empty" style="border:none;background:transparent;">加载中...</div>
         </div>
       </div>
       <!-- 💬 留言板 -->
@@ -3940,6 +4126,33 @@ function showClubDetail(club) {
       if (container) container.innerHTML = '<div class="rec-empty">加载失败</div>';
     }
   })(recContainerId);
+
+  (async (containerId) => {
+    try {
+      const resp = await fetch(`api/club_moe_king.php?action=get&club_id=${clubId}&country=${clubCountry}`);
+      const data = await resp.json();
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const item = data.success ? data.data : null;
+      if (!item) {
+        container.innerHTML = '<div class="rec-empty">暂无萌王</div>';
+        return;
+      }
+      const title = item.name_cn || item.name || ('角色 #' + item.character_id);
+      container.innerHTML =
+        '<div class="moe-king-card">' +
+          (item.image_url ? '<img src="' + esc(item.image_url) + '" alt="' + esc(title) + '" loading="lazy">' : '<div class="moe-king-avatar">王</div>') +
+          '<div class="moe-king-info">' +
+            '<div class="moe-king-label">本同好会萌王</div>' +
+            '<div class="moe-king-name">' + esc(title) + '</div>' +
+            (item.summary ? '<div class="moe-king-summary">' + esc(item.summary) + '</div>' : '') +
+          '</div>' +
+        '</div>';
+    } catch (e) {
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = '<div class="rec-empty">加载失败</div>';
+    }
+  })(moeKingContainerId);
 
   // ——— 异步加载留言板 ———
   (async function loadComments(containerId) {
@@ -4138,17 +4351,45 @@ function showClubDetail(club) {
 }
 
 // ====== 同好会绑定申请弹窗 ======
+function setMembershipApplyMethod(method) {
+  const activeMethod = method || 'school_no_code';
+  document.querySelectorAll('.membership-apply-tab').forEach(function(tab) {
+    tab.classList.toggle('active', tab.dataset.joinMethod === activeMethod);
+  });
+  const isCode = activeMethod === 'school_code';
+  const isExternal = activeMethod === 'external_exchange';
+  const qqWrap = document.getElementById('applyQQ')?.closest('div');
+  const roleWrap = document.getElementById('applyRole')?.closest('div');
+  const studentWrap = document.getElementById('applyIsStudent')?.closest('div');
+  if (qqWrap) qqWrap.hidden = isCode || isExternal;
+  if (roleWrap) roleWrap.hidden = isCode || isExternal;
+  if (studentWrap) studentWrap.hidden = true;
+  document.querySelectorAll('.membership-apply-extra').forEach(function(panel) {
+    panel.hidden = panel.dataset.joinPanel !== activeMethod;
+  });
+  const btn = document.getElementById('membershipApplySubmitBtn');
+  if (btn) btn.textContent = isCode ? '验证并加入' : '提交申请';
+  const msg = document.getElementById('membershipApplyMessage');
+  if (msg) msg.textContent = '';
+}
+
 function openMembershipApplyModal(club) {
   const modal = document.getElementById('membershipApplyModal');
   if (!modal) return;
   document.getElementById('membershipApplyClubName').textContent = club.name || __('listNoName');
-  document.getElementById('applyQQ').value = '';
-  document.getElementById('applyRole').value = 'member';
-  document.getElementById('applyIsStudent').checked = true;
+  if (document.getElementById('applyQQ')) document.getElementById('applyQQ').value = '';
+  if (document.getElementById('applyRole')) document.getElementById('applyRole').value = 'member';
+  if (document.getElementById('applyIsStudent')) document.getElementById('applyIsStudent').checked = true;
+  ['applyBindCode','applyExternalClub','applyExternalRole','applyExternalContact','applyExternalReason'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   const msg = document.getElementById('membershipApplyMessage');
   if (msg) msg.textContent = '';
   modal._clubId = club.id;
   modal._country = club.country || 'china';
+  modal._joinMethod = 'school_no_code';
+  setMembershipApplyMethod('school_no_code');
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
 }
@@ -4168,25 +4409,70 @@ async function submitMembershipApply() {
 
   const clubId = modal._clubId;
   const country = modal._country || 'china';
+  const method = document.querySelector('.membership-apply-tab.active')?.dataset.joinMethod || modal._joinMethod || 'school_no_code';
   const qqAccount = document.getElementById('applyQQ')?.value.trim() || '';
   const applyRole = document.getElementById('applyRole')?.value || 'member';
-  const isStudent = document.getElementById('applyIsStudent')?.checked ? 1 : 0;
+  const isStudent = 1;
 
   btn.disabled = true;
-  btn.textContent = '提交中...';
+  btn.textContent = method === 'school_code' ? '验证中...' : '提交中...';
   msg.textContent = '';
 
   try {
+    if (method === 'school_code') {
+      const code = document.getElementById('applyBindCode')?.value.trim().toUpperCase() || '';
+      if (!code) {
+        msg.innerHTML = '请输入绑定码';
+        btn.disabled = false;
+        btn.textContent = '验证并加入';
+        return;
+      }
+      const redeemResp = await fetch('./api/club_codes.php?action=redeem', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code })
+      });
+      const redeemResult = await redeemResp.json();
+      if (redeemResult.success) {
+        msg.innerHTML = '已加入同好会';
+        btn.textContent = '已完成';
+        await checkAuth();
+        setTimeout(() => {
+          closeMembershipApplyModal();
+          btn.disabled = false;
+          btn.textContent = '提交申请';
+        }, 1200);
+      } else {
+        msg.innerHTML = redeemResult.message || '绑定码验证失败';
+        btn.disabled = false;
+        btn.textContent = '验证并加入';
+      }
+      return;
+    }
+
+    const payload = {
+      club_id: clubId,
+      country: country,
+      join_method: method,
+      qq_account: qqAccount,
+      contact_account: qqAccount,
+      apply_role: applyRole,
+      is_student: isStudent
+    };
+    if (method === 'external_exchange') {
+      payload.apply_role = 'external';
+      payload.role = 'external';
+      payload.contact_account = document.getElementById('applyExternalContact')?.value.trim() || '';
+      payload.qq_account = payload.contact_account;
+      payload.external_club_name = document.getElementById('applyExternalClub')?.value.trim() || '';
+      payload.external_club_role = document.getElementById('applyExternalRole')?.value.trim() || '';
+      payload.apply_reason = document.getElementById('applyExternalReason')?.value.trim() || '';
+    }
+
     const resp = await fetch('./api/membership.php?action=apply', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        club_id: clubId,
-        country: country,
-        qq_account: qqAccount,
-        apply_role: applyRole,
-        is_student: isStudent
-      })
+      body: JSON.stringify(payload)
     });
     const result = await resp.json();
     if (result.success) {
@@ -4200,12 +4486,12 @@ async function submitMembershipApply() {
     } else {
       msg.innerHTML = '❌ ' + (result.message || '申请失败');
       btn.disabled = false;
-      btn.textContent = '提交申请';
+      btn.textContent = method === 'school_code' ? '验证并加入' : '提交申请';
     }
   } catch {
     msg.innerHTML = '❌ 网络错误，请重试';
     btn.disabled = false;
-    btn.textContent = '提交申请';
+    btn.textContent = method === 'school_code' ? '验证并加入' : '提交申请';
   }
 }
 
@@ -4248,6 +4534,7 @@ function renderCurrentDetail() {
     // 如果数据为空，显示提示
     if (!sourceRows.length && !State.globalSearchEnabled) {
         let provinceName = State.currentDetailProvinceName || (State.currentCountry === 'japan' ? __('countryJapan') : State.currentCountry === 'overseas' ? __('countryOverseas') : __('countryNotSelected'));
+        if (State.currentCountry === 'japan') provinceName = formatJapanPrefectureName(provinceName);
         if (provinceName === '国内同好会') provinceName = __('domesticClubs');
         if (provinceName === '日本') provinceName = __('countryJapan');
         if (provinceName === '海外') provinceName = __('countryOverseas');
@@ -4265,7 +4552,9 @@ function renderCurrentDetail() {
     const regionCount = filtered.filter(x => x.type === 'region').length;
     const vnfestCount = filtered.filter(x => x.type === 'vnfest').length;
     
-    let displayTitle = State.currentDetailProvinceName;
+    let displayTitle = State.currentCountry === 'japan'
+      ? formatJapanPrefectureName(State.currentDetailProvinceName)
+      : State.currentDetailProvinceName;
     if (displayTitle === '非地区' || displayTitle === '国内同好会') displayTitle = __('domesticClubs');
     if (displayTitle === '日本') displayTitle = __('countryJapan');
     if (displayTitle === '海外') displayTitle = __('countryOverseas');
@@ -4353,7 +4642,7 @@ function renderGroupListWithLocation(rows) {
         const verifyMeta = Utils.escapeHTML(item.verified ? __('listVerified') : __('listUnverified')) + __('listEstablished') + Utils.escapeHTML(Utils.formatCreatedAt(item.created_at));
 
         // 地区显示
-        let locationText = isJapan ? (item.prefecture || item.province || '') : getClubProvinceLabel(item);
+        let locationText = isJapan ? formatJapanPrefectureName(item.prefecture || item.province || '') : getClubProvinceLabel(item);
 
         const clubData = encodeURIComponent(JSON.stringify({
             id: item.id,
@@ -4444,13 +4733,20 @@ function renderGroupListWithLocation(rows) {
 
 function showProvinceDetails(provinceName) {
     console.log('点击省份:', provinceName, '当前国家:', State.currentCountry);
+
+    // 收起面板时点击省份自动展开
+    var panel = document.getElementById('selectedCard');
+    if (panel && panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+    }
     
     const key = Utils.normalizeProvinceName(provinceName);
-    State.currentDetailProvinceName = provinceName;
+    const japanKey = normalizeJapanPrefectureName(provinceName);
+    State.currentDetailProvinceName = State.currentCountry === 'japan' ? japanKey : provinceName;
     
     // 🔥 关键：根据当前国家获取正确的数据
     if (State.currentCountry === 'japan') {
-        State.currentDetailRows = State.japanGroupsMap.get(provinceName) || [];
+        State.currentDetailRows = State.japanGroupsMap.get(japanKey) || [];
     } else {
         if (provinceName === '国内同好会') {
             State.currentDetailRows = State.provinceGroupsMap.get('__non_regional__') || [];
@@ -4789,55 +5085,9 @@ function renderJapanMap() {
   const japanWidth = Math.max(w, 1200);
   const japanHeight = Math.max(h, 1100);
 
-const japanNameMap = {
-    'JP-01': '北海道',      // 保持不变（汉字相同）
-    'JP-02': '青森県',      // 青森县 → 青森県
-    'JP-03': '岩手県',      // 岩手县 → 岩手県
-    'JP-04': '宮城県',      // 宫城县 → 宮城県
-    'JP-05': '秋田県',      // 秋田县 → 秋田県
-    'JP-06': '山形県',      // 山形县 → 山形県
-    'JP-07': '福島県',      // 福岛县 → 福島県
-    'JP-08': '茨城県',      // 茨城县 → 茨城県
-    'JP-09': '栃木県',      // 栃木县 → 栃木県
-    'JP-10': '群馬県',      // 群马县 → 群馬県
-    'JP-11': '埼玉県',      // 埼玉县 → 埼玉県
-    'JP-12': '千葉県',      // 千叶县 → 千葉県
-    'JP-13': '東京都',      // 东京都 → 東京都
-    'JP-14': '神奈川県',    // 神奈川县 → 神奈川県
-    'JP-15': '新潟県',      // 新潟县 → 新潟県
-    'JP-16': '富山県',      // 富山县 → 富山県
-    'JP-17': '石川県',      // 石川县 → 石川県
-    'JP-18': '福井県',      // 福井县 → 福井県
-    'JP-19': '山梨県',      // 山梨县 → 山梨県
-    'JP-20': '長野県',      // 长野县 → 長野県
-    'JP-21': '岐阜県',      // 岐阜县 → 岐阜県
-    'JP-22': '静岡県',      // 静冈县 → 静岡県
-    'JP-23': '愛知県',      // 爱知县 → 愛知県
-    'JP-24': '三重県',      // 三重县 → 三重県
-    'JP-25': '滋賀県',      // 滋贺县 → 滋賀県
-    'JP-26': '京都府',      // 京都府 → 京都府
-    'JP-27': '大阪府',      // 大阪府 → 大阪府
-    'JP-28': '兵庫県',      // 兵库县 → 兵庫県
-    'JP-29': '奈良県',      // 奈良县 → 奈良県
-    'JP-30': '和歌山県',    // 和歌山县 → 和歌山県
-    'JP-31': '鳥取県',      // 鸟取县 → 鳥取県
-    'JP-32': '島根県',      // 岛根县 → 島根県
-    'JP-33': '岡山県',      // 冈山县 → 岡山県
-    'JP-34': '広島県',      // 广岛县 → 広島県
-    'JP-35': '山口県',      // 山口县 → 山口県
-    'JP-36': '徳島県',      // 德岛县 → 徳島県
-    'JP-37': '香川県',      // 香川县 → 香川県
-    'JP-38': '愛媛県',      // 爱媛县 → 愛媛県
-    'JP-39': '高知県',      // 高知县 → 高知県
-    'JP-40': '福岡県',      // 福冈县 → 福岡県
-    'JP-41': '佐賀県',      // 佐贺县 → 佐賀県
-    'JP-42': '長崎県',      // 长崎县 → 長崎県
-    'JP-43': '熊本県',      // 熊本县 → 熊本県
-    'JP-44': '大分県',      // 大分县 → 大分県
-    'JP-45': '宮崎県',      // 宫崎县 → 宮崎県
-    'JP-46': '鹿児島県',    // 鹿儿岛县 → 鹿児島県
-    'JP-47': '沖縄県'       // 冲绳县 → 沖縄県
-};
+const japanNameMap = Object.fromEntries(
+  (window.JAPAN_PREFECTURES || []).map((item) => [item.id, item.jaName])
+);
 
   japan().width(japanWidth).height(japanHeight).scale(1).language('cn')
     .colorDefault('#ffdce9')
@@ -4987,15 +5237,17 @@ const japanNameMap = {
 
 // 显示日本县详情（已经有动画，保持原样）
 function showJapanProvinceDetails(prefectureName) {
-    const rows = State.japanGroupsMap.get(prefectureName) || [];
-    State.currentDetailProvinceName = prefectureName;
+    const prefectureKey = normalizeJapanPrefectureName(prefectureName);
+    const prefectureLabel = formatJapanPrefectureName(prefectureKey);
+    const rows = State.japanGroupsMap.get(prefectureKey) || [];
+    State.currentDetailProvinceName = prefectureKey;
     
     // 已有动画，保持不变
     animateSelectedCardUpdate(() => {
         State.currentDetailRows = rows;
-        document.getElementById('selectedTitle').textContent = __('renderTitleDetail', prefectureName);
+        document.getElementById('selectedTitle').textContent = __('renderTitleDetail', prefectureLabel);
         document.getElementById('selectedProvince').textContent = `${rows.length} ` + __('clubCount');
-        document.getElementById('selectedMeta').textContent = __('countryJapan') + ' · ' + prefectureName;
+        document.getElementById('selectedMeta').textContent = __('countryJapan') + ' · ' + prefectureLabel;
         if (rows.length) {
             renderGroupList(getFilteredSortedRows(rows));
         } else {
@@ -5009,7 +5261,9 @@ function showJapanMapBubble(provinceName, anchorX, anchorY) {
   const bubble = document.getElementById('badgeBubble');
   if (!bubble) return;
 
-  const rows = State.japanGroupsMap.get(provinceName) || [];
+  const provinceKey = normalizeJapanPrefectureName(provinceName);
+  const provinceLabel = formatJapanPrefectureName(provinceKey);
+  const rows = State.japanGroupsMap.get(provinceKey) || [];
   if (!rows.length) return hideMapBubble();
 
   State.bubbleAnimToken++;
@@ -5026,7 +5280,7 @@ function showJapanMapBubble(provinceName, anchorX, anchorY) {
 
   bubble.innerHTML = `
     <div class="map-bubble-scroll">
-      <h3 class="map-bubble-title">${Utils.escapeHTML(provinceName)} · ${rows.length} ${__('clubCount')}</h3>
+      <h3 class="map-bubble-title">${Utils.escapeHTML(provinceLabel)} · ${rows.length} ${__('clubCount')}</h3>
       ${rows.slice(0, 12).map(item => `
         <article class="map-bubble-item" data-club='${encodeURIComponent(JSON.stringify({
           id: item.id,
@@ -5037,22 +5291,22 @@ function showJapanMapBubble(provinceName, anchorX, anchorY) {
           canApply: item.can_apply === true,
           detectedUrl: '',
           type: item.type,
-          province: provinceName,
-          prefecture: item.prefecture || provinceName,
+          province: provinceLabel,
+          prefecture: item.prefecture || provinceKey,
           school: item.school || '',
           remark: item.remark || __('listNoRemark'),
-          verifyMeta: (item.verified ? '已登记' : '未登记') + ' · 成立时间：' + Utils.formatCreatedAt(item.created_at),
+          verifyMeta: (item.verified ? __('listVerified') : __('listUnverified')) + ' · ' + __('detailEstablished') + '：' + Utils.formatCreatedAt(item.created_at),
           country: 'japan', logo_url: item.logo_url || '', external_links: item.external_links || ''
         }))}'>
           <div class="bubble-name-wrap"><span class="bubble-name">${Utils.escapeHTML(item.name || __('listNoName'))}</span></div>
           <div class="bubble-id">${Utils.escapeHTML(item.info_hidden ? __('listInfoHidden') : String(item.info || __('listNoContact')))}</div>
         </article>
       `).join('')}
-      ${rows.length > 12 ? `<div class="map-bubble-more" style="margin-top: 8px; font-size: 12px; color: var(--md-primary); text-align: center;">还有 ${rows.length - 12} 个组织，点击地图查看全部</div>` : ''}
+      ${rows.length > 12 ? `<div class="map-bubble-more" style="margin-top: 8px; font-size: 12px; color: var(--md-primary); text-align: center;">${Utils.escapeHTML(__('listMoreClubs', rows.length - 12))}</div>` : ''}
     </div>
   `;
 
-  State.activeBubbleState = { provinceName, anchorX, anchorY, isJapan: true };
+  State.activeBubbleState = { provinceName: provinceKey, anchorX, anchorY, isJapan: true };
   placeMapBubble(anchorX, anchorY);
 
   bubble.style.width = 'auto';
@@ -5229,12 +5483,14 @@ function useMockJapanData() {
     { id: 2, name: "京都大学Galgame同好会", prefecture: "京都府", info: "123456789", type: "school", created_at: "2026-05-07" },
     { id: 3, name: "大阪大学动漫研究社", prefecture: "大阪府", info: "987654321", type: "school", created_at: "2026-05-07", external_links: "Twitter: https://x.com/example_osaka" },
     { id: 4, name: "北海道大学视觉小说部", prefecture: "北海道", info: "111222333", type: "school", created_at: "2026-05-07" },
-    { id: 5, name: "名古屋大学Galgame部", prefecture: "爱知县", info: "444555666", type: "school", created_at: "2026-05-07" }
+    { id: 5, name: "名古屋大学Galgame部", prefecture: "愛知県", info: "444555666", type: "school", created_at: "2026-05-07" }
   ];
   State.japanGroupsMap = new Map();
   State.japanRows.forEach(item => {
-    const prefecture = item.prefecture;
+    const prefecture = normalizeJapanPrefectureName(item.prefecture);
     if (!prefecture) return;
+    item.prefecture = prefecture;
+    item.province = prefecture;
     if (!State.japanGroupsMap.has(prefecture)) State.japanGroupsMap.set(prefecture, []);
     State.japanGroupsMap.get(prefecture).push(item);
   });
@@ -5245,7 +5501,7 @@ async function reloadBandoriData() {
   let rows = [], source = 'none';
   
   try {
-    const resp = await fetch('./data/clubs.json', { cache: 'no-store' });
+    const resp = await fetch('./api/clubs.php', { cache: 'no-store' });
     if (resp.ok) {
       const json = await resp.json();
       if (json?.data && Array.isArray(json.data)) {
@@ -5328,20 +5584,7 @@ function bindAllStaticEvents() {
     }
   });
 
-  const stepScale = (factor) => {
-    if (!State.mapViewState) return;
-    const { svg, zoom, minScale, maxScale, width, height } = State.mapViewState;
-    const currentTransform = d3.zoomTransform(svg.node());
-    const nextScale = Math.max(minScale, Math.min(maxScale, currentTransform.k * factor));
-    const center = [width / 2, height / 2];
-    const nextTransform = d3.zoomIdentity
-      .translate(currentTransform.x, currentTransform.y)
-      .scale(currentTransform.k)
-      .translate(center[0], center[1])
-      .scale(nextScale / currentTransform.k)
-      .translate(-center[0], -center[1]);
-    svg.call(zoom.transform, nextTransform);
-  };
+  // stepScale removed — replaced by drawer collapse (initDrawerPanel)
 
 
 
@@ -5453,24 +5696,9 @@ function bindAllStaticEvents() {
             'gd': '广东', 'hk': '香港', 'mc': '澳门', 'tw': '台湾'
         };
         
-        const japanIdToName = {
-            'JP-01': '北海道', 'JP-02': '青森県', 'JP-03': '岩手県', 'JP-04': '宮城県',
-            'JP-05': '秋田県', 'JP-06': '山形県', 'JP-07': '福島県', 'JP-08': '茨城県',
-            'JP-09': '栃木県', 'JP-10': '群馬県', 'JP-11': '埼玉県', 'JP-12': '千葉県',
-            'JP-13': '東京都', 'JP-14': '神奈川県', 'JP-15': '新潟県', 'JP-16': '富山県',
-            'JP-17': '石川県', 'JP-18': '福井県', 'JP-19': '山梨県', 'JP-20': '長野県',
-            'JP-21': '岐阜県', 'JP-22': '静岡県', 'JP-23': '愛知県', 'JP-24': '三重県',
-            'JP-25': '滋賀県', 'JP-26': '京都府', 'JP-27': '大阪府', 'JP-28': '兵庫県',
-            'JP-29': '奈良県', 'JP-30': '和歌山県', 'JP-31': '鳥取県', 'JP-32': '島根県',
-            'JP-33': '岡山県', 'JP-34': '広島県', 'JP-35': '山口県', 'JP-36': '徳島県',
-            'JP-37': '香川県', 'JP-38': '愛媛県', 'JP-39': '高知県', 'JP-40': '福岡県',
-            'JP-41': '佐賀県', 'JP-42': '長崎県', 'JP-43': '熊本県', 'JP-44': '大分県',
-'JP-45': '宮崎県', 'JP-46': '鹿児島県', 'JP-47': '沖縄県'
-        };
-        
         let provinceName = chinaIdToName[provincePath.id];
         if (!provinceName) {
-            provinceName = japanIdToName[provincePath.id];
+            provinceName = getJapanPrefectureNameById(provincePath.id);
         }
         
         if (provinceName) {
@@ -5635,8 +5863,8 @@ async function loadEditableClubSnapshot(club) {
 
   try {
     const response = country === 'japan'
-      ? await fetch('./data/clubs_japan.json', { cache: 'no-store' })
-      : await fetch('./data/clubs.json', { cache: 'no-store' });
+      ? await fetch('./api/clubs_japan.php', { cache: 'no-store' })
+      : await fetch('./api/clubs.php', { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = await response.json();
     const rawClub = (payload.data || []).find(item => parseInt(item.id, 10) === clubId);
@@ -5684,6 +5912,7 @@ function openEditPanel(club = null, isNew = false) {
   
   if (!adminPanel) return;
   bindProvincePicker();
+  renderJapanPrefectureSelect(editPrefecture, editPrefecture?.value || '');
   
   function toggleRegionFields(country) {
     if (country === 'japan') {
@@ -5722,7 +5951,7 @@ function openEditPanel(club = null, isNew = false) {
     if (editCountry) editCountry.value = 'china';
     if (editName) editName.value = '';
     setProvincePickerSelection([]);
-    if (editPrefecture) editPrefecture.value = '';
+    renderJapanPrefectureSelect(editPrefecture, '');
     if (editType) editType.value = 'school';
     if (editInfo) editInfo.value = '';
     if (editRemark) editRemark.value = '';
@@ -5743,7 +5972,7 @@ function openEditPanel(club = null, isNew = false) {
     if (editCountry) editCountry.value = country;
     if (editName) editName.value = club.name || '';
     setProvincePickerSelection(club.provinces || (club.province ? [club.province] : []));
-    if (club.prefecture) setSelectValue(editPrefecture, club.prefecture);
+    renderJapanPrefectureSelect(editPrefecture, club.prefecture || club.province || '');
     if (editType) editType.value = club.rawType || club.type || 'school';
     if (editInfo) editInfo.value = club.originalInfo || club.info || '';
     if (editRemark) editRemark.value = club.remark || '';
@@ -5843,11 +6072,12 @@ async function saveClub() {
   
   if (country === 'japan') {
     const prefectureSelect = editPrefecture;
-    clubData.prefecture = prefectureSelect?.options[prefectureSelect.selectedIndex]?.text || '';
+    clubData.prefecture = normalizeJapanPrefectureName(prefectureSelect?.value || prefectureSelect?.options[prefectureSelect.selectedIndex]?.text || '');
     if (!clubData.prefecture) {
-      alert('请选择日本县/都/府/道');
+      alert(__('selectPrefecturePlaceholder'));
       return;
     }
+    clubData.province = clubData.prefecture;
   } else if (country === 'overseas') {
     clubData.province = '海外';
   } else {
@@ -6158,6 +6388,14 @@ let currentPubFilter = 'all';
 let clubDataCn = [];
 let clubDataJp = [];
 
+function scheduleIdleTask(callback, timeout) {
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    window.requestIdleCallback(callback, { timeout: timeout || 1200 });
+  } else {
+    setTimeout(callback, Math.min(timeout || 1200, 800));
+  }
+}
+
 async function loadPublications() {
   try {
     const resp = await fetch('./data/publications.json', { cache: 'no-store' });
@@ -6175,10 +6413,15 @@ async function loadPublications() {
 }
 
 async function loadClubDataForPublications() {
+  if ((State.bandoriRows && State.bandoriRows.length) || (State.japanRows && State.japanRows.length)) {
+    clubDataCn = State.bandoriRows || [];
+    clubDataJp = State.japanRows || [];
+    return;
+  }
   try {
     const [cn, jp] = await Promise.all([
-      fetch('./data/clubs.json', { cache: 'no-store' }).then(r => r.json()),
-      fetch('./data/clubs_japan.json', { cache: 'no-store' }).then(r => r.json())
+      fetch('./api/clubs.php', { cache: 'no-store' }).then(r => r.json()),
+      fetch('./api/clubs_japan.php', { cache: 'no-store' }).then(r => r.json())
     ]);
     clubDataCn = cn.data || [];
     clubDataJp = jp.data || [];
@@ -6755,16 +6998,10 @@ function initTopUserBar() {
           document.getElementById('calendarModal')?.setAttribute('aria-hidden', 'false');
           break;
         case 'publication':
-          (function() {
-            const pubModal = document.getElementById('publicationModal');
-            if (pubModal) {
-              if (typeof renderPublicationList === 'function') renderPublicationList();
-              const addBtn = document.getElementById('addPublicationBtn');
-              if (addBtn) addBtn.style.display = hasRole('manager') ? 'flex' : 'none';
-              pubModal.classList.add('open');
-              pubModal.setAttribute('aria-hidden', 'false');
-            }
-          })();
+        case 'project-hub':
+          if (typeof window.openHubModal === 'function') {
+            window.openHubModal();
+          }
           break;
       }
     });
@@ -6832,6 +7069,11 @@ function initMobileDrawer() {
     document.getElementById('mobileDrawer')?.setAttribute('aria-hidden', 'false');
   });
 
+  document.getElementById('listMenuBtn')?.addEventListener('click', function() {
+    document.getElementById('mobileDrawer')?.classList.add('open');
+    document.getElementById('mobileDrawer')?.setAttribute('aria-hidden', 'false');
+  });
+
   // 遮罩关闭
   document.getElementById('mobileDrawerBackdrop')?.addEventListener('click', function() {
     document.getElementById('mobileDrawer')?.classList.remove('open');
@@ -6849,10 +7091,22 @@ function initMobileDrawer() {
     window.location.href = 'submit.html';
   });
   document.getElementById('submitEventBtnDrawer')?.addEventListener('click', function() {
-    window.location.href = 'submit_event.html';
+    if (typeof window.openHubModal === 'function') {
+      window.openHubModal();
+      document.getElementById('mobileDrawer')?.classList.remove('open');
+      document.getElementById('mobileDrawer')?.setAttribute('aria-hidden', 'true');
+    } else {
+      window.location.href = 'submit_event.html';
+    }
   });
   document.getElementById('submitPublicationBtnDrawer')?.addEventListener('click', function() {
-    window.location.href = 'submit_publication.html';
+    if (typeof window.openHubModal === 'function') {
+      window.openHubModal();
+      document.getElementById('mobileDrawer')?.classList.remove('open');
+      document.getElementById('mobileDrawer')?.setAttribute('aria-hidden', 'true');
+    } else {
+      window.location.href = 'submit_publication.html';
+    }
   });
 
   // 抽屉内语言切换
@@ -6885,45 +7139,30 @@ function initMobileDrawer() {
 }
 
 // ==========================================
-// 移动端抽屉控件
+// 右侧面板收起控件
 // ==========================================
-(function initDrawerControls() {
+(function initDrawerPanel() {
     function init() {
-        const zoomInBtn = document.getElementById('drawerZoomInBtn');
-        const zoomOutBtn = document.getElementById('drawerZoomOutBtn');
-        const resetBtn = document.getElementById('drawerResetBtn');
-
-        if (!zoomInBtn || !zoomOutBtn || !resetBtn) {
-            setTimeout(init, 500);
-            return;
-        }
-
-        zoomInBtn.onclick = function(e) {
+        var collapseBtn = document.getElementById('drawerCollapseBtn');
+        var expandBtn = document.getElementById('drawerExpandBtn');
+        var panel = document.getElementById('selectedCard');
+        if (!collapseBtn || !expandBtn || !panel) { setTimeout(init, 500); return; }
+        collapseBtn.onclick = function(e) {
             e.stopPropagation();
-            stepScale(1.2);
+            panel.classList.add('collapsed');
         };
-
-        zoomOutBtn.onclick = function(e) {
+        expandBtn.onclick = function(e) {
             e.stopPropagation();
-            stepScale(1 / 1.2);
+            panel.classList.remove('collapsed');
         };
-
-        resetBtn.onclick = function(e) {
-            e.stopPropagation();
-            if (State.mapViewState) {
-                const { svg, zoom, baseScale, baseTranslate } = State.mapViewState;
-                svg.call(zoom.transform, d3.zoomIdentity.translate(baseTranslate[0], baseTranslate[1]).scale(baseScale));
-            }
-        };
-
-        console.log('✅ 缩放控件绑定完成');
+        // 初始入场动画播放完毕后移除，防止展开时动画重播
+        setTimeout(function() {
+            if (panel) panel.style.animation = 'none';
+        }, 800);
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    } else { init(); }
 })();
 
 // ==========================================
@@ -7026,22 +7265,26 @@ function bindMapTooltip() {
         'JP-41': '佐賀県', 'JP-42': '長崎県', 'JP-43': '熊本県', 'JP-44': '大分県',
         'JP-45': '宮崎県', 'JP-46': '鹿児島県', 'JP-47': '沖縄県'
     };
+    (window.JAPAN_PREFECTURES || []).forEach((item) => {
+        nameMap[item.id] = currentLang === 'ja' ? item.jaName : item.zhName;
+    });
     
     const tooltip = document.getElementById('tooltip');
     if (!tooltip) return;
     
     const provinces = document.querySelectorAll('.province');
     provinces.forEach(p => {
-        const newP = p.cloneNode(true);
-        p.parentNode.replaceChild(newP, p);
-        newP.addEventListener('mouseenter', (e) => {
-            const name = nameMap[newP.id] || newP.id;
+        if (p.dataset.tooltipBound === '1') return;
+        p.dataset.tooltipBound = '1';
+        p.addEventListener('mouseenter', (e) => {
+            const jp = (window.JAPAN_PREFECTURES || []).find((item) => item.id === p.id);
+            const name = jp ? (currentLang === 'ja' ? jp.jaName : jp.zhName) : (nameMap[p.id] || p.id);
             tooltip.innerHTML = `<div class="tooltip-name">${name}</div>`;
             tooltip.style.opacity = '0.9';
             tooltip.style.left = (e.pageX + 10) + 'px';
             tooltip.style.top = (e.pageY + 10) + 'px';
         });
-        newP.addEventListener('mouseleave', () => {
+        p.addEventListener('mouseleave', () => {
             tooltip.style.opacity = '0';
         });
     });
@@ -7069,8 +7312,6 @@ async function init() {
         loadChinaData(),
         loadJapanData()
     ]);
-    await loadPublications();
-    await loadClubDataForPublications();
     console.log('✅ 数据加载完成 - 中国:', State.bandoriRows.length, '日本:', State.japanRows.length);
     
     // 数据加载完成后再渲染地图
@@ -7095,6 +7336,11 @@ async function init() {
     initPublicationEvents();
     initTopUserBar();
     initMobileDrawer();
+    scheduleIdleTask(function() {
+        loadClubDataForPublications().then(loadPublications).catch(function(error) {
+            console.warn('Deferred publication data load failed:', error);
+        });
+    }, 900);
 
     // 语言设置
     const savedLang = localStorage.getItem('language');
@@ -7122,7 +7368,7 @@ async function init() {
         };
     }
     
-    setTimeout(bindMapTooltip, 1000);
+    bindMapTooltip();
 }
 
 // 专门加载中国数据的函数
@@ -7185,8 +7431,10 @@ async function loadJapanData() {
                 // 构建日本县分组
                 State.japanGroupsMap = new Map();
                 State.japanRows.forEach(item => {
-                    const prefecture = item.prefecture || item.province;
+                    const prefecture = normalizeJapanPrefectureName(item.prefecture || item.province);
                     if (!prefecture) return;
+                    item.prefecture = prefecture;
+                    item.province = prefecture;
                     if (!State.japanGroupsMap.has(prefecture)) {
                         State.japanGroupsMap.set(prefecture, []);
                     }
@@ -7617,6 +7865,7 @@ init();
             pollTimer = null;
         }
     }
+    window.stopNotificationPolling = stopNotificationPolling;
 
     // ---- visibility ----
     document.addEventListener('visibilitychange', function () {
@@ -7625,6 +7874,12 @@ init();
         } else if (bellWrap && bellWrap.style.display !== 'none') {
             startNotificationPolling();
         }
+    });
+    window.addEventListener('focus', function () {
+        if (bellWrap && bellWrap.style.display !== 'none') checkNotifications();
+    });
+    window.addEventListener('pageshow', function () {
+        if (bellWrap && bellWrap.style.display !== 'none') checkNotifications();
     });
 
     // ---- event delegation ----

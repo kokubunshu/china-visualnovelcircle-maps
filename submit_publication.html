@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -208,8 +208,8 @@
     async function loadClubData() {
       try {
         const [cn, jp] = await Promise.all([
-          fetch('./data/clubs.json', { cache: 'no-store' }).then(r => r.json()),
-          fetch('./data/clubs_japan.json', { cache: 'no-store' }).then(r => r.json())
+          fetch('./api/clubs.php', { cache: 'no-store' }).then(r => r.json()),
+          fetch('./api/clubs_japan.php', { cache: 'no-store' }).then(r => r.json())
         ]);
         clubDataCn = cn.data || [];
         clubDataJp = jp.data || [];
@@ -406,3 +406,5 @@
 <script src="js/page-background.js" data-picker="compact"></script>
 </body>
 </html>
+
+

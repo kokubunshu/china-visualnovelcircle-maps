@@ -399,7 +399,7 @@ body {
   <div class="tabs" id="tabBar">
     <button class="tab-btn active" data-tab="club">🏫 同好会申请</button>
     <button class="tab-btn" data-tab="event">📅 活动申请</button>
-    <button class="tab-btn" data-tab="publication">📖 刊物征集</button>
+    <button class="tab-btn" data-tab="publication">企划申请</button>
     <button class="tab-btn" data-tab="membership">👥 成员绑定</button>
     <button class="tab-btn" data-tab="feedback">💬 反馈建议</button>
   </div>
@@ -524,19 +524,29 @@ async function checkAuth() {
 // ====== 加载同好会名称映射 ======
 let clubNameMapCn = {};
 let clubNameMapJp = {};
+let clubRowsCn = [];
+let clubRowsJp = [];
 async function loadClubNames() {
   try {
     const [cn, jp] = await Promise.all([
-      fetch('../data/clubs.json?t=' + Date.now()).then(r => r.json()),
-      fetch('../data/clubs_japan.json?t=' + Date.now()).then(r => r.json())
+      fetch('../api/clubs.php?t=' + Date.now()).then(r => r.json()),
+      fetch('../api/clubs_japan.php?t=' + Date.now()).then(r => r.json())
     ]);
     clubNameMapCn = {};
     clubNameMapJp = {};
-    (cn.data || []).forEach(c => { clubNameMapCn[c.id] = c.name || c.school || '未知'; });
-    (jp.data || []).forEach(c => { clubNameMapJp[c.id] = c.name || c.school || '未知'; });
+    clubRowsCn = cn.data || [];
+    clubRowsJp = jp.data || [];
+    clubRowsCn.forEach(c => { clubNameMapCn[c.id] = c.name || c.school || '未知'; });
+    clubRowsJp.forEach(c => { clubNameMapJp[c.id] = c.name || c.school || '未知'; });
     // 合并映射（中文优先）作为兼容备选
     clubNameMap = { ...clubNameMapJp, ...clubNameMapCn };
-  } catch { clubNameMapCn = {}; clubNameMapJp = {}; clubNameMap = {}; }
+  } catch { clubNameMapCn = {}; clubNameMapJp = {}; clubNameMap = {}; clubRowsCn = []; clubRowsJp = []; }
+}
+
+function findClubRefByName(name) {
+  const needle = String(name || '').trim();
+  const rows = clubRowsCn.map(c => ({ ...c, country: 'china' })).concat(clubRowsJp.map(c => ({ ...c, country: 'japan' })));
+  return rows.find(c => [c.name, c.display_name, c.school].some(v => String(v || '').trim() === needle)) || null;
 }
 
 // ====== Tab 1: 同好会申请 ======
@@ -623,14 +633,20 @@ async function approveEvent(id) {
   if (idx === -1) return;
   const sub = eventSubmissions[idx];
   const eventData = {
-    id: sub.id, event: sub.event, date: sub.date, image: sub.image || '',
+    event: sub.event, date: sub.date, image: sub.image || '',
     raw_text: sub.clubName + (sub.location ? ' @ ' + sub.location : ''),
     offical: 0, description: sub.description, link: sub.link || ''
   };
+  const clubRef = findClubRefByName(sub.clubName);
+  if (clubRef && clubRef.id) {
+    eventData.organizer_club = { id: Number(clubRef.id), country: clubRef.country || 'china', name: clubRef.name || sub.clubName || '' };
+    eventData.clubName = clubRef.name || sub.clubName || '';
+  }
   try {
-    const r = await fetch('../api/events.php', {
+    const r = await fetch('../api/events.php?action=add', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ events: [eventData] })
+      credentials: 'same-origin',
+      body: JSON.stringify(eventData)
     });
     const data = await r.json();
     if (data.success !== false) {
@@ -726,26 +742,50 @@ async function approvePublication(id) {
   const idx = publicationSubmissions.findIndex(s => s.id === id);
   if (idx === -1) return;
   const sub = publicationSubmissions[idx];
-  const pubData = {
-    clubName: sub.clubName,
-    publicationName: sub.publicationName,
-    status: 'writing',
-    submitContact: sub.submitContact || '',
-    submitLink: sub.submitLink || '',
-    deadline: sub.deadline || '',
+  const clubRef = (sub.club_ids && sub.club_ids[0])
+    ? { id: Number(sub.club_ids[0].id), country: sub.club_ids[0].country || 'china', name: sub.clubName || '' }
+    : findClubRefByName(sub.clubName);
+  if (!clubRef || !clubRef.id) {
+    showToast('未找到绑定同好会，请先在申请中选择有效同好会', 'error');
+    return;
+  }
+  const projectData = {
+    title: sub.publicationName,
+    project_type: 'publication',
+    status: 'collecting',
+    organizer_club: { id: Number(clubRef.id), country: clubRef.country || 'china', name: clubRef.name || sub.clubName || '' },
+    participant_clubs: [{ id: Number(clubRef.id), country: clubRef.country || 'china', name: clubRef.name || sub.clubName || '' }],
+    summary: sub.description || '',
     description: sub.description || '',
-    image_url: sub.image_url || ''
+    cover_image: sub.image_url || '',
+    deadline: sub.deadline || '',
+    results_link: sub.submitLink || ''
   };
   try {
-    const r = await fetch('../api/publications.php', {
+    const r = await fetch('../api/projects.php', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pubData)
+      credentials: 'same-origin',
+      body: JSON.stringify(projectData)
     });
     const data = await r.json();
     if (data.success) {
+      if (data.project?.id) {
+        await fetch('../api/project_items.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            project_id: data.project.id,
+            type: 'submission',
+            label: '稿件投稿',
+            description: [sub.submitContact || '', sub.submitLink || ''].filter(Boolean).join('\n'),
+            deadline: sub.deadline || ''
+          })
+        }).catch(() => {});
+      }
       publicationSubmissions[idx].status = 'approved';
       publicationSubmissions[idx].approved_at = new Date().toISOString();
-      publicationSubmissions[idx].publication_id = data.data?.id || null;
+      publicationSubmissions[idx].project_id = data.project?.id || null;
       await savePublicationSubmissions();
       showToast('✅ 已通过：' + sub.publicationName, 'success');
       loadCurrentTab();
@@ -977,7 +1017,7 @@ function renderMembershipTab(filter) {
           <span class="badge badge-${item.status || 'pending'}">${statusText(item.status)}</span>
         </div>
         <div class="card-body">
-          <div class="row"><span class="label">🏫 同好会 ID：</span>#${item.club_id}</div>
+          <div class="row"><span class="label">🏫 同好会：</span>${escapeHtml(clubName)}</div>
           <div class="row"><span class="label">👤 申请身份：</span>${applyRoleText}</div>
           <div class="row"><span class="label">💬 QQ：</span>${escapeHtml(item.qq_account || '未填写')}</div>
           <div class="row"><span class="label">🎓 学生：</span>${item.is_student == 1 ? '是' : '否'}</div>

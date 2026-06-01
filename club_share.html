@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111318">
+<title>同好会分享 - VNFest</title>
+<style>
+:root {
+  --bg: #101114;
+  --surface: rgba(24, 26, 31, 0.92);
+  --surface2: rgba(35, 37, 44, 0.88);
+  --border: rgba(255,255,255,0.12);
+  --text: #f7f3ee;
+  --muted: #aaa19a;
+  --primary: #e74c3c;
+  --green: #57c089;
+  --amber: #dca44b;
+  --cyan: #64bed2;
+  --radius: 8px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(231,76,60,0.2), transparent 30%),
+    radial-gradient(circle at 96% 4%, rgba(100,190,210,0.14), transparent 28%),
+    linear-gradient(180deg, #17191f 0%, #101114 58%, #0d0e11 100%);
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+a { color: inherit; text-decoration: none; }
+.shell { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding: 22px 0 40px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.brand-mark { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; background: var(--primary); color: #fff; }
+.langbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero {
+  min-height: 330px;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 22px;
+  align-items: end;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, rgba(231,76,60,0.17), transparent 42%),
+    linear-gradient(0deg, rgba(16,17,20,0.7), rgba(16,17,20,0.35)),
+    var(--surface);
+}
+.logo {
+  width: 96px; height: 96px; border-radius: 8px;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--amber); font-size: 30px; font-weight: 900;
+}
+.logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero h1 { margin: 0; font-size: clamp(28px, 5vw, 56px); line-height: 1.04; letter-spacing: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.pill { border: 1px solid var(--border); border-radius: 6px; padding: 6px 9px; color: var(--muted); background: rgba(255,255,255,0.04); font-size: 13px; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+.btn {
+  min-height: 40px; border: 1px solid var(--border); border-radius: 7px;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 9px 12px; color: var(--text);
+  background: rgba(255,255,255,0.05); cursor: pointer; font-weight: 800;
+}
+.btn.primary { background: var(--primary); border-color: transparent; color: #fff; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr); gap: 12px; margin-top: 12px; }
+.panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: rgba(255,255,255,0.035); }
+.panel h2 { margin: 0 0 12px; font-size: 17px; }
+.list { display: grid; gap: 8px; }
+.item { border: 1px solid var(--border); border-radius: 7px; padding: 12px; background: rgba(255,255,255,0.035); }
+.item strong { display: block; font-size: 14px; margin-bottom: 5px; }
+.item p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.score { display: grid; gap: 8px; }
+.score-line { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.score-line span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--green)); }
+.muted { color: var(--muted); }
+.empty { color: var(--muted); border: 1px dashed var(--border); border-radius: 7px; padding: 18px; text-align: center; }
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); border-radius: 7px; background: #fff; color: #18191d; padding: 10px 14px; font-weight: 800; box-shadow: 0 10px 30px rgba(0,0,0,0.28); }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; align-items: start; padding: 22px; }
+  .grid { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="topbar">
+    <a class="brand" href="./index.html?guest=1"><span class="brand-mark">VN</span><span>VNFest</span></a>
+    <div class="langbar" aria-label="Language">
+      <button class="btn" type="button" data-i18n-lang="zh-CN">中文</button>
+      <button class="btn" type="button" data-i18n-lang="ja">日本語</button>
+    </div>
+  </header>
+
+  <section class="hero" id="hero">
+    <div id="clubLogo" class="logo">VN</div>
+    <div>
+      <p class="pill" style="display:inline-flex;">同好会公开分享页</p>
+      <h1 id="clubName">加载中</h1>
+      <div id="clubMeta" class="meta"></div>
+      <div class="actions">
+        <a id="applyBtn" class="btn primary" href="./index.html?guest=1">在地图查看</a>
+        <button id="copyBtn" class="btn" type="button">复制分享链接</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>近期动态</h2>
+      <div id="activityList" class="list"></div>
+    </div>
+    <aside class="panel">
+      <h2>加入与资料</h2>
+      <div id="profileBox" class="list"></div>
+    </aside>
+  </section>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var clubKey = params.get('club') || params.get('key') || '';
+  function $(id) { return document.getElementById(id); }
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+    });
+  }
+  function media(url) {
+    if (!url) return '';
+    if (/^(https?:)?\/\//.test(url) || url.indexOf('data:') === 0) return url;
+    return './' + String(url).replace(/^\.?\//, '');
+  }
+  function item(title, body, extra) {
+    return '<div class="item"><strong>' + esc(title || '未命名') + '</strong><p>' + esc(body || '') + '</p>' + (extra || '') + '</div>';
+  }
+  function toast(text) {
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    document.body.appendChild(el);
+    window.setTimeout(function () { el.remove(); }, 1800);
+  }
+  function record(eventName, source) {
+    return fetch('./api/growth.php?action=record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event: eventName, club_key: clubKey, source: source || 'share_page' })
+    }).catch(function () {});
+  }
+  function render(club) {
+    document.title = club.name + ' - VNFest';
+    $('clubName').textContent = club.name;
+    $('clubMeta').innerHTML = [
+      club.country === 'japan' ? '日本' : '中国',
+      club.region,
+      club.school,
+      club.type
+    ].filter(Boolean).map(function (value) { return '<span class="pill">' + esc(value) + '</span>'; }).join('');
+    if (club.logo_url) $('clubLogo').innerHTML = '<img src="' + esc(media(club.logo_url)) + '" alt="' + esc(club.name) + '">';
+    else $('clubLogo').textContent = (club.short_name || club.name || 'VN').slice(0, 2).toUpperCase();
+    $('applyBtn').href = club.apply_url || './index.html?guest=1';
+    $('applyBtn').addEventListener('click', function () { record('club_apply_click', 'share_page'); });
+
+    var activity = [];
+    (club.activity.events || []).forEach(function (event) {
+      activity.push(item(event.title, [event.date, event.description].filter(Boolean).join(' · ')));
+    });
+    (club.activity.publications || []).forEach(function (pub) {
+      activity.push(item(pub.name, ['刊物征稿', pub.status, pub.deadline].filter(Boolean).join(' · ')));
+    });
+    if (club.activity.wiki) {
+      activity.push(item(club.activity.wiki.title || 'Wiki 主页', club.activity.wiki.summary || '', '<p style="margin-top:8px;"><a class="btn" href="' + esc(club.activity.wiki.url || './wiki/index.html') + '">查看 Wiki</a></p>'));
+    }
+    $('activityList').innerHTML = activity.length ? activity.join('') : '<div class="empty">暂无公开动态</div>';
+
+    var contactText = club.contact || (club.contact_hidden ? '联系方式需申请绑定后可见' : '暂未公开联系方式');
+    var missing = (club.completeness.missing || []).join(', ') || '资料已较完整';
+    $('profileBox').innerHTML =
+      item('联系方式', contactText) +
+      '<div class="item score"><strong>资料完整度 ' + Number(club.completeness.score || 0) + '%</strong><div class="score-line"><span style="width:' + Number(club.completeness.score || 0) + '%"></span></div><p>' + esc(missing) + '</p></div>' +
+      item('简介', club.remark || '负责人可在管理后台补充公开简介。') +
+      (club.external_links ? item('外部链接', club.external_links) : '');
+  }
+  $('copyBtn').addEventListener('click', function () {
+    var url = window.location.href;
+    var copied = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(url)
+      : Promise.reject(new Error('clipboard unavailable'));
+    copied.then(function () {
+      record('club_share_copy', 'share_page');
+      toast('分享链接已复制');
+    }).catch(function () {
+      toast(url);
+    });
+  });
+  if (!clubKey) {
+    $('activityList').innerHTML = '<div class="empty">缺少同好会参数</div>';
+    $('profileBox').innerHTML = '';
+    return;
+  }
+  fetch('./api/growth.php?action=club_summary&track=1&club=' + encodeURIComponent(clubKey))
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (!data.success) throw new Error(data.message || 'not found');
+      render(data.club);
+    })
+    .catch(function () {
+      $('clubName').textContent = '同好会加载失败';
+      $('activityList').innerHTML = '<div class="empty">请稍后刷新重试</div>';
+      $('profileBox').innerHTML = '';
+    });
+})();
+</script>
+<script defer src="js/page-i18n.js?v=20260525-growth"></script>
+</body>
+</html>

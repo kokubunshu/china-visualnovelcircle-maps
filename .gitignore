@@ -69,9 +69,11 @@ config.php
 !.env.example
 
 # Databases and live runtime data
+data/*.bak*
 data/*.sql
 data/*.db
 data/*.sqlite
+data/_tmp_*
 data/*.json
 !data/**/.gitkeep
 !data/**/.htaccess
@@ -92,6 +94,15 @@ uploads/**
 !uploads/galonly/.htaccess
 wiki/uploads/*
 !wiki/uploads/.gitkeep
+
+# Large archives (wiki exports, backups etc.)
+*.7z
+*.tar.gz
+*.zip
+!*.example.zip
+
+# Local reference materials
+参考/
 
 # Local wallpaper drop folder.
 # Put local wallpapers here; only the folder placeholder is versioned.
@@ -116,5 +127,4 @@ dist/
 # Internal AI/design workspace
 .claude/
 .superpowers/
-docs/superpowers/
-docs/frontend-design-demo.html
+docs/

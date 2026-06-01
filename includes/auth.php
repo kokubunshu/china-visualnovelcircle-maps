@@ -3,6 +3,7 @@ require_once __DIR__ . '/db.php';
 
 const ROLE_HIERARCHY = [
     'visitor' => 0,
+    'external' => 0.5,
     'member' => 1,
     'manager' => 2,
     'representative' => 3,

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -851,7 +851,7 @@ body {
                     .then(function(data) {
                         if (data.success && data.application) {
                             applicationId = parseInt(data.application.id, 10) || applicationId;
-                            isEditMode = applicationId > 0 && data.application.status !== 'approved';
+                            isEditMode = applicationId > 0;
                             return data.application;
                         }
                         if (isEditMode) {
@@ -886,13 +886,7 @@ body {
                         uploadedImagePaths = [appData.image_path.trim()];
                         renderImagePreviews();
                     }
-                    if (appData.status === 'approved') {
-                        $('btn-submit').textContent = '已通过，无法修改';
-                        $('btn-submit').disabled = true;
-                        showError('申请已通过，不能再修改。如需调整请联系审核员。');
-                    } else {
-                        $('btn-submit').textContent = '保存修改';
-                    }
+                    $('btn-submit').textContent = '保存修改';
                     $('header-title').textContent = '编辑摊位';
                     $('event-name-display').textContent = '修改申请信息';
                 }
@@ -927,3 +921,5 @@ body {
 <script src="../js/page-background.js" data-picker="compact"></script>
 </body>
 </html>
+
+

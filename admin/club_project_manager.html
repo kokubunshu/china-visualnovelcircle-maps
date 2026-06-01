@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>同好会企划管理 - VNFest</title>
+  <link rel="stylesheet" href="../css/vote-common.css">
+  <link rel="stylesheet" href="../css/admin-manager.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <strong>同好会企划管理</strong>
+        <span>创建十二器/萌战企划，配置阶段，管理赛程</span>
+      </div>
+      <div class="actions">
+        <a class="btn" href="../club_square.html">同好会广场</a>
+        <a class="btn" href="../user.html">用户中心</a>
+        <button class="btn theme-toggle" id="themeToggle" title="切换明亮/暗色模式" aria-label="切换明亮/暗色模式">
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="card create-card" id="createCard">
+          <div class="create-header" id="createToggle">
+            <span>+ 创建新企划</span>
+            <span class="arrow">&#9660;</span>
+          </div>
+          <div class="create-body" id="createBody">
+            <div class="form-field">
+              <label class="field-label">类型</label>
+              <div class="segmented" id="createType">
+                <button class="segmented-btn twelve active" data-type="twelve">十二器</button>
+                <button class="segmented-btn moe" data-type="moe">萌战</button>
+              </div>
+            </div>
+
+            <div class="suffix-field" id="suffixField">
+              <label class="field-label">活动名称后缀</label>
+              <div class="suffix-row">
+                <span>十二</span>
+                <input class="suffix-input" id="suffixInput" maxlength="1" placeholder="器">
+                <span>器</span>
+                <span style="font-size:11px;color:var(--am-text-secondary);margin-left:4px;">→ 十二<span id="suffixPreview">器</span></span>
+              </div>
+              <div class="suffix-hint">输入一个汉字，留空默认「十二器」。</div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">所属同好会</label>
+              <div class="search-wrap" id="clubSearchWrap">
+                <div class="search-input" id="clubSearchInput" tabindex="0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;flex-shrink:0;opacity:0.5;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <span id="clubSearchPlaceholder" style="color:#bbb;">输入同好会名称搜索...</span>
+                  <span id="clubSearchChip" class="chip" style="display:none;"><span id="clubSearchChipName"></span><span class="chip-remove" id="clubSearchClear">&times;</span></span>
+                </div>
+                <div class="search-results" id="clubSearchResults"></div>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">标题</label>
+              <input class="form-input" id="createTitle" placeholder="例如 2026 年度 Galgame 十二器评选">
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label class="field-label">年份</label>
+                <input class="form-input" id="createYear" value="2026">
+              </div>
+              <div class="form-field">
+                <label class="field-label">地区</label>
+                <select class="form-select" id="createCountry">
+                  <option value="china">中国</option>
+                  <option value="japan">日本</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field">
+                <label class="field-label">可见性</label>
+                <select class="form-select" id="createVisibility">
+                  <option value="public">公开浏览</option>
+                  <option value="club_only">成员可见</option>
+                  <option value="unlisted">不列入广场</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="field-label">参与资格</label>
+                <select class="form-select" id="createEligibility">
+                  <option value="club_member">同好会成员</option>
+                  <option value="public">登录用户</option>
+                  <option value="invite_code">邀请码</option>
+                  <option value="whitelist">白名单</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">说明</label>
+              <textarea class="form-textarea" id="createDescription" placeholder="选填，简要介绍企划规则..."></textarea>
+            </div>
+
+            <button class="btn-submit twelve" id="createBtn">创建草稿</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>我的企划 <span style="font-size:11px;color:var(--am-text-secondary);font-weight:400;" id="projectCount"></span></span>
+          </div>
+          <div class="project-list" id="manageList">
+            <div class="empty-state"><div class="empty-state-inner"><p>暂无可管理企划</p></div></div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="detail-area" id="detailArea">
+        <div class="empty-state">
+          <div class="empty-state-inner">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin:0 auto 12px;opacity:0.3;">
+              <rect x="8" y="8" width="32" height="32" rx="4" stroke="var(--am-text-secondary)" stroke-width="1.5" fill="none"/>
+              <line x1="24" y1="16" x2="24" y2="32" stroke="var(--am-text-secondary)" stroke-width="1.5"/>
+              <line x1="16" y1="24" x2="32" y2="24" stroke="var(--am-text-secondary)" stroke-width="1.5"/>
+            </svg>
+            <p>选择一个企划开始管理</p>
+            <p class="hint">或在左侧创建新企划</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="stageModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <span class="stage-tag nomination" id="modalStageTag">提名期</span>
+          <strong style="font-size:16px;margin-left:8px;" id="modalStageTitle">编辑阶段</strong>
+        </div>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button class="stage-btn" id="modalCancel">取消</button>
+        <button class="stage-btn primary" id="modalSave">保存配置</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="../js/vote-common.js?v=20260601-flow9"></script>
+  <script src="../js/club-project-manager.js?v=20260601-flow9"></script>
+</body>
+</html>

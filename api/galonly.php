@@ -240,11 +240,6 @@ switch ($action) {
             echo json_encode(['success' => false, 'message' => '申请不存在'], JSON_UNESCAPED_UNICODE);
             exit();
         }
-        if ($app['status'] === 'approved') {
-            echo json_encode(['success' => false, 'message' => '已通过的申请无法修改'], JSON_UNESCAPED_UNICODE);
-            exit();
-        }
-
         // 收集要更新的字段
         $fields = [];
         $params = [];
@@ -313,6 +308,10 @@ switch ($action) {
             $fields[] = 'status = ?';
             $params[] = 'pending';
             $fields[] = 'resubmitted = 1';
+        }
+        // 已通过的申请被编辑时，标记更新但不改变状态
+        if ($app['status'] === 'approved') {
+            $fields[] = 'has_update = 1';
         }
         $fields[] = 'updated_at = ?';
         $params[] = $now;
@@ -624,6 +623,88 @@ switch ($action) {
         }
         exit();
 
+    case 'withdraw_vote':
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => '仅支持 POST 请求'], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $user = requireLogin();
+        if (!hasAuditPermission($user)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => '权限不足'], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $applicationId = (int)($input['application_id'] ?? 0);
+
+        if (!$applicationId) {
+            echo json_encode(['success' => false, 'message' => '缺少 application_id'], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $db = getDB();
+
+        // 检查是否存在投票
+        $stmt = $db->prepare("SELECT id, vote FROM galonly_votes WHERE application_id = ? AND auditer_id = ?");
+        $stmt->execute([$applicationId, $user['id']]);
+        $existingVote = $stmt->fetch();
+
+        if (!$existingVote) {
+            echo json_encode(['success' => false, 'message' => '你尚未对该申请投票'], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $db->beginTransaction();
+        try {
+            // 删除投票
+            $stmt = $db->prepare("DELETE FROM galonly_votes WHERE id = ?");
+            $stmt->execute([$existingVote['id']]);
+
+            // 获取当前申请状态
+            $stmt = $db->prepare("SELECT status FROM galonly_applications WHERE id = ?");
+            $stmt->execute([$applicationId]);
+            $currentStatus = $stmt->fetchColumn();
+
+            // 重新统计投票
+            $stmt = $db->prepare("SELECT vote, COUNT(*) as cnt FROM galonly_votes WHERE application_id = ? GROUP BY vote");
+            $stmt->execute([$applicationId]);
+            $voteRows = $stmt->fetchAll();
+            $voteCounts = ['approve' => 0, 'reject' => 0];
+            foreach ($voteRows as $row) {
+                $voteCounts[$row['vote']] = (int)$row['cnt'];
+            }
+
+            // 重新判断审核状态
+            $newStatus = 'pending';
+            if ($voteCounts['approve'] >= 4) {
+                $newStatus = 'approved';
+            } elseif ($voteCounts['reject'] >= 4) {
+                $newStatus = 'rejected';
+            }
+
+            // 仅在状态变化时更新
+            if ($newStatus !== $currentStatus) {
+                $db->prepare("UPDATE galonly_applications SET status = ?, updated_at = ? WHERE id = ?")
+                    ->execute([$newStatus, $now, $applicationId]);
+            }
+
+            $db->commit();
+            logAction('galonly.withdraw_vote', 'galonly_application', $applicationId);
+
+            echo json_encode([
+                'success' => true,
+                'result' => $newStatus,
+                'votes' => $voteCounts,
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (Exception $e) {
+            $db->rollBack();
+            echo json_encode(['success' => false, 'message' => '撤回投票失败：' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        exit();
+
     case 'add_event':
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'message' => '仅支持 POST 请求'], JSON_UNESCAPED_UNICODE);
@@ -720,7 +801,7 @@ switch ($action) {
         echo json_encode(['success' => false, 'message' => '未知动作', 'available_actions' => [
             'list_events', 'check_eligibility', 'submit', 'get_application',
             'update_application', 'delete_application', 'upload_image',
-            'list_applications', 'vote',
+            'list_applications', 'vote', 'withdraw_vote',
             'add_event', 'delete_event',
         ]], JSON_UNESCAPED_UNICODE);
         exit();

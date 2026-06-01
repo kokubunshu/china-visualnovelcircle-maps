@@ -494,6 +494,7 @@
         </div>
     </div>
     
+    <script src="./js/app-core.js"></script>
     <script>
         // ========== 壁纸自定义接口 ==========
         // 预留壁纸切换接口，可通过以下方式自定义背景
@@ -543,6 +544,27 @@
         const prefectureGroup = document.getElementById('prefectureGroup');
         const provinceSelect = document.getElementById('province');
         const prefectureSelect = document.getElementById('prefecture');
+
+        function renderSubmitPrefectureSelect(selectedValue = '') {
+            if (!prefectureSelect || !Array.isArray(window.JAPAN_PREFECTURES)) return;
+            const selectedKey = Utils.normalizeJapanPrefecture(selectedValue);
+            const groups = new Map();
+            window.JAPAN_PREFECTURES.forEach((item) => {
+                if (!groups.has(item.regionZh)) groups.set(item.regionZh, []);
+                groups.get(item.regionZh).push(item);
+            });
+            prefectureSelect.innerHTML = '<option value="">请选择都道府县</option>' +
+                Array.from(groups.entries()).map(([region, items]) =>
+                    '<optgroup label="' + Utils.escapeHTML(region) + '">' +
+                    items.map((item) => {
+                        const selected = item.jaName === selectedKey ? ' selected' : '';
+                        return '<option value="' + Utils.escapeHTML(item.jaName) + '"' + selected + '>' + Utils.escapeHTML(item.zhName) + '</option>';
+                    }).join('') +
+                    '</optgroup>'
+                ).join('');
+        }
+
+        renderSubmitPrefectureSelect(prefectureSelect.value);
         
         function toggleCountryFields() {
             const val = countrySelect.value;
@@ -579,7 +601,7 @@
             
             let region = '';
             if (country === 'japan') {
-                region = prefectureSelect.value;
+                region = Utils.normalizeJapanPrefecture(prefectureSelect.value);
                 if (!region) {
                     alert('请选择都道府县');
                     return;

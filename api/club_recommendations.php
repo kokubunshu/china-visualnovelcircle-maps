@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/audit.php';
+require_once __DIR__ . '/../includes/image_proxy_helper.php';
 
 $action = $_GET['action'] ?? '';
 
@@ -78,6 +79,9 @@ switch ($action) {
         );
         $stmt->execute([$clubId, $country]);
         $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($list as &$row) {
+            $row['image_url'] = proxyImageUrl($row['image_url'] ?? '');
+        }
 
         echo json_encode(['success' => true, 'data' => $list], JSON_UNESCAPED_UNICODE);
         exit();

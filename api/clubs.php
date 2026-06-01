@@ -36,6 +36,7 @@ function normalizeClubProvinces(array $input): array {
 // GET - 读取数据
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     require_once __DIR__ . '/../includes/auth.php';
+    require_once __DIR__ . '/../includes/growth.php';
     if (!file_exists($dataFile)) {
         echo json_encode(['success' => true, 'total' => 0, 'data' => []]);
         exit();
@@ -49,12 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $memberLevel = ROLE_HIERARCHY['member'];
 
     $memberships = [];
+    $memberRoles = [];
     if ($user) {
         $db = getDB();
         $stmt = $db->prepare("SELECT club_id, status, role FROM club_memberships WHERE user_id = ?");
         $stmt->execute([$user['id']]);
         foreach ($stmt->fetchAll() as $m) {
             $memberships[$m['club_id']] = $m['status'];
+            $memberRoles[$m['club_id']] = $m['role'] ?? '';
             // 取俱乐部角色中的最高等级
             if ($m['status'] === 'active') {
                 $clubLevel = ROLE_HIERARCHY[$m['role']] ?? -1;
@@ -66,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     foreach ($rows as &$item) {
         $clubId = $item['id'] ?? 0;
-        $isMember = isset($memberships[$clubId]) && $memberships[$clubId] === 'active';
+        $isMember = isset($memberships[$clubId]) && $memberships[$clubId] === 'active' && ($memberRoles[$clubId] ?? '') !== 'external';
         $visibleByDefault = !empty($item['visible_by_default']);
         // 管理员及以上系统角色可查看所有学校的信息
 
@@ -84,6 +87,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($item['info_hidden']) {
             $item['info'] = '申请绑定后可见';
         }
+        $publicSummary = growthBuildClubSummary(array_merge($item, ['country' => 'china']));
+        $item['share_url'] = $publicSummary['share_url'];
+        $item['completeness'] = $publicSummary['completeness'];
+        $item['dynamic_summary'] = [
+            'events' => count($publicSummary['activity']['events'] ?? []),
+            'publications' => count($publicSummary['activity']['publications'] ?? []),
+            'has_wiki' => !empty($publicSummary['activity']['wiki']),
+        ];
+        $item['public_contact'] = $publicSummary['contact'];
     }
     unset($item);
 

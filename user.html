@@ -18,9 +18,6 @@
   root.style.colorScheme = root.getAttribute('data-theme');
 })();
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── Theme Variables ── */
 :root {
@@ -105,6 +102,13 @@ body {
     linear-gradient(180deg, #141519 0%, #0d0f12 62%, #0b0d10 100%);
   font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
+}
+
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 18% -8%, rgba(217,65,53,0.13), transparent 30%),
+    radial-gradient(circle at 92% 0%, rgba(22,123,148,0.10), transparent 32%),
+    linear-gradient(180deg, #fbf7f0 0%, #f5f2ed 62%, #eee8df 100%);
 }
 
 body::before {
@@ -531,7 +535,7 @@ h1 { font-size: clamp(32px, 4vw, 48px); line-height: .98; letter-spacing: 0; }
 
 /* List items */
 .list { display: grid; gap: 7px; }
-.club-item, .moe-item, .notice-item, .security-row {
+.club-item, .moe-item, .notice-item, .security-row, .growth-item {
   display: grid; grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px; align-items: center;
   padding: 10px; border: 1px solid var(--border); border-radius: var(--radius);
@@ -539,14 +543,19 @@ h1 { font-size: clamp(32px, 4vw, 48px); line-height: .98; letter-spacing: 0; }
   transition: transform .16s ease, border-color .16s ease;
 }
 .club-item { grid-template-columns: 34px minmax(0, 1fr) auto; }
-.club-item:hover, .moe-item:hover, .notice-item:hover {
+.growth-item { grid-template-columns: minmax(0, 1fr); align-items: start; }
+.club-item:hover, .moe-item:hover, .notice-item:hover, .growth-item:hover {
   transform: translateY(-1px); border-color: var(--primary);
 }
-.club-item strong, .moe-item strong, .notice-item strong {
+.club-item strong, .moe-item strong, .notice-item strong, .growth-item strong {
   display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; font-size: 13px;
 }
-.club-item span, .moe-item span, .notice-item span { color: var(--muted); font-size: 11px; }
+.club-item span, .moe-item span, .notice-item span, .growth-item span { color: var(--muted); font-size: 11px; }
+.growth-metrics, .growth-actions {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.growth-actions .btn { min-height: 32px; padding: 6px 9px; font-size: 12px; }
 
 .mini-avatar {
   width: 34px; height: 34px; border-radius: 7px;
@@ -909,6 +918,34 @@ html.has-vnfest-wallpaper .topbar {
   .club-item { grid-template-columns: 34px minmax(0, 1fr); }
   .toast-stack { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .back-top-btn { right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  #particleCanvas { opacity: .32; }
+}
+
+@media (max-width: 620px) {
+  .page { width: min(100vw - 10px, 1160px); padding-top: 6px; }
+  .topbar { flex-direction: row; align-items: center; padding: 8px; gap: 8px; }
+  .top-actions { width: auto; margin-left: auto; gap: 6px; }
+  .top-actions .btn { flex: 0 0 auto; min-height: 34px; padding: 0 10px; align-items: center; justify-content: center; white-space: nowrap; }
+  .identity { grid-template-columns: 58px minmax(0, 1fr); padding: 12px; gap: 12px; }
+  .avatar { width: 58px; height: 58px; border-radius: 17px; }
+  h1 { font-size: clamp(22px, 7vw, 26px); line-height: 1.08; word-break: keep-all; overflow-wrap: normal; }
+  .identity-sub { margin-top: 6px; font-size: 12px; line-height: 1.45; }
+  .hero-foot { gap: 8px; }
+  .cockpit-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .cockpit-stats .stat { min-height: 58px; padding: 10px; }
+  .today-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .today-item { grid-template-columns: 28px minmax(0, 1fr) auto; min-height: 52px; padding: 9px; gap: 8px; }
+  .today-token { width: 28px; height: 28px; font-size: 14px; }
+  .today-item strong, .today-item span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .advanced-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
+  .advanced-card { min-height: 74px; padding: 11px; }
+  .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .tab { flex: 0 0 auto; min-width: max-content; white-space: nowrap; }
+  .notice-item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+  .notice-item > span:first-child,
+  .notice-item strong,
+  .notice-item span { min-width: 0; overflow-wrap: anywhere; }
+  .notice-item .status-pill { justify-self: end; white-space: nowrap; }
 }
 
 /* ── Reduced Motion ── */
@@ -958,6 +995,10 @@ html.has-vnfest-wallpaper .topbar {
       </span>
     </a>
     <div class="top-actions">
+      <div class="page-lang-switch" aria-label="语言">
+        <button type="button" data-i18n-lang="zh">中文</button>
+        <button type="button" data-i18n-lang="ja">日本語</button>
+      </div>
       <button id="themeBtn" class="btn ghost" type="button">浅色模式</button>
       <a class="btn" href="./index.html?guest=1">返回地图</a>
       <button id="logoutBtn" class="btn danger" type="button">退出登录</button>
@@ -986,7 +1027,6 @@ html.has-vnfest-wallpaper .topbar {
         <div class="cockpit-stats" aria-label="用户中心统计">
           <div class="stat"><strong id="statClubCount">0</strong><span>我的同好会</span></div>
           <div class="stat"><strong id="statNoticeCount">0</strong><span>未读通知</span></div>
-          <div class="stat"><strong id="statMoeCount">0</strong><span>萌战活动</span></div>
         </div>
       </div>
     </div>
@@ -1006,11 +1046,6 @@ html.has-vnfest-wallpaper .topbar {
           <span class="today-token">通</span>
           <span><strong>未读通知</strong><span>审核、绑定、系统消息</span></span>
           <span id="todayUnread" class="count">0</span>
-        </button>
-        <button class="today-item good" type="button" data-open-tab="moe" data-sort-key="moe">
-          <span class="today-token">萌</span>
-          <span><strong>萌战进行中</strong><span>公开活动与可管理活动</span></span>
-          <span id="todayMoe" class="count">0</span>
         </button>
         <button class="today-item" type="button" data-open-tab="overview" data-sort-key="events">
           <span class="today-token">活</span>
@@ -1051,21 +1086,21 @@ html.has-vnfest-wallpaper .topbar {
         <span class="adv-icon">🎪</span>
         <span class="adv-body"><strong>GalOnly 通道</strong><span>高校专属摊位申请</span></span>
       </a>
-      <a class="adv-card" href="./moe/index.html" data-sort-key="moe">
-        <span class="adv-icon">🏆</span>
-        <span class="adv-body"><strong>萌战活动</strong><span>提名、投票、赛程</span></span>
+      <a class="adv-card" href="./club_square.html" data-sort-key="club-square">
+        <span class="adv-icon">▦</span>
+        <span class="adv-body"><strong>同好会广场</strong><span>十二器、萌战与大型企划</span></span>
       </a>
       <a id="clubManageEntry" class="adv-card" href="./admin/club_manager.html" data-sort-key="club-manage" hidden>
         <span class="adv-icon">⚙️</span>
         <span class="adv-body"><strong>同好会管理</strong><span>负责人可用</span></span>
       </a>
+      <a id="projectManageEntry" class="adv-card" href="./admin/club_project_manager.html" data-sort-key="project-manage" hidden>
+        <span class="adv-icon">12</span>
+        <span class="adv-body"><strong>企划管理</strong><span>负责人可用</span></span>
+      </a>
       <a id="publicationManageEntry" class="adv-card" href="./admin/publication_manager.html" data-sort-key="publication-manage" hidden>
         <span class="adv-icon">📖</span>
         <span class="adv-body"><strong>刊物管理</strong><span>负责人可用</span></span>
-      </a>
-      <a id="moeManageEntry" class="adv-card" href="./admin/moe_manager.html" data-sort-key="moe-manage" hidden>
-        <span class="adv-icon">🎮</span>
-        <span class="adv-body"><strong>萌战管理</strong><span>负责人 / 超管可用</span></span>
       </a>
       <a id="galonlyAuditEntry" class="adv-card" href="./admin/Galonly_audit.html" data-sort-key="galonly-audit" hidden>
         <span class="adv-icon">✅</span>
@@ -1080,7 +1115,6 @@ html.has-vnfest-wallpaper .topbar {
         <button class="tab active" type="button" data-tab="overview">总览</button>
         <button class="tab" type="button" data-tab="security">账户</button>
         <button class="tab" type="button" data-tab="clubs">同好会</button>
-        <button class="tab" type="button" data-tab="moe">萌战</button>
         <button class="tab" type="button" data-tab="notifications">通知</button>
       </nav>
     </aside>
@@ -1095,6 +1129,13 @@ html.has-vnfest-wallpaper .topbar {
             </div>
             <div id="overviewClubs" class="list"></div>
           </div>
+          <div id="ownerGrowthPanel" class="panel" data-sort-key="overview-growth" hidden>
+            <div class="panel-title-row">
+              <h2>负责人工作台</h2>
+              <a class="btn ghost" href="./admin/club_manager.html">管理</a>
+            </div>
+            <div id="ownerGrowthList" class="list"></div>
+          </div>
           <div class="panel" data-sort-key="overview-notifications">
             <div class="panel-title-row">
               <h2>最近通知</h2>
@@ -1108,13 +1149,6 @@ html.has-vnfest-wallpaper .topbar {
               <a class="btn ghost" href="./index.html?guest=1">活动日历</a>
             </div>
             <div id="overviewEvents" class="list"></div>
-          </div>
-          <div class="panel" data-sort-key="overview-moe">
-            <div class="panel-title-row">
-              <h2>萌战动态</h2>
-              <a class="btn ghost" href="./moe/index.html">进入萌战</a>
-            </div>
-            <div id="overviewMoe" class="list"></div>
           </div>
         </div>
       </section>
@@ -1260,18 +1294,6 @@ html.has-vnfest-wallpaper .topbar {
         </div>
       </section>
 
-      <section id="view-moe" class="view">
-        <div class="panel-grid">
-          <div class="panel">
-            <div class="panel-title-row"><h2>公开萌战活动</h2><a class="btn ghost" href="./moe/index.html">进入</a></div>
-            <div id="moePublicList" class="list"></div>
-          </div>
-          <div id="moeManagePanel" class="panel" hidden>
-            <div class="panel-title-row"><h2>可管理萌战</h2><a class="btn ghost" href="./admin/moe_manager.html">管理</a></div>
-            <div id="moeManageList" class="list"></div>
-          </div>
-        </div>
-      </section>
 
       <section id="view-notifications" class="view">
         <div class="panel">
@@ -1286,6 +1308,7 @@ html.has-vnfest-wallpaper .topbar {
   </section>
 </main>
 
+<script src="./js/page-i18n.js"></script>
 <script>
 (function () {
   'use strict';
@@ -1295,10 +1318,9 @@ html.has-vnfest-wallpaper .topbar {
    * @typedef {{id:number|string, club_id:number|string, user_id?:number|string, role?:string, status?:string, country?:string, nickname?:string, username?:string, apply_role?:string, club_name?:string}} Membership
    * @typedef {{id:number|string, name?:string, display_name?:string, school?:string, logo_url?:string, country?:string}} Club
    * @typedef {{id:number|string, title?:string, message?:string, is_read?:number|string|boolean}} NotificationItem
-   * @typedef {{id:number|string, title?:string, status?:string, country?:string}} MoeContest
    */
 
-  var roleLevel = { visitor: 0, member: 1, manager: 2, representative: 3, super_admin: 4 };
+  var roleLevel = { visitor: 0, external: 0.5, member: 1, manager: 2, representative: 3, super_admin: 4 };
   var state = {
     auth: null,
     memberships: [],
@@ -1306,10 +1328,9 @@ html.has-vnfest-wallpaper .topbar {
     notifications: [],
     unread: 0,
     pending: [],
-    publicMoe: [],
-    manageableMoe: [],
     eventRegistrations: [],
     events: [],
+    ownerDashboard: null,
     loading: true,
     virtual: {},
     avatarFile: null,
@@ -1334,13 +1355,13 @@ html.has-vnfest-wallpaper .topbar {
   var sameOrigin = { credentials: 'same-origin' };
 
   /* ── Particle Canvas ── */
-  var pCanvas, pCtx, particles = [], pAnimId, pW, pH;
+  var pCanvas, pCtx, particles = [], pAnimId, pTimer, pW, pH, pLastFrame = 0;
   function initParticles() {
     pCanvas = document.getElementById('particleCanvas');
     if (!pCanvas) return;
     pCtx = pCanvas.getContext('2d');
     resizeParticles();
-    var count = 70;
+    var count = window.innerWidth <= 620 ? 28 : 52;
     var colors = ['#e74c3c', '#ff6b5c', '#c0392b', '#ff9e96', '#e74c3c'];
     for (var i = 0; i < count; i++) {
       particles.push({
@@ -1350,39 +1371,71 @@ html.has-vnfest-wallpaper .topbar {
         opacity: Math.random() * 0.2 + 0.05, wobble: Math.random() * Math.PI * 2
       });
     }
-    window.addEventListener('resize', resizeParticles);
+    window.addEventListener('resize', debounceParticleResize);
     document.addEventListener('visibilitychange', onParticleVis);
-    pTick();
+    queueParticleTick(0);
   }
   function resizeParticles() { pW = window.innerWidth; pH = window.innerHeight; pCanvas.width = pW; pCanvas.height = pH; }
+  function debounceParticleResize() {
+    clearTimeout(pTimer);
+    pTimer = setTimeout(function () {
+      pTimer = null;
+      resizeParticles();
+      queueParticleTick(0);
+    }, 80);
+  }
   function onParticleVis() {
-    if (document.hidden) { if (pAnimId) { cancelAnimationFrame(pAnimId); pAnimId = null; } }
-    else { if (!pAnimId) pTick(); }
+    if (document.hidden) {
+      if (pAnimId) { cancelAnimationFrame(pAnimId); pAnimId = null; }
+      if (pTimer) { clearTimeout(pTimer); pTimer = null; }
+    }
+    else { queueParticleTick(0); }
+  }
+  function queueParticleTick(delay) {
+    if (document.hidden || pAnimId || pTimer) return;
+    pTimer = setTimeout(function () {
+      pTimer = null;
+      pAnimId = requestAnimationFrame(pTick);
+    }, delay || 0);
   }
   function pTick() {
-    pAnimId = requestAnimationFrame(pTick);
+    pAnimId = null;
+    if (document.hidden) return;
+    var now = performance.now();
+    var interval = window.innerWidth <= 620 ? 96 : 64;
+    if (now - pLastFrame < interval) {
+      queueParticleTick(interval - (now - pLastFrame));
+      return;
+    }
+    pLastFrame = now;
+    var reduced = prefersReducedMotion();
     pCtx.clearRect(0, 0, pW, pH);
     for (var i = 0; i < particles.length; i++) {
       var p = particles[i];
-      p.wobble += 0.008;
-      p.x += p.vx + Math.sin(p.wobble) * 0.15;
-      p.y += p.vy;
+      if (!reduced) {
+        p.wobble += 0.008;
+        p.x += p.vx + Math.sin(p.wobble) * 0.15;
+        p.y += p.vy;
+      }
       if (p.x < -10) p.x = pW + 10; if (p.x > pW + 10) p.x = -10;
       if (p.y < -10) p.y = pH + 10; if (p.y > pH + 10) p.y = -10;
       pCtx.globalAlpha = p.opacity;
       pCtx.fillStyle = p.color;
       pCtx.beginPath(); pCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); pCtx.fill();
     }
-    pCtx.globalAlpha = 0.04;
-    pCtx.strokeStyle = '#e74c3c'; pCtx.lineWidth = 0.5;
-    for (var i = 0; i < particles.length; i++) {
-      for (var j = i + 1; j < particles.length; j++) {
-        var dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) { pCtx.beginPath(); pCtx.moveTo(particles[i].x, particles[i].y); pCtx.lineTo(particles[j].x, particles[j].y); pCtx.stroke(); }
+    if (!reduced && window.innerWidth > 620) {
+      pCtx.globalAlpha = 0.035;
+      pCtx.strokeStyle = '#e74c3c'; pCtx.lineWidth = 0.5;
+      for (var i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          var dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 112) { pCtx.beginPath(); pCtx.moveTo(particles[i].x, particles[i].y); pCtx.lineTo(particles[j].x, particles[j].y); pCtx.stroke(); }
+        }
       }
     }
     pCtx.globalAlpha = 1;
+    if (!reduced) queueParticleTick(interval);
   }
 
   function currentTheme() {
@@ -1490,6 +1543,7 @@ html.has-vnfest-wallpaper .topbar {
 
   function roleLabel(role) {
     return {
+      external: '外交成员（IEM）',
       visitor: '访客',
       member: '成员',
       manager: '管理员',
@@ -1608,7 +1662,7 @@ html.has-vnfest-wallpaper .topbar {
   }
 
   function showSkeletons() {
-    ['overviewClubs', 'overviewNotifications', 'overviewEvents', 'overviewMoe', 'clubList', 'notificationList', 'moePublicList'].forEach(function (id) {
+    ['overviewClubs', 'ownerGrowthList', 'overviewNotifications', 'overviewEvents', 'clubList', 'notificationList'].forEach(function (id) {
       var el = $(id);
       if (el) el.innerHTML = skeletonHtml(id === 'clubList' || id === 'notificationList' ? 4 : 3);
     });
@@ -1737,22 +1791,19 @@ html.has-vnfest-wallpaper .topbar {
     var activeClubs = state.memberships.filter(function (m) { return m.status === 'active'; });
     setCount('statClubCount', activeClubs.length);
     setCount('statNoticeCount', state.unread);
-    setCount('statMoeCount', state.publicMoe.length);
     setCount('todayUnread', state.unread);
     setCount('todayPending', state.pending.length);
     setCount('todayEvents', myEventRegistrations().length);
-    setCount('todayMoe', state.publicMoe.length);
     setTabUnread(state.unread);
     setText('clubCountLabel', activeClubs.length + ' 个');
     setText('pendingCountLabel', state.pending.length + ' 条');
 
     var canManage = canManageClub();
     setHidden('clubManageEntry', !canManage);
+    setHidden('projectManageEntry', !canManage);
     setHidden('publicationManageEntry', !canManage);
     setHidden('pendingPanel', !canManage);
-    var canMoeManage = (u.role === 'super_admin') || state.manageableMoe.length > 0;
-    setHidden('moeManageEntry', !canMoeManage);
-    setHidden('moeManagePanel', !canMoeManage);
+    setHidden('ownerGrowthPanel', !canManage || !state.ownerDashboard || !(state.ownerDashboard.clubs || []).length);
     setHidden('galonlyAuditEntry', !u.is_audit);
   }
 
@@ -1785,6 +1836,39 @@ html.has-vnfest-wallpaper .topbar {
     }).join('') : emptyHtml('暂无待处理申请', '新的成员绑定申请会显示在这里。');
   }
 
+  function renderOwnerGrowth() {
+    var mount = $('ownerGrowthList');
+    if (!mount) return;
+    var data = state.ownerDashboard || {};
+    var clubs = data.clubs || [];
+    if (!clubs.length) {
+      mount.innerHTML = emptyHtml('暂无可管理同好会', '成为负责人后会显示分享、申请和内容入口。');
+      return;
+    }
+    mount.innerHTML = clubs.slice(0, 4).map(function (club) {
+      var analytics = club.analytics || {};
+      var events = ((club.activity || {}).events || []).length;
+      var pubs = ((club.activity || {}).publications || []).length;
+      var shareUrl = club.share_url || ('./club_share.html?club=' + encodeURIComponent(club.key));
+      return '<div class="growth-item">' +
+        '<span><strong>' + esc(club.name || club.key) + '</strong><span>' + esc(club.region || club.school || '') + '</span></span>' +
+        '<div class="growth-metrics">' +
+          '<span class="status-pill active">完整度 ' + Number((club.completeness || {}).score || 0) + '%</span>' +
+          '<span class="status-pill">待审核 ' + Number(club.pending_members || 0) + '</span>' +
+          '<span class="status-pill">成员 ' + Number(club.member_count || 0) + '</span>' +
+          '<span class="status-pill">访问 ' + Number(analytics.club_share_view || 0) + '</span>' +
+          '<span class="status-pill">内容 ' + (events + pubs) + '</span>' +
+        '</div>' +
+        '<div class="growth-actions">' +
+          '<a class="btn ghost" href="' + esc(shareUrl) + '">分享页</a>' +
+          '<button class="btn" type="button" data-copy-share="' + esc(shareUrl) + '" data-club-key="' + esc(club.key) + '">复制邀请</button>' +
+          '<a class="btn" href="./submit_event.html">发活动</a>' +
+          '<a class="btn" href="./submit_publication.html">刊物征稿</a>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
   function myEventRegistrations() {
     var u = user();
     if (!u) return [];
@@ -1798,26 +1882,6 @@ html.has-vnfest-wallpaper .topbar {
       var name = ev ? ev.event : ('活动 #' + reg.event_id);
       return '<div class="moe-item"><span><strong>' + esc(name) + '</strong><span>' + esc((reg.registered_at || '').split(' ')[0] || '已报名') + '</span></span><span class="status-pill active">已报名</span></div>';
     }).join('') : emptyHtml('还没有报名记录', '活动日历里的报名会汇总到这里。');
-  }
-
-  function renderMoe() {
-    var publicHtml = state.publicMoe.length ? state.publicMoe.slice(0, 8).map(function (contest) {
-      return '<a class="moe-item" href="./moe/index.html?contest_id=' + Number(contest.id) + '">' +
-        '<span><strong>' + esc(contest.title || ('萌战 #' + contest.id)) + '</strong><span>' + esc((contest.country || 'china') === 'japan' ? '日本' : '中国') + ' · ' + esc(statusLabel(contest.status)) + '</span></span>' +
-        '<span class="status-pill ' + esc(contest.status || '') + '">' + esc(statusLabel(contest.status)) + '</span>' +
-        '</a>';
-    }).join('') : emptyHtml('暂无公开萌战', '公开萌战活动会显示在这里。');
-    $('moePublicList').innerHTML = publicHtml;
-    $('overviewMoe').innerHTML = publicHtml;
-
-    if ((user() && user().role === 'super_admin') || state.manageableMoe.length > 0) {
-      $('moeManageList').innerHTML = state.manageableMoe.length ? state.manageableMoe.slice(0, 8).map(function (contest) {
-        return '<a class="moe-item" href="./admin/moe_manager.html">' +
-          '<span><strong>' + esc(contest.title || ('萌战 #' + contest.id)) + '</strong><span>活动 #' + Number(contest.id) + ' · ' + esc(statusLabel(contest.status)) + '</span></span>' +
-          '<span class="status-pill manage">可管理</span>' +
-          '</a>';
-      }).join('') : emptyHtml('暂无可管理萌战', '成为同好会负责人后可创建或管理萌战。');
-    }
   }
 
   function renderNotifications() {
@@ -1834,8 +1898,8 @@ html.has-vnfest-wallpaper .topbar {
   function renderAll() {
     renderSafely('identity', renderIdentity);
     renderSafely('clubs', renderClubs, 'clubList');
+    renderSafely('ownerGrowth', renderOwnerGrowth, 'ownerGrowthList');
     renderSafely('events', renderEvents, 'overviewEvents');
-    renderSafely('moe', renderMoe, 'moePublicList');
     renderSafely('notifications', renderNotifications, 'notificationList');
   }
 
@@ -1872,26 +1936,28 @@ html.has-vnfest-wallpaper .topbar {
       safeGet('./data/clubs_japan.json', { data: [] }),
       safeGet('./api/notifications.php?action=count_unread', { success: false, count: 0 }),
       safeGet('./api/notifications.php?action=list&page=1&limit=100', { success: false, notifications: [] }),
-      safeGet('./api/moe_contests.php?action=list', { success: false, data: [] }),
-      safeGet('./api/moe_contests.php?action=my_manageable', { success: false, data: [] }),
       safeGet('./api/events.php?action=registrations', { success: false, registrations: [] }),
-      safeGet('./data/events.json', { events: [] })
+      safeGet('./api/events.php?action=list', { events: [] })
     ]);
 
     state.clubs = (results[0].data || []).map(function (c) { c.country = 'china'; return c; })
       .concat((results[1].data || []).map(function (c) { c.country = 'japan'; return c; }));
     state.unread = results[2].success ? Number(results[2].count || 0) : 0;
     state.notifications = results[3].notifications || [];
-    state.publicMoe = results[4].data || [];
-    state.manageableMoe = results[5].data || [];
-    state.eventRegistrations = results[6].registrations || [];
-    state.events = results[7].events || [];
+    state.eventRegistrations = results[4].registrations || [];
+    state.events = results[5].events || [];
 
     if (canManageClub()) {
-      var pendingData = await safeGet('./api/membership.php?action=pending', { success: false, memberships: [] });
+      var managerResults = await Promise.all([
+        safeGet('./api/membership.php?action=pending', { success: false, memberships: [] }),
+        safeGet('./api/growth.php?action=owner_dashboard', { success: false, clubs: [], analytics: {} })
+      ]);
+      var pendingData = managerResults[0];
       state.pending = pendingData.success ? (pendingData.memberships || []) : [];
+      state.ownerDashboard = managerResults[1].success ? managerResults[1] : null;
     } else {
       state.pending = [];
+      state.ownerDashboard = null;
     }
   }
 
@@ -2052,6 +2118,7 @@ html.has-vnfest-wallpaper .topbar {
     var pulling = false;
     document.addEventListener('touchstart', function (event) {
       if (window.scrollY !== 0 || event.touches.length !== 1) return;
+      if (event.target.closest('input, textarea, select, button, a, [data-sort-scope], .quick-menu')) return;
       startY = event.touches[0].clientY;
       distance = 0;
       pulling = true;
@@ -2228,6 +2295,7 @@ html.has-vnfest-wallpaper .topbar {
     document.addEventListener('touchstart', function (event) {
       if (window.innerWidth > 760) return;
       if (!document.querySelector('.tab.active:not([data-tab="overview"])')) return;
+      if (event.target.closest('input, textarea, select, button, a, .virtual-list, .quick-menu')) return;
       panel = event.target.closest('.view.active .panel');
       startY = panel ? event.touches[0].clientY : 0;
     }, { passive: true });
@@ -2249,6 +2317,20 @@ html.has-vnfest-wallpaper .topbar {
   }
 
   function bindEvents() {
+    var userNotificationSyncAt = 0;
+    async function syncUserNotificationsNow() {
+      var now = Date.now();
+      if (now - userNotificationSyncAt < 8000) return;
+      userNotificationSyncAt = now;
+      await refreshData();
+      renderSafely('notifications', renderNotifications, 'notificationList');
+    }
+    window.addEventListener('focus', syncUserNotificationsNow);
+    window.addEventListener('pageshow', syncUserNotificationsNow);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) syncUserNotificationsNow();
+    });
+
     document.addEventListener('click', async function (event) {
       var openTab = event.target.closest('[data-open-tab]');
       if (openTab) switchTab(openTab.dataset.openTab);
@@ -2280,6 +2362,24 @@ html.has-vnfest-wallpaper .topbar {
         await refreshData();
         renderAll();
         showToast('通知已标记为已读', 'success');
+      }
+      var copyShare = event.target.closest('[data-copy-share]');
+      if (copyShare) {
+        var shareUrl = new URL(copyShare.dataset.copyShare, window.location.href).href;
+        var copied = navigator.clipboard && navigator.clipboard.writeText
+          ? navigator.clipboard.writeText(shareUrl)
+          : Promise.reject(new Error('clipboard unavailable'));
+        copied.then(function () {
+          return apiPost('./api/growth.php?action=record', {
+            event: 'club_share_copy',
+            club_key: copyShare.dataset.clubKey || '',
+            source: 'owner_dashboard'
+          }).catch(function () {});
+        }).then(function () {
+          showToast('分享链接已复制', 'success');
+        }).catch(function () {
+          showToast(shareUrl, 'info');
+        });
       }
     });
 

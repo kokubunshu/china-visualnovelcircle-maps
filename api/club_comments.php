@@ -24,13 +24,13 @@ function isClubActiveMember(int $userId, int $clubId, string $country): bool {
     $db = getDB();
     try {
         $stmt = $db->prepare(
-            "SELECT id FROM club_memberships WHERE user_id = ? AND club_id = ? AND country = ? AND status = 'active'"
+            "SELECT id FROM club_memberships WHERE user_id = ? AND club_id = ? AND country = ? AND status = 'active' AND role <> 'external'"
         );
         $stmt->execute([$userId, $clubId, $country]);
         return (bool)$stmt->fetch();
     } catch (Exception $e) {
         $stmt = $db->prepare(
-            "SELECT id FROM club_memberships WHERE user_id = ? AND club_id = ? AND status = 'active'"
+            "SELECT id FROM club_memberships WHERE user_id = ? AND club_id = ? AND status = 'active' AND role <> 'external'"
         );
         $stmt->execute([$userId, $clubId]);
         return (bool)$stmt->fetch();

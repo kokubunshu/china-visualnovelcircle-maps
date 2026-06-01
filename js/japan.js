@@ -297,6 +297,10 @@
     }
 
     let tooltipHtml = (d) => {
+        const prefecture = global.JAPAN_PREFECTURE_BY_ID?.get?.(d.id);
+        if (prefecture) {
+            return '<div class="tooltip-name">' + prefecture.jaName + '</div>';
+        }
         // 根据 id 映射日本都道府县名称
         const nameMap = {
             'JP-01': '北海道', 'JP-02': '青森县', 'JP-03': '岩手县', 'JP-04': '宫城县',
@@ -369,7 +373,7 @@
     japan.width = (...args) => { if (!args.length) return width; width = args[0]; return japan; };
     japan.height = (...args) => { if (!args.length) return height; height = args[0]; return japan; };
     japan.scale = (...args) => { if (!args.length) return scale; scale = args[0]; return japan; };
-    japan.language = (...args) => { if (!args.length) return language; if (["cn", "tw", "en"].includes(args[0])) language = args[0]; return japan; };
+    japan.language = (...args) => { if (!args.length) return language; if (["cn", "zh", "ja", "tw", "en"].includes(args[0])) language = args[0]; return japan; };
     japan.colorDefault = (...args) => { if (!args.length) return colorDefault; colorDefault = args[0]; return japan; };
     japan.colorLake = (...args) => { if (!args.length) return colorLake; colorLake = args[0]; return japan; };
     japan.tooltipHtml = (...args) => { if (!args.length) return tooltipHtml; tooltipHtml = args[0]; return japan; };

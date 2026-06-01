@@ -34,8 +34,9 @@ RewriteRule ^data/.*\.(db|sqlite)$ - [F,L]
     ExpiresByType text/javascript "access plus 1 day"
 </IfModule>
 
-# Keep submission JSON private while allowing public data JSON such as clubs.json.
-<FilesMatch "submissions.*\.json$">
+# Keep submission and club JSON private — submissions are person-submitted data,
+# club JSONs contain contact info that must go through API access control.
+<FilesMatch "(submissions|clubs|clubs_japan)\.json$">
     Order allow,deny
     Deny from all
 </FilesMatch>

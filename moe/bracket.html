@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -587,6 +587,8 @@ a { color: inherit; text-decoration: none; }
   }
 }
 </style>
+<link rel="stylesheet" href="../css/vote-activity.css">
+<script src="../js/vote-activity.js"></script>
 </head>
 <body>
 <div class="page" data-feature="Moe Contest Bracket Board">
@@ -596,8 +598,12 @@ a { color: inherit; text-decoration: none; }
       <p id="pageSub">32强 1v1 对阵淘汰赛</p>
     </div>
     <div class="actions">
-      <button class="theme-btn" type="button" onclick="toggleTheme()" title="切换主题" aria-label="切换主题">色</button>
-      <a class="btn" id="backLink" href="./index.html">← 返回萌战</a>
+      <div class="page-lang-switch" aria-label="语言">
+        <button type="button" data-i18n-lang="zh">中文</button>
+        <button type="button" data-i18n-lang="ja">日本語</button>
+      </div>
+      <button class="theme-btn" type="button" onclick="toggleTheme()" title="切换主题" aria-label="切换主题">主题</button>
+      <a class="btn" id="backLink" href="./index.html">返回萌战</a>
       <button class="btn primary" type="button" onclick="loadBracketData()">刷新赛程</button>
     </div>
   </header>
@@ -631,6 +637,7 @@ a { color: inherit; text-decoration: none; }
   <div class="page-footer">VNFest 萌战 · 数据每 30 秒自动刷新</div>
 </div>
 
+<script src="../js/page-i18n.js"></script>
 <script>
 (function(){
 var params = new URLSearchParams(window.location.search);
@@ -730,6 +737,7 @@ async function loadBracketData() {
     var data = await apiGet('moe_matches.php', { action: 'contest_bracket', contest_id: contestId });
     if (!data.success) throw new Error(data.message || '加载失败');
     bracketData = data;
+    if (window.ActivityTheme) window.ActivityTheme.applyContestWallpaper(bracketData.contest, 0.34);
     renderBracketBoard();
     if (document.getElementById('statusStrip').querySelector('.pill.error')) renderStatusStrip();
   } catch (e) {
@@ -1066,9 +1074,13 @@ document.addEventListener('visibilitychange', function () {
   }
 });
 
+var resizeTimer = 0;
 window.addEventListener('resize', function () {
-  if (bracketData) renderBracketBoard();
-  else updateScrollRail();
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function () {
+    if (bracketData) renderBracketBoard();
+    else updateScrollRail();
+  }, 100);
 });
 
 installInteractionFeedback();
