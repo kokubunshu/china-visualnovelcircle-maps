@@ -47,7 +47,8 @@ RUN sed -ri \
 COPY . /var/www/html/
 
 # 创建持久化目录并设置权限
-RUN mkdir -p /data/uploads /data/wiki /data/cache \
+# uploads/ 和 wiki/uploads/ 被 .dockerignore 排除，需要提前创建作为挂载点
+RUN mkdir -p /var/www/html/uploads /var/www/html/wiki/uploads /var/www/html/data/cache \
     && chown -R www-data:www-data /var/www/html/data /var/www/html/uploads /var/www/html/wiki \
     && chmod -R 755 /var/www/html/data /var/www/html/uploads /var/www/html/wiki
 
