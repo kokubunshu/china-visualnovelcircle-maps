@@ -1,0 +1,49 @@
+services:
+  # ── 主应用: PHP 8 + Apache ──
+  app:
+    image: ghcr.io/vnfestmap/galgame-community-map:latest
+    container_name: vnfest-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"    # 仅本地监听，由宝塔 Nginx 反代
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      # 配置文件（每个服务器不同，不打包进镜像）
+      - ./config.php:/var/www/html/config.php:ro
+      # 运行时数据（同好会 JSON、提交等）
+      - ./data:/var/www/html/data
+      # 用户上传文件
+      - ./uploads:/var/www/html/uploads
+      - ./wiki/uploads:/var/www/html/wiki/uploads
+      # 缓存
+      - ./data/cache:/var/www/html/data/cache
+    networks:
+      - vnfest-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health.php"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Watchtower: 自动检测新镜像并更新容器 ──
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: vnfest-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Asia/Shanghai
+      - WATCHTOWER_CLEANUP=true           # 更新后删除旧镜像
+      - WATCHTOWER_POLL_INTERVAL=300       # 每 5 分钟检查一次
+      - WATCHTOWER_INCLUDE_STOPPED=true    # 也更新已停止的容器
+      - WATCHTOWER_REVIVE_STOPPED=false
+    command: --label-enable               # 只更新打了 com.centurylinklabs.watchtower.enable=true 标签的容器
+    networks:
+      - vnfest-network
+
+networks:
+  vnfest-network:
+    driver: bridge
