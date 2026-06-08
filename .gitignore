@@ -1,5 +1,8 @@
 # System files
 .DS_Store
+
+# Server deploy config (per-environment paths & credentials)
+deploy-config.sh
 Thumbs.db
 Desktop.ini
 ehthumbs.db
