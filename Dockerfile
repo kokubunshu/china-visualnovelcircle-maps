@@ -14,6 +14,7 @@ RUN set -eux \
         libpng-dev \
         libjpeg-dev \
         libfreetype6-dev \
+        libonig-dev \
         zip \
         unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
